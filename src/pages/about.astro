@@ -1,0 +1,95 @@
+---
+import PathHeading from '../components/PathHeading.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import TimelineItem from '../components/TimelineItem.astro';
+import { EDUCATION } from '../data/education';
+import { JOBS } from '../data/jobs';
+import { SKILL_GROUPS, SPOKEN_LANGUAGES } from '../data/skills';
+import { getLocale, pick, t } from '../i18n';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formatPeriod } from '../lib/dates';
+
+const locale = getLocale();
+const presentLabel = t(locale, 'about.present');
+---
+
+<BaseLayout title={t(locale, 'about.title')}>
+  <section class="space-y-14 py-14">
+    <header>
+      <PathHeading path="about" />
+      <p class="text-muted mt-4">{t(locale, 'about.intro')}</p>
+    </header>
+
+    <div>
+      <SectionHeading>{t(locale, 'about.experience.title')}</SectionHeading>
+      <ol class="mt-7">
+        {
+          JOBS.map((job) => (
+            <TimelineItem
+              period={formatPeriod(locale, job.from, job.to, presentLabel)}
+              title={pick(locale, job.role)}
+              org={job.company}
+              orgUrl={job.url}
+              location={pick(locale, job.location)}
+              summary={pick(locale, job.summary)}
+              tags={job.tech}
+            />
+          ))
+        }
+      </ol>
+    </div>
+
+    <div>
+      <SectionHeading>{t(locale, 'about.education.title')}</SectionHeading>
+      <ol class="mt-7">
+        {
+          EDUCATION.map((entry) => (
+            <TimelineItem
+              period={formatPeriod(locale, entry.from, entry.to, presentLabel)}
+              title={pick(locale, entry.degree)}
+              org={entry.school}
+              orgUrl={entry.url}
+            />
+          ))
+        }
+      </ol>
+    </div>
+
+    <div class="grid gap-10 sm:grid-cols-2">
+      <div>
+        <SectionHeading>{t(locale, 'about.skills.title')}</SectionHeading>
+        <div class="mt-6 space-y-5">
+          {
+            SKILL_GROUPS.map((group) => (
+              <div>
+                <h3 class="text-muted font-mono text-sm">
+                  {pick(locale, group.title)}
+                </h3>
+                <ul class="mt-2 flex flex-wrap gap-1.5">
+                  {group.items.map((item) => (
+                    <li class="chip bg-panel text-ink">{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+      <div>
+        <SectionHeading>{t(locale, 'about.languages.title')}</SectionHeading>
+        <ul class="mt-6 max-w-xs space-y-3">
+          {
+            SPOKEN_LANGUAGES.map((language) => (
+              <li class="border-line flex justify-between gap-4 border-b pb-2 text-sm">
+                <span class="text-ink">{pick(locale, language.name)}</span>
+                <span class="text-muted font-mono">
+                  {pick(locale, language.level)}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

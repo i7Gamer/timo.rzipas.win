@@ -1,0 +1,32 @@
+---
+import TerminalLine from '../components/TerminalLine.astro';
+import TerminalWindow from '../components/TerminalWindow.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getLocale, t } from '../i18n';
+
+const locale = getLocale();
+---
+
+<BaseLayout title={t(locale, 'notFound.title')}>
+  <section class="mx-auto flex w-full max-w-xl flex-col gap-8 py-20">
+    <TerminalWindow title={t(locale, 'terminal.title')}>
+      <TerminalLine
+        cmd="cd /this-page"
+        out="bash: cd: /this-page: No such file or directory"
+      />
+      <TerminalLine cmd="" cursor />
+    </TerminalWindow>
+    <div class="space-y-4">
+      <h1 class="text-ink font-mono text-3xl font-semibold">
+        {t(locale, 'notFound.title')}
+      </h1>
+      <p class="text-muted">{t(locale, 'notFound.message')}</p>
+      <a
+        href="/"
+        class="btn-outline border-accent text-accent hover:bg-accent-soft inline-block"
+      >
+        cd ~ — {t(locale, 'notFound.home')}
+      </a>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,35 @@
+---
+import type { Service } from '../data/services';
+import { pick, t, type Locale } from '../i18n';
+import { STATUS_DOT_CLASS } from '../lib/status';
+
+interface Props {
+  service: Service;
+  locale: Locale;
+}
+
+const { service, locale } = Astro.props;
+
+const statusKey = `status.${service.status}` as const;
+---
+
+<article
+  data-service={service.name}
+  class="panel flex h-full flex-col gap-2 p-4"
+>
+  <div class="flex items-center justify-between gap-2">
+    <h3 class="text-ink font-mono text-sm font-semibold">{service.name}</h3>
+    <span class="text-muted flex items-center gap-1.5 font-mono text-[11px]">
+      <span
+        aria-hidden="true"
+        data-status-dot
+        class:list={['size-1.5 rounded-full', STATUS_DOT_CLASS[service.status]]}
+      ></span>
+      <span data-status-label>{t(locale, statusKey)}</span>
+    </span>
+  </div>
+  <span class="chip bg-surface text-muted w-fit">
+    {pick(locale, service.category)}
+  </span>
+  <p class="text-muted text-sm">{pick(locale, service.description)}</p>
+</article>

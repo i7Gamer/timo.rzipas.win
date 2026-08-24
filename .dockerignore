@@ -1,0 +1,7 @@
+.git
+.astro
+node_modules
+dist
+deploy/docker-compose.example.yml
+.github
+*.md

@@ -1,0 +1,25 @@
+---
+import PathHeading from '../components/PathHeading.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { PROJECTS } from '../data/projects';
+import { getLocale, t } from '../i18n';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { sortProjects } from '../lib/projects';
+
+const locale = getLocale();
+const projects = sortProjects(PROJECTS);
+---
+
+<BaseLayout title={t(locale, 'projects.title')}>
+  <section class="py-14">
+    <PathHeading path="projects" />
+    <p class="text-muted mt-4">{t(locale, 'projects.intro')}</p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        projects.map((project) => (
+          <ProjectCard project={project} locale={locale} />
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>

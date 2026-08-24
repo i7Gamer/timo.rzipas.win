@@ -1,0 +1,24 @@
+---
+interface Props {
+  cmd: string;
+  out?: string;
+  cursor?: boolean;
+}
+
+const { cmd, out, cursor = false } = Astro.props;
+const PROMPT = '~ $';
+---
+
+<p class="text-ink whitespace-nowrap">
+  <span class="text-accent select-none">{PROMPT}</span>
+  <span>{cmd}</span>
+  {
+    cursor && (
+      <span
+        aria-hidden="true"
+        class="animate-cursor bg-accent inline-block h-[1.05em] w-[0.55em] translate-y-[0.18em]"
+      />
+    )
+  }
+</p>
+{out !== undefined && <p class="text-muted">{out}</p>}

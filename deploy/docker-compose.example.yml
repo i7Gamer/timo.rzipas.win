@@ -1,0 +1,25 @@
+# Example homelab deployment. Copy next to your other stacks and adjust.
+services:
+  website:
+    image: ghcr.io/i7gamer/timo.rzipas.win:latest
+    container_name: timo-website
+    restart: unless-stopped
+    ports:
+      # Host port for the reverse proxy to point at; drop this block if the
+      # proxy shares a Docker network with the container instead.
+      - '8093:80'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1/healthz']
+      interval: 60s
+      timeout: 5s
+      retries: 3
+    # TODO(Timo): wire into your reverse proxy. Traefik example:
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.timo-website.rule=Host(`timo.rzipas.win`)
+    #   - traefik.http.routers.timo-website.tls.certresolver=letsencrypt
+    #   - traefik.http.services.timo-website.loadbalancer.server.port=80
+    volumes:
+      # status.json written by deploy/update-status.ps1 (scheduled on the
+      # host) — served at /status.json for the live homelab indicators.
+      - ./status:/usr/share/nginx/status:ro

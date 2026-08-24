@@ -1,0 +1,24 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<div class="panel overflow-hidden shadow-sm">
+  <div class="border-line flex items-center gap-1.5 border-b px-4 py-2.5">
+    <span aria-hidden="true" class="size-2.5 rounded-full bg-red-400/80"></span>
+    <span aria-hidden="true" class="size-2.5 rounded-full bg-amber-400/80"
+    ></span>
+    <span aria-hidden="true" class="size-2.5 rounded-full bg-emerald-400/80"
+    ></span>
+    <span class="text-muted ml-2 font-mono text-xs">{title}</span>
+  </div>
+  <div
+    data-terminal-content
+    class="space-y-1.5 overflow-x-auto px-4 py-4 font-mono text-sm leading-relaxed"
+  >
+    <slot />
+  </div>
+</div>

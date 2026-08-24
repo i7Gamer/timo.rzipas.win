@@ -1,0 +1,206 @@
+---
+import ProjectCard from '../components/ProjectCard.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import TerminalLine from '../components/TerminalLine.astro';
+import TerminalWindow from '../components/TerminalWindow.astro';
+import { STORAGE_TOTAL } from '../data/hardware';
+import { PROJECTS } from '../data/projects';
+import { SERVICES } from '../data/services';
+import { getLocale, t, type UIKey } from '../i18n';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { featuredProjects } from '../lib/projects';
+
+const locale = getLocale();
+const featured = featuredProjects(PROJECTS);
+
+const STATS: ReadonlyArray<{ value: string; labelKey: UIKey }> = [
+  { value: STORAGE_TOTAL, labelKey: 'stats.storage' },
+  { value: '64 GB', labelKey: 'stats.ram' },
+  { value: '24/7', labelKey: 'stats.uptime' },
+  { value: String(SERVICES.length), labelKey: 'stats.services' },
+];
+
+// Outputs for the interactive terminal — read by the <script> below.
+const TERMINAL_STRINGS = {
+  whoami: t(locale, 'terminal.whoami.out'),
+  skills: t(locale, 'terminal.skills.out'),
+  health: t(locale, 'terminal.health.out'),
+  help: t(locale, 'terminal.help.out'),
+  sudo: t(locale, 'terminal.sudo.out'),
+};
+---
+
+<BaseLayout>
+  <section class="bg-dots relative -mx-4 px-4 py-16 sm:-mx-6 sm:px-6 lg:py-24">
+    <div class="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+      <div class="space-y-5">
+        <p class="text-accent font-mono text-sm">
+          {t(locale, 'hero.role')} · {t(locale, 'hero.location')}
+        </p>
+        <h1 class="text-ink text-4xl font-bold tracking-tight sm:text-5xl">
+          {t(locale, 'hero.greeting')}
+        </h1>
+        <p class="text-ink text-lg font-medium">{t(locale, 'hero.tagline')}</p>
+        <p class="text-muted">{t(locale, 'hero.intro')}</p>
+        <div class="flex flex-wrap gap-3 pt-2">
+          <a
+            href="/projects/"
+            class="bg-accent text-surface rounded-md px-4 py-2 font-mono text-sm font-semibold transition-opacity hover:opacity-85"
+          >
+            {t(locale, 'hero.cta.projects')}
+          </a>
+          <a
+            href="/homelab/"
+            class="btn-outline border-line text-ink hover:border-accent hover:text-accent"
+          >
+            {t(locale, 'hero.cta.homelab')}
+          </a>
+        </div>
+      </div>
+      <div
+        data-hero-terminal
+        data-strings={JSON.stringify(TERMINAL_STRINGS)}
+        data-input-label={t(locale, 'terminal.input.label')}
+      >
+        <TerminalWindow title={t(locale, 'terminal.title')}>
+          <TerminalLine
+            cmd={t(locale, 'terminal.whoami.cmd')}
+            out={t(locale, 'terminal.whoami.out')}
+          />
+          <TerminalLine
+            cmd={t(locale, 'terminal.skills.cmd')}
+            out={t(locale, 'terminal.skills.out')}
+          />
+          <TerminalLine
+            cmd={t(locale, 'terminal.health.cmd')}
+            out={t(locale, 'terminal.health.out')}
+          />
+          <div data-terminal-idle>
+            <TerminalLine cmd="" cursor />
+          </div>
+        </TerminalWindow>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-14">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <SectionHeading>{t(locale, 'section.featured.title')}</SectionHeading>
+      <a href="/projects/" class="link-accent text-sm">
+        {t(locale, 'section.featured.all')} →
+      </a>
+    </div>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        featured.map((project) => (
+          <ProjectCard project={project} locale={locale} />
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="pt-2 pb-16">
+    <div class="border-line bg-panel rounded-2xl border p-6 sm:p-8">
+      <SectionHeading>{t(locale, 'section.homelabTeaser.title')}</SectionHeading
+      >
+      <p class="text-muted mt-4">
+        {t(locale, 'section.homelabTeaser.text')}
+      </p>
+      <dl class="mt-6 grid max-w-xl grid-cols-2 gap-4 sm:grid-cols-4">
+        {
+          STATS.map((stat) => (
+            <div class="flex flex-col-reverse">
+              <dt class="text-muted font-mono text-xs">
+                {t(locale, stat.labelKey)}
+              </dt>
+              <dd class="text-accent font-mono text-xl font-semibold">
+                {stat.value}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      <a
+        href="/homelab/"
+        class="btn-outline border-accent text-accent hover:bg-accent-soft mt-6 inline-block"
+      >
+        {t(locale, 'section.homelabTeaser.cta')} →
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { runTerminalCommand, type TerminalStrings } from '../lib/terminal';
+
+  function setUpTerminal(root: HTMLElement): void {
+    const content = root.querySelector('[data-terminal-content]');
+    if (!(content instanceof HTMLElement) || !root.dataset.strings) {
+      return;
+    }
+    const strings = JSON.parse(root.dataset.strings) as TerminalStrings;
+
+    // Replace the decorative blinking cursor with a real input line.
+    root.querySelector('[data-terminal-idle]')?.remove();
+    content.classList.add('max-h-72', 'overflow-y-auto');
+
+    const row = document.createElement('p');
+    row.className = 'flex items-center gap-2';
+    const prompt = document.createElement('span');
+    prompt.className = 'text-accent select-none';
+    prompt.textContent = '~ $';
+    const input = document.createElement('input');
+    input.className = 'text-ink min-w-0 flex-1 bg-transparent outline-none';
+    input.setAttribute('aria-label', root.dataset.inputLabel ?? 'Terminal');
+    input.autocapitalize = 'none';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    row.append(prompt, input);
+    content.append(row);
+
+    const insertLine = (className: string, ...children: (Node | string)[]) => {
+      const line = document.createElement('p');
+      line.className = className;
+      line.append(...children);
+      content.insertBefore(line, row);
+    };
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') {
+        return;
+      }
+      const value = input.value;
+      input.value = '';
+      insertLine('text-ink', prompt.cloneNode(true), ` ${value}`);
+      const action = runTerminalCommand(value, strings);
+      if (action.type === 'print') {
+        for (const outputLine of action.lines) {
+          insertLine('text-muted', outputLine);
+        }
+      } else if (action.type === 'navigate') {
+        window.location.href = action.href;
+      } else if (action.type === 'clear') {
+        for (const line of [...content.querySelectorAll('p')]) {
+          if (line !== row) {
+            line.remove();
+          }
+        }
+      }
+      row.scrollIntoView({ block: 'nearest' });
+    });
+
+    // Clicking anywhere in the terminal focuses the prompt — unless the
+    // visitor is selecting text to copy.
+    root.addEventListener('click', () => {
+      if (window.getSelection()?.toString()) {
+        return;
+      }
+      input.focus();
+    });
+  }
+
+  const host = document.querySelector('[data-hero-terminal]');
+  if (host instanceof HTMLElement) {
+    setUpTerminal(host);
+  }
+</script>

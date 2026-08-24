@@ -1,0 +1,59 @@
+---
+import { getLocale, t, type UIKey } from '../i18n';
+import { isActivePath } from '../lib/paths';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+const locale = getLocale();
+const currentPath = Astro.url.pathname;
+
+const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
+  { href: '/', key: 'nav.home' },
+  { href: '/projects/', key: 'nav.projects' },
+  { href: '/homelab/', key: 'nav.homelab' },
+  { href: '/about/', key: 'nav.about' },
+];
+---
+
+<header
+  class="border-line bg-surface/90 sticky top-0 z-10 border-b backdrop-blur"
+>
+  <div
+    class="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6"
+  >
+    <a
+      href="/"
+      class="text-ink hover:text-accent font-mono text-sm font-semibold transition-colors"
+    >
+      <span class="text-accent">~</span>/timo
+    </a>
+
+    <nav aria-label="Main" class="flex items-center gap-1">
+      {
+        NAV_ITEMS.map((item) => {
+          const active = isActivePath(currentPath, item.href);
+          return (
+            <a
+              href={item.href}
+              aria-current={active ? 'page' : undefined}
+              class:list={[
+                'rounded-md px-2 py-1 text-sm transition-colors sm:px-3',
+                active
+                  ? 'text-accent font-medium'
+                  : 'text-muted hover:text-ink',
+                item.href === '/' && 'hidden sm:inline-block',
+              ]}
+            >
+              {t(locale, item.key)}
+            </a>
+          );
+        })
+      }
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <LanguageSwitcher />
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

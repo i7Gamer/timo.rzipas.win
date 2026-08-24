@@ -1,0 +1,58 @@
+---
+interface Props {
+  period: string;
+  title: string;
+  org?: string;
+  orgUrl?: string;
+  location?: string;
+  summary?: string;
+  tags?: string[];
+}
+
+const {
+  period,
+  title,
+  org,
+  orgUrl,
+  location,
+  summary,
+  tags = [],
+} = Astro.props;
+---
+
+<li class="border-line relative border-l pb-8 pl-6 last:pb-0">
+  <span
+    aria-hidden="true"
+    class="border-surface bg-accent absolute top-1 -left-[5.5px] size-2.5 rounded-full border-2"
+  ></span>
+  <p class="text-accent font-mono text-xs">
+    {period}{location && <span class="text-muted"> · {location}</span>}
+  </p>
+  <h3 class="text-ink mt-1 font-semibold">
+    {title}
+    {
+      org && (
+        <span class="text-muted font-normal">
+          {' · '}
+          {orgUrl ? (
+            <a href={orgUrl} rel="noopener" class="link-underline">
+              {org}
+            </a>
+          ) : (
+            org
+          )}
+        </span>
+      )
+    }
+  </h3>
+  {summary && <p class="text-muted mt-1 text-sm">{summary}</p>}
+  {
+    tags.length > 0 && (
+      <ul class="mt-2 flex flex-wrap gap-1.5">
+        {tags.map((tag) => (
+          <li class="chip bg-panel text-muted">{tag}</li>
+        ))}
+      </ul>
+    )
+  }
+</li>
