@@ -143,19 +143,26 @@ const TERMINAL_STRINGS = {
     // Replace the decorative blinking cursor with a real input line.
     root.querySelector('[data-terminal-idle]')?.remove();
     content.classList.add('max-h-72', 'overflow-y-auto');
+    const frame = content.closest('.panel');
+    frame?.classList.remove('shadow-sm');
+    frame?.classList.add('terminal-glow');
 
     const row = document.createElement('p');
-    row.className = 'flex items-center gap-2';
+    row.className = 'group flex items-center gap-2';
     const prompt = document.createElement('span');
     prompt.className = 'text-accent select-none';
     prompt.textContent = '~ $';
+    const idleCursor = document.createElement('span');
+    idleCursor.className =
+      'animate-cursor bg-accent inline-block h-[1.05em] w-[0.55em] group-focus-within:hidden';
+    idleCursor.setAttribute('aria-hidden', 'true');
     const input = document.createElement('input');
     input.className = 'text-ink min-w-0 flex-1 bg-transparent outline-none';
     input.setAttribute('aria-label', root.dataset.inputLabel ?? 'Terminal');
     input.autocapitalize = 'none';
     input.autocomplete = 'off';
     input.spellcheck = false;
-    row.append(prompt, input);
+    row.append(prompt, idleCursor, input);
     content.append(row);
 
     const insertLine = (className: string, ...children: (Node | string)[]) => {
