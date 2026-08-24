@@ -63,22 +63,23 @@ Point a Cloudflare Tunnel public hostname at the container (TLS terminates at th
 ### Live service status
 
 `/homelab` upgrades its build-time status dots at runtime from `GET /status.json`.
-The file is generated on the host by `deploy/update-status.ps1` (point the
-URLs in its table at your own services first) and mounted read-only into the
-container (see `deploy/docker-compose.example.yml`). Every check is a plain
-HTTP request, so the task needs no Docker access and runs fine as SYSTEM or
-with nobody logged on. Schedule it every few minutes:
+The file is generated on the host by `deploy/update-status.ps1`: copy it next
+to your `docker-compose.yml` and point the URLs in its table at your own
+services. It writes `status.json` into a `status` folder beside itself, which
+is exactly the `./status` volume the compose file mounts read-only into the
+container. Every check is a plain HTTP request, so the task needs no Docker
+access and runs fine as SYSTEM or with nobody logged on:
 
 ```powershell
 Register-ScheduledTask -TaskName 'website-status' `
-  -RunLevel Highest `
+  -User 'SYSTEM' -RunLevel Highest `
   -Trigger (New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)) `
-  -Action (New-ScheduledTaskAction -Execute 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:/path/to/deploy/update-status.ps1"')
+  -Action (New-ScheduledTaskAction -Execute 'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:/path/to/docker/update-status.ps1"')
 ```
 
 The script runs on Windows PowerShell 5.1, so the fixed `powershell.exe` path
 is used rather than `pwsh`, whose Store install has no reliable path for a
-scheduled task.
+scheduled task. Pass `-OutDir` if the status folder lives somewhere else.
 
 If the file is missing or malformed the page silently keeps its static labels.
 
