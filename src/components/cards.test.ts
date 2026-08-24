@@ -52,6 +52,35 @@ describe('ProjectCard', () => {
   });
 });
 
+describe('ProjectCard live links', () => {
+  const hosted: Project = { ...project, link: 'https://demo.rzipas.win/' };
+
+  it('offers a visit link when the project is hosted somewhere', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ProjectCard, {
+      props: { project: hosted, locale: 'en' },
+    });
+    expect(html).toContain('https://demo.rzipas.win/');
+    expect(html).toContain('Visit');
+  });
+
+  it('translates the visit link', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ProjectCard, {
+      props: { project: hosted, locale: 'de' },
+    });
+    expect(html).toContain('Ansehen');
+  });
+
+  it('omits it for projects that are not hosted', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ProjectCard, {
+      props: { project, locale: 'en' },
+    });
+    expect(html).not.toContain('Visit');
+  });
+});
+
 describe('ProjectCard forks', () => {
   const forked: Project = { ...project, name: 'ForkedTool', fork: true };
 

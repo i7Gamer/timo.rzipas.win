@@ -58,7 +58,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     name: "What's up Docker",
-    category: { en: 'Ops', de: 'Betrieb' },
+    category: { en: 'Ops', de: 'Ops' },
     description: {
       en: 'Watches every container image and tells me when an update is out.',
       de: 'Überwacht alle Container-Images und meldet, sobald ein Update da ist.',
@@ -88,7 +88,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'Media', de: 'Medien' },
     description: {
       en: 'Media server for the household — films, series and music off the bulk storage.',
-      de: 'Medienserver für den Haushalt — Filme, Serien und Musik vom Massenspeicher.',
+      de: 'Medienserver für den Haushalt — Filme, Serien und Musik von den großen Platten.',
     },
     status: 'online',
   },
@@ -97,7 +97,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'Media', de: 'Medien' },
     description: {
       en: 'Request and discovery frontend for the media library — the successor to Overseerr.',
-      de: 'Anfrage- und Entdeckungs-Frontend für die Mediathek — der Nachfolger von Overseerr.',
+      de: 'Wunsch- und Entdeckungs-Frontend für die Medienbibliothek — der Nachfolger von Overseerr.',
     },
     status: 'online',
   },

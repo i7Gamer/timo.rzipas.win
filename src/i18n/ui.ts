@@ -25,7 +25,8 @@ const en = {
   'terminal.whoami.cmd': 'whoami',
   'terminal.whoami.out': 'Timo Rzipa · Software Engineer @ Abacus Research AG',
   'terminal.skills.cmd': 'cat skills.txt',
-  'terminal.skills.out': 'Java · C# · TypeScript · SQL · Docker · Networking',
+  'terminal.skills.out':
+    'Java · C# · TypeScript · Angular · Vue · SQL · Docker · Networking',
   'terminal.health.cmd': 'curl -s https://timo.rzipas.win/healthz',
   'terminal.health.out': 'ok — served from the living room',
   'terminal.help.out':
@@ -66,10 +67,10 @@ const en = {
   'homelab.hw.os.workstation': 'Windows 11 Pro + CachyOS',
   'homelab.services.title': 'Running services',
   'homelab.services.note':
-    'Snapshot of the current inventory — it grows on most weekends.',
+    'Status dots are live — checked from inside the homelab every few minutes.',
   'homelab.why.title': 'Why self-host?',
   'homelab.why.text':
-    'Running services myself means understanding the whole stack — DNS, TLS, reverse proxies, backups, monitoring, and it turns abstract cloud concepts into hardware I can actually touch. It also keeps my data on my own disks — where it is mine to measure, query and turn into a chart whenever something makes me curious.',
+    'Running services myself means understanding the whole stack — DNS, TLS, reverse proxies, backups, monitoring — and it turns abstract cloud concepts into hardware I can actually touch. It also keeps my data on my own disks — where it is mine to measure, query and turn into a chart whenever something makes me curious.',
   'homelab.diagram.title': 'How a request reaches this page',
   'diagram.visitor': 'Visitor',
   'diagram.cloudflare': 'Cloudflare · DNS + TLS',
@@ -83,6 +84,7 @@ const en = {
   'status.online': 'online',
   'status.planned': 'planned',
   'status.offline': 'offline',
+  'status.asOf': 'as of {time}',
 
   'about.title': 'About',
   'about.intro':
@@ -91,7 +93,7 @@ const en = {
   'about.education.title': 'Education',
   'about.skills.title': 'Skills',
   'about.languages.title': 'Languages',
-  'about.present': 'today',
+  'about.present': 'present',
 
   'lang.switch.label': 'Zu Deutsch wechseln',
   'lang.switch.code': 'DE',
@@ -150,9 +152,9 @@ const de: Partial<Record<UIKey, string>> = {
   'project.status.fork': 'Fork',
 
   'homelab.intro':
-    'Programmieren ist die halbe Geschichte. Die andere Hälfte ist die Infrastruktur, auf der alles läuft: ein selbst gebauter Server im Wohnzimmer statt fremder Cloud.',
+    'Programmieren ist die halbe Geschichte. Die andere Hälfte ist die Infrastruktur, auf der alles läuft: ein selbst gebauter Server im Wohnzimmer statt einer fremden Cloud.',
   'homelab.machine.server': 'Server',
-  'homelab.machine.workstation': 'Arbeitsplatz',
+  'homelab.machine.workstation': 'Workstation',
   'homelab.hw.ram': 'Arbeitsspeicher',
   'homelab.hw.board': 'Mainboard',
   'homelab.hw.gpu': 'Grafik',
@@ -164,10 +166,10 @@ const de: Partial<Record<UIKey, string>> = {
   'homelab.hw.os.workstation': 'Windows 11 Pro + CachyOS',
   'homelab.services.title': 'Laufende Dienste',
   'homelab.services.note':
-    'Momentaufnahme des aktuellen Bestands — er wächst an den meisten Wochenenden.',
+    'Die Status-Punkte sind live — alle paar Minuten direkt aus dem Homelab geprüft.',
   'homelab.why.title': 'Warum Self-Hosting?',
   'homelab.why.text':
-    'Dienste selbst zu betreiben heißt, den ganzen Stack zu verstehen — DNS, TLS, Reverse Proxies, Backups, Monitoring, und aus abstrakten Cloud-Konzepten wird Hardware, die man anfassen kann. Und meine Daten bleiben auf meinen eigenen Platten — dort kann ich sie messen, auswerten und visualisieren, sobald mich etwas neugierig macht.',
+    'Dienste selbst zu betreiben heißt, den ganzen Stack zu verstehen — DNS, TLS, Reverse Proxies, Backups, Monitoring — und aus abstrakten Cloud-Konzepten wird Hardware, die man anfassen kann. Und meine Daten bleiben auf meinen eigenen Platten — dort kann ich sie messen, auswerten und visualisieren, sobald mich etwas neugierig macht.',
   'homelab.diagram.title': 'Wie eine Anfrage diese Seite erreicht',
   'diagram.visitor': 'Besucher',
   'diagram.cloudflare': 'Cloudflare · DNS + TLS',
@@ -180,6 +182,7 @@ const de: Partial<Record<UIKey, string>> = {
   'stats.services': 'Dienste',
   'status.planned': 'geplant',
   'status.offline': 'offline',
+  'status.asOf': 'Stand: {time}',
 
   'about.title': 'Über mich',
   'about.intro':

@@ -3,8 +3,9 @@ import '../styles/global.css';
 
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
-import { AUTHOR } from '../data/site';
-import { getLocale, t } from '../i18n';
+import { JOBS } from '../data/jobs';
+import { AUTHOR, GITHUB_URL, LINKEDIN_URL, SITE_URL } from '../data/site';
+import { getLocale, LOCALES, t } from '../i18n';
 import { DEFAULT_THEME, THEME_STORAGE_KEY } from '../lib/theme';
 
 interface Props {
@@ -20,6 +21,21 @@ const title = Astro.props.title
 const description = Astro.props.description ?? t(locale, 'site.description');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = new URL('/og.png', Astro.site);
+const alternateLocales = LOCALES.filter((other) => other !== locale);
+
+// Structured data so a search for the name gets a proper card.
+const currentJob = JOBS.find((job) => job.to === undefined);
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: AUTHOR,
+  url: SITE_URL,
+  jobTitle: t(locale, 'hero.role'),
+  ...(currentJob && {
+    worksFor: { '@type': 'Organization', name: currentJob.company },
+  }),
+  sameAs: [GITHUB_URL, LINKEDIN_URL],
+};
 ---
 
 <!doctype html>
@@ -41,7 +57,17 @@ const ogImageUrl = new URL('/og.png', Astro.site);
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={ogImageUrl} />
     <meta property="og:locale" content={locale} />
+    {
+      alternateLocales.map((other) => (
+        <meta property="og:locale:alternate" content={other} />
+      ))
+    }
     <meta name="twitter:card" content="summary_large_image" />
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(personSchema)}
+    />
 
     <script
       is:inline

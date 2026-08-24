@@ -36,3 +36,31 @@ export function parseStatusPayload(payload: unknown): Map<string, LiveStatus> {
   }
   return result;
 }
+
+/** Minutes after which a status.json is considered outdated. */
+export const STATUS_STALE_AFTER_MINUTES = 15;
+
+/** Reads the generation timestamp of /status.json, or null if unusable. */
+export function parseGeneratedAt(payload: unknown): Date | null {
+  if (typeof payload !== 'object' || payload === null) {
+    return null;
+  }
+  const generatedAt = (payload as { generatedAt?: unknown }).generatedAt;
+  if (typeof generatedAt !== 'string') {
+    return null;
+  }
+  const date = new Date(generatedAt);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** Whether the status data is older than the given threshold. */
+export function isStale(
+  generatedAt: Date,
+  now: Date,
+  thresholdMinutes: number,
+): boolean {
+  const MS_PER_MINUTE = 60_000;
+  return (
+    now.getTime() - generatedAt.getTime() > thresholdMinutes * MS_PER_MINUTE
+  );
+}
