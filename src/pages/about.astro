@@ -14,81 +14,88 @@ const presentLabel = t(locale, 'about.present');
 ---
 
 <BaseLayout title={t(locale, 'about.title')}>
-  <section class="space-y-14 py-14">
-    <header>
+  <section class="py-10">
+    <header class="mb-10">
       <PathHeading path="about" />
       <p class="text-muted mt-4">{t(locale, 'about.intro')}</p>
     </header>
 
-    <div>
-      <SectionHeading>{t(locale, 'about.experience.title')}</SectionHeading>
-      <ol class="mt-7">
-        {
-          JOBS.map((job) => (
-            <TimelineItem
-              period={formatPeriod(locale, job.from, job.to, presentLabel)}
-              title={pick(locale, job.role)}
-              org={job.company}
-              orgUrl={job.url}
-              location={pick(locale, job.location)}
-              summary={pick(locale, job.summary)}
-              tags={job.tech}
-            />
-          ))
-        }
-      </ol>
-    </div>
-
-    <div>
-      <SectionHeading>{t(locale, 'about.education.title')}</SectionHeading>
-      <ol class="mt-7">
-        {
-          EDUCATION.map((entry) => (
-            <TimelineItem
-              period={formatPeriod(locale, entry.from, entry.to, presentLabel)}
-              title={pick(locale, entry.degree)}
-              org={entry.school}
-              orgUrl={entry.url}
-            />
-          ))
-        }
-      </ol>
-    </div>
-
-    <div class="grid gap-10 sm:grid-cols-2">
+    <div class="space-y-10">
       <div>
-        <SectionHeading>{t(locale, 'about.skills.title')}</SectionHeading>
-        <div class="mt-6 space-y-5">
+        <SectionHeading>{t(locale, 'about.experience.title')}</SectionHeading>
+        <ol class="mt-7">
           {
-            SKILL_GROUPS.map((group) => (
-              <div>
-                <h3 class="text-muted font-mono text-sm">
-                  {pick(locale, group.title)}
-                </h3>
-                <ul class="mt-2 flex flex-wrap gap-1.5">
-                  {group.items.map((item) => (
-                    <li class="chip bg-panel text-ink">{item}</li>
-                  ))}
-                </ul>
-              </div>
+            JOBS.map((job) => (
+              <TimelineItem
+                period={formatPeriod(locale, job.from, job.to, presentLabel)}
+                title={pick(locale, job.role)}
+                org={job.company}
+                orgUrl={job.url}
+                location={pick(locale, job.location)}
+                summary={pick(locale, job.summary)}
+                tags={job.tech}
+              />
             ))
           }
-        </div>
+        </ol>
       </div>
+
       <div>
-        <SectionHeading>{t(locale, 'about.languages.title')}</SectionHeading>
-        <ul class="mt-6 max-w-xs space-y-3">
+        <SectionHeading>{t(locale, 'about.education.title')}</SectionHeading>
+        <ol class="mt-7">
           {
-            SPOKEN_LANGUAGES.map((language) => (
-              <li class="border-line flex justify-between gap-4 border-b pb-2 text-sm">
-                <span class="text-ink">{pick(locale, language.name)}</span>
-                <span class="text-muted font-mono">
-                  {pick(locale, language.level)}
-                </span>
-              </li>
+            EDUCATION.map((entry) => (
+              <TimelineItem
+                period={formatPeriod(
+                  locale,
+                  entry.from,
+                  entry.to,
+                  presentLabel,
+                )}
+                title={pick(locale, entry.degree)}
+                org={entry.school}
+                orgUrl={entry.url}
+              />
             ))
           }
-        </ul>
+        </ol>
+      </div>
+
+      <div class="grid gap-10 sm:grid-cols-2">
+        <div>
+          <SectionHeading>{t(locale, 'about.skills.title')}</SectionHeading>
+          <div class="mt-6 space-y-5">
+            {
+              SKILL_GROUPS.map((group) => (
+                <div>
+                  <h3 class="text-muted font-mono text-sm">
+                    {pick(locale, group.title)}
+                  </h3>
+                  <ul class="mt-2 flex flex-wrap gap-1.5">
+                    {group.items.map((item) => (
+                      <li class="chip bg-panel text-ink">{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+        <div>
+          <SectionHeading>{t(locale, 'about.languages.title')}</SectionHeading>
+          <ul class="mt-6 max-w-xs space-y-3">
+            {
+              SPOKEN_LANGUAGES.map((language) => (
+                <li class="border-line flex justify-between gap-4 border-b pb-2 text-sm">
+                  <span class="text-ink">{pick(locale, language.name)}</span>
+                  <span class="text-muted font-mono">
+                    {pick(locale, language.level)}
+                  </span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
       </div>
     </div>
   </section>

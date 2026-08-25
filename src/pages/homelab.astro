@@ -21,87 +21,89 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
 ---
 
 <BaseLayout title={t(locale, 'homelab.title')}>
-  <section class="space-y-14 py-14">
-    <header>
+  <section class="py-10">
+    <header class="mb-10">
       <PathHeading path="homelab" />
       <p class="text-muted mt-4">{t(locale, 'homelab.intro')}</p>
     </header>
 
-    <div>
-      <SectionHeading>{t(locale, 'homelab.hardware.title')}</SectionHeading>
-      <div class="mt-6 grid items-start gap-6 lg:grid-cols-2">
-        {
-          MACHINES.map((machine) => (
-            <div>
-              <h3 class="text-muted mb-2 font-mono text-sm">
-                {t(locale, machine.titleKey)}
-              </h3>
-              <TerminalWindow title={machine.terminalTitle}>
-                <TerminalLine cmd="fastfetch" />
-                {machine.specs.map((spec) => (
-                  <p class="flex flex-wrap gap-x-2">
-                    <span class="text-accent w-36 shrink-0">
-                      {t(locale, spec.labelKey)}
-                    </span>
-                    <span class="text-ink">
-                      {spec.valueKey ? t(locale, spec.valueKey) : spec.value}
-                    </span>
-                  </p>
-                ))}
-              </TerminalWindow>
-            </div>
-          ))
-        }
+    <div class="space-y-10">
+      <div>
+        <SectionHeading>{t(locale, 'homelab.hardware.title')}</SectionHeading>
+        <div class="mt-6 grid items-start gap-6 lg:grid-cols-2">
+          {
+            MACHINES.map((machine) => (
+              <div>
+                <h3 class="text-muted mb-2 font-mono text-sm">
+                  {t(locale, machine.titleKey)}
+                </h3>
+                <TerminalWindow title={machine.terminalTitle}>
+                  <TerminalLine cmd="fastfetch" />
+                  {machine.specs.map((spec) => (
+                    <p class="flex flex-wrap gap-x-2">
+                      <span class="text-accent w-36 shrink-0">
+                        {t(locale, spec.labelKey)}
+                      </span>
+                      <span class="text-ink">
+                        {spec.valueKey ? t(locale, spec.valueKey) : spec.value}
+                      </span>
+                    </p>
+                  ))}
+                </TerminalWindow>
+              </div>
+            ))
+          }
+        </div>
       </div>
-    </div>
 
-    <div>
-      <SectionHeading>{t(locale, 'homelab.diagram.title')}</SectionHeading>
-      <ol class="mx-auto mt-6 flex max-w-xs flex-col items-center">
-        {
-          DIAGRAM_STEPS.map((step, index) => (
-            <li class="flex w-full flex-col items-center">
-              {index > 0 && (
-                <span aria-hidden="true" class="text-accent py-1 font-mono">
-                  ↓
+      <div>
+        <SectionHeading>{t(locale, 'homelab.diagram.title')}</SectionHeading>
+        <ol class="mx-auto mt-6 flex max-w-xs flex-col items-center">
+          {
+            DIAGRAM_STEPS.map((step, index) => (
+              <li class="flex w-full flex-col items-center">
+                {index > 0 && (
+                  <span aria-hidden="true" class="text-accent py-1 font-mono">
+                    ↓
+                  </span>
+                )}
+                <span class="border-line bg-panel text-ink w-full rounded-md border px-3 py-2 text-center font-mono text-xs">
+                  {t(locale, step)}
                 </span>
-              )}
-              <span class="border-line bg-panel text-ink w-full rounded-md border px-3 py-2 text-center font-mono text-xs">
-                {t(locale, step)}
-              </span>
-            </li>
-          ))
-        }
-      </ol>
-    </div>
-
-    <div class="border-line bg-panel rounded-2xl border p-6 sm:p-8">
-      <SectionHeading>{t(locale, 'homelab.why.title')}</SectionHeading>
-      <p class="text-muted mt-4">{t(locale, 'homelab.why.text')}</p>
-    </div>
-
-    <div>
-      <div
-        class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2"
-      >
-        <SectionHeading>{t(locale, 'homelab.services.title')}</SectionHeading>
-        <p class="text-muted font-mono text-xs">
-          {t(locale, 'homelab.services.note')}
-          <span data-status-asof data-label={t(locale, 'status.asOf')} hidden
-          ></span>
-        </p>
+              </li>
+            ))
+          }
+        </ol>
       </div>
-      <div
-        class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        data-status-grid
-        data-label-online={t(locale, 'status.online')}
-        data-label-offline={t(locale, 'status.offline')}
-      >
-        {
-          SERVICES.map((service) => (
-            <ServiceCard service={service} locale={locale} />
-          ))
-        }
+
+      <div class="border-line bg-panel rounded-2xl border p-6 sm:p-8">
+        <SectionHeading>{t(locale, 'homelab.why.title')}</SectionHeading>
+        <p class="text-muted mt-4">{t(locale, 'homelab.why.text')}</p>
+      </div>
+
+      <div>
+        <div
+          class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2"
+        >
+          <SectionHeading>{t(locale, 'homelab.services.title')}</SectionHeading>
+          <p class="text-muted font-mono text-xs">
+            {t(locale, 'homelab.services.note')}
+            <span data-status-asof data-label={t(locale, 'status.asOf')} hidden
+            ></span>
+          </p>
+        </div>
+        <div
+          class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          data-status-grid
+          data-label-online={t(locale, 'status.online')}
+          data-label-offline={t(locale, 'status.offline')}
+        >
+          {
+            SERVICES.map((service) => (
+              <ServiceCard service={service} locale={locale} />
+            ))
+          }
+        </div>
       </div>
     </div>
   </section>
