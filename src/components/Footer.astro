@@ -95,7 +95,11 @@ const ICON_LINK_CLASS = 'text-muted hover:text-accent transition-colors';
         </a>
       </li>
       <li>
-        <a href={`mailto:${EMAIL}`} aria-label="E-Mail" class={ICON_LINK_CLASS}>
+        <a
+          href={`mailto:${EMAIL}`}
+          aria-label={t(locale, 'a11y.email')}
+          class={ICON_LINK_CLASS}
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"

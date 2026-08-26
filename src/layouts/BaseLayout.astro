@@ -1,5 +1,10 @@
 ---
 import '../styles/global.css';
+// The exact files the fontsource CSS references for latin text — importing
+// them with ?url yields the same hashed assets, so the preload and the
+// stylesheet share one copy. Other subsets still lazy-load via unicode-range.
+import interLatinUrl from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import jetbrainsMonoLatinUrl from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url';
 
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
@@ -51,6 +56,20 @@ const personSchema = {
     <meta name="author" content={AUTHOR} />
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonicalUrl} />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={interLatinUrl}
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={jetbrainsMonoLatinUrl}
+      crossorigin
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />

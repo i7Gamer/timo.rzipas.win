@@ -18,4 +18,5 @@ const result = spawnSync('pnpm', ['exec', 'astro', command], {
   shell: true,
   env: { ...process.env, LOCALE: locale },
 });
-process.exit(result.status ?? 0);
+// null status means the child was killed or failed to spawn — that is a failure.
+process.exit(result.status ?? 1);

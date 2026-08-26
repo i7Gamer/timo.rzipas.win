@@ -131,7 +131,11 @@ const TERMINAL_STRINGS = {
 </BaseLayout>
 
 <script>
-  import { runTerminalCommand, type TerminalStrings } from '../lib/terminal';
+  import {
+    createCommandHistory,
+    runTerminalCommand,
+    type TerminalStrings,
+  } from '../lib/terminal';
 
   function setUpTerminal(root: HTMLElement): void {
     const content = root.querySelector('[data-terminal-content]');
@@ -146,6 +150,8 @@ const TERMINAL_STRINGS = {
     const frame = content.closest('.panel');
     frame?.classList.remove('shadow-sm');
     frame?.classList.add('terminal-glow');
+    // The pulse lives on the wrapper so it escapes the panel's overflow clip.
+    root.classList.add('terminal-halo');
 
     const row = document.createElement('p');
     row.className = 'group flex items-center gap-2';
@@ -172,12 +178,24 @@ const TERMINAL_STRINGS = {
       content.insertBefore(line, row);
     };
 
+    const history = createCommandHistory();
+
     input.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        const recalled =
+          event.key === 'ArrowUp' ? history.previous() : history.next();
+        if (recalled !== undefined) {
+          event.preventDefault();
+          input.value = recalled;
+        }
+        return;
+      }
       if (event.key !== 'Enter') {
         return;
       }
       const value = input.value;
       input.value = '';
+      history.add(value);
       insertLine('text-ink', prompt.cloneNode(true), ` ${value}`);
       const action = runTerminalCommand(value, strings);
       if (action.type === 'print') {

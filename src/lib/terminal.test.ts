@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { runTerminalCommand, type TerminalStrings } from './terminal';
+import {
+  createCommandHistory,
+  runTerminalCommand,
+  type TerminalStrings,
+} from './terminal';
 
 const strings: TerminalStrings = {
   whoami: 'WHOAMI_OUT',
@@ -136,5 +140,75 @@ describe('runTerminalCommand', () => {
       type: 'print',
       lines: ['SKILLS_OUT'],
     });
+  });
+});
+
+describe('createCommandHistory', () => {
+  it('recalls commands newest-first', () => {
+    const history = createCommandHistory();
+    history.add('whoami');
+    history.add('ls');
+    expect(history.previous()).toBe('ls');
+    expect(history.previous()).toBe('whoami');
+  });
+
+  it('holds at the oldest entry like bash', () => {
+    const history = createCommandHistory();
+    history.add('whoami');
+    expect(history.previous()).toBe('whoami');
+    expect(history.previous()).toBe('whoami');
+  });
+
+  it('walks forward back down to a blank live line', () => {
+    const history = createCommandHistory();
+    history.add('whoami');
+    history.add('ls');
+    history.previous();
+    history.previous();
+    expect(history.next()).toBe('ls');
+    expect(history.next()).toBe('');
+    expect(history.next()).toBeUndefined();
+  });
+
+  it('returns undefined while empty', () => {
+    expect(createCommandHistory().previous()).toBeUndefined();
+    expect(createCommandHistory().next()).toBeUndefined();
+  });
+
+  it('records commands trimmed and ignores blank ones', () => {
+    const history = createCommandHistory();
+    history.add('   ');
+    expect(history.previous()).toBeUndefined();
+    history.add('  ls  ');
+    expect(history.previous()).toBe('ls');
+  });
+
+  it('skips consecutive duplicates', () => {
+    const history = createCommandHistory();
+    history.add('ls');
+    history.add('ls');
+    history.add('whoami');
+    expect(history.previous()).toBe('whoami');
+    expect(history.previous()).toBe('ls');
+    expect(history.previous()).toBe('ls');
+  });
+
+  it('restarts browsing at the newest entry after adding', () => {
+    const history = createCommandHistory();
+    history.add('whoami');
+    history.previous();
+    history.add('ls');
+    expect(history.previous()).toBe('ls');
+  });
+
+  it('evicts the oldest entry beyond the limit', () => {
+    const LIMIT = 2;
+    const history = createCommandHistory(LIMIT);
+    history.add('one');
+    history.add('two');
+    history.add('three');
+    expect(history.previous()).toBe('three');
+    expect(history.previous()).toBe('two');
+    expect(history.previous()).toBe('two');
   });
 });

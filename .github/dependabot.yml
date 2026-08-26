@@ -1,0 +1,23 @@
+# Weekly dependency PRs; minor/patch npm bumps arrive as one grouped PR.
+# Note: the pinned pnpm version (packageManager in package.json) is not
+# covered by Dependabot and stays a manual bump.
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - 'minor'
+          - 'patch'
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+  - package-ecosystem: 'docker'
+    directory: '/'
+    schedule:
+      interval: 'weekly'

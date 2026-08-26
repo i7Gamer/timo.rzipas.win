@@ -24,6 +24,54 @@ const PAGE_ROUTES: Readonly<Record<string, string>> = {
 const SKILLS_FILE = 'skills.txt';
 const LS_OUTPUT = `about  homelab  projects  ${SKILLS_FILE}`;
 
+const HISTORY_LIMIT = 50;
+
+export interface CommandHistory {
+  add(command: string): void;
+  previous(): string | undefined;
+  next(): string | undefined;
+}
+
+/**
+ * ↑/↓ recall for the fake terminal, with bash-like edges: hold at the
+ * oldest entry going up, walk forward back down to a blank live line.
+ * `undefined` means "nothing to recall" — the caller leaves the input alone.
+ */
+export function createCommandHistory(limit = HISTORY_LIMIT): CommandHistory {
+  const entries: string[] = [];
+  // Browse position; entries.length is the blank "live" line.
+  let index = 0;
+
+  return {
+    add(command) {
+      const trimmed = command.trim();
+      if (trimmed !== '' && trimmed !== entries.at(-1)) {
+        entries.push(trimmed);
+        if (entries.length > limit) {
+          entries.shift();
+        }
+      }
+      index = entries.length;
+    },
+    previous() {
+      if (entries.length === 0) {
+        return undefined;
+      }
+      if (index > 0) {
+        index -= 1;
+      }
+      return entries[index];
+    },
+    next() {
+      if (index >= entries.length) {
+        return undefined;
+      }
+      index += 1;
+      return index === entries.length ? '' : entries[index];
+    },
+  };
+}
+
 function print(...lines: string[]): TerminalAction {
   return { type: 'print', lines };
 }

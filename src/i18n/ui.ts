@@ -98,6 +98,8 @@ const en = {
   'lang.switch.label': 'Zu Deutsch wechseln',
   'lang.switch.code': 'DE',
   'a11y.toggleTheme': 'Toggle color theme',
+  'a11y.mainNav': 'Main',
+  'a11y.email': 'Email',
 
   'footer.selfHosted': 'Self-hosted on my own hardware',
   'footer.source': 'Source',
@@ -163,7 +165,6 @@ const de: Partial<Record<UIKey, string>> = {
   'homelab.hw.storage.value': `${STORAGE_TOTAL} auf 10 Platten`,
   'homelab.hw.storage.workstation': '3,2 TB SSD',
   'homelab.hw.os': 'Betriebssystem',
-  'homelab.hw.os.workstation': 'Windows 11 Pro + CachyOS',
   'homelab.services.title': 'Laufende Dienste',
   'homelab.services.note':
     'Die Status-Punkte sind live — alle paar Minuten direkt aus dem Homelab geprüft.',
@@ -195,6 +196,8 @@ const de: Partial<Record<UIKey, string>> = {
   'lang.switch.label': 'Switch to English',
   'lang.switch.code': 'EN',
   'a11y.toggleTheme': 'Farbschema wechseln',
+  'a11y.mainNav': 'Hauptnavigation',
+  'a11y.email': 'E-Mail',
 
   'footer.selfHosted': 'Self-hosted auf eigener Hardware',
   'footer.source': 'Quellcode',

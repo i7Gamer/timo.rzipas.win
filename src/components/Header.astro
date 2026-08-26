@@ -28,7 +28,7 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
       <span class="text-accent">~</span>/timo
     </a>
 
-    <nav aria-label="Main" class="flex items-center gap-1">
+    <nav aria-label={t(locale, 'a11y.mainNav')} class="flex items-center gap-1">
       {
         NAV_ITEMS.map((item) => {
           const active = isActivePath(currentPath, item.href);

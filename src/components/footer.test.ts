@@ -18,4 +18,11 @@ describe('Footer', () => {
     expect(html).toContain('mailto:');
     expect(html).not.toMatch(/mailto:[^>]*target="_blank"/);
   });
+
+  it('labels the mail link in the page language', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(Footer);
+    // The container renders the default (English) build.
+    expect(html).toContain('aria-label="Email"');
+  });
 });

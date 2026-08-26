@@ -6,7 +6,9 @@ services:
     restart: unless-stopped
     ports:
       # Host port for the reverse proxy to point at; drop this block if the
-      # proxy shares a Docker network with the container instead.
+      # proxy shares a Docker network with the container instead — but note
+      # that deploy/update-status.ps1 probes this port for the site's own
+      # status dot, so point its check somewhere else first.
       - '8093:80'
     healthcheck:
       test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1/healthz']

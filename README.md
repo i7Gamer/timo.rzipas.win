@@ -44,9 +44,10 @@ pnpm build      # builds BOTH locales into dist/en and dist/de
 
 ### Adding a language
 
-1. Add the code to `src/i18n/locales.json`
-2. Add a dictionary in `src/i18n/ui.ts` and translations in `src/data/*`
-3. Add one line to each `map` block in `deploy/nginx.conf`
+1. Add the code to `src/i18n/locales.json` **and** to the `Locale` union in `src/i18n/index.ts`
+2. Add a dictionary in `src/i18n/ui.ts` and translations in `src/data/*` — each dictionary's `lang.switch.*` keys must name its `nextLocale`
+3. Add the locale to `OG_LOCALE` in `src/layouts/BaseLayout.astro` (the type errors until you do)
+4. Add one line to each `map` block in `deploy/nginx.conf`
 
 Untranslated keys automatically fall back to English.
 

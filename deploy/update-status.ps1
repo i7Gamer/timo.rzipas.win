@@ -14,7 +14,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 # Site service name (must match `name` in src/data/services.ts) -> the
-# endpoint that must answer 2xx/3xx for it to count as online.
+# endpoint that must answer HTTP below 500 for it to count as online
+# (a 401/403 login wall still proves the service is up).
 # Services not listed here (e.g. "Bulk storage") keep their static label.
 $Checks = [ordered]@{
   # --- Docker containers, probed on their published host port ---
@@ -48,9 +49,15 @@ $services = [ordered]@{}
 foreach ($entry in $Checks.GetEnumerator()) {
   $online = $false
   try {
-    $response = Invoke-WebRequest -Uri $entry.Value -Method Get `
-      -TimeoutSec $RequestTimeoutSeconds -UseBasicParsing
-    $online = $response.StatusCode -lt 400
+    Invoke-WebRequest -Uri $entry.Value -Method Get `
+      -TimeoutSec $RequestTimeoutSeconds -UseBasicParsing | Out-Null
+    $online = $true
+  } catch [System.Net.WebException] {
+    # Windows PowerShell throws on 4xx/5xx. A 4xx (e.g. 401 from an
+    # auth-protected UI) still means the service answered; only 5xx and
+    # no-response at all count as offline.
+    $status = $_.Exception.Response.StatusCode
+    $online = ($null -ne $status) -and ([int]$status -lt 500)
   } catch {
     $online = $false
   }

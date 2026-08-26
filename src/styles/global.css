@@ -103,33 +103,15 @@
 }
 
 /* Retro CRT glow for the interactive hero terminal. Applied by its script,
-   so non-interactive terminals (and no-JS visitors) keep the plain panel. */
-@keyframes terminal-glow-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 14px color-mix(in oklab, var(--accent) 18%, transparent),
-      0 0 36px color-mix(in oklab, var(--accent) 9%, transparent),
-      inset 0 0 16px color-mix(in oklab, var(--accent) 6%, transparent);
-  }
-  50% {
-    box-shadow:
-      0 0 20px color-mix(in oklab, var(--accent) 30%, transparent),
-      0 0 52px color-mix(in oklab, var(--accent) 15%, transparent),
-      inset 0 0 20px color-mix(in oklab, var(--accent) 9%, transparent);
-  }
-}
-
+   so non-interactive terminals (and no-JS visitors) keep the plain panel.
+   The panel itself only gets STATIC shadows; the pulse lives on the wrapper
+   (terminal-halo) as an opacity animation of a pseudo-element, which the
+   compositor handles without repainting the blurred shadow every frame. */
 @utility terminal-glow {
   box-shadow:
     0 0 14px color-mix(in oklab, var(--accent) 18%, transparent),
     0 0 36px color-mix(in oklab, var(--accent) 9%, transparent),
     inset 0 0 16px color-mix(in oklab, var(--accent) 6%, transparent);
-  animation: terminal-glow-pulse 3.2s ease-in-out infinite;
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-  }
 
   &.panel {
     border-color: color-mix(in oklab, var(--accent) 40%, var(--line));
@@ -140,10 +122,42 @@
   }
 
   &:focus-within {
-    animation: none;
     box-shadow:
       0 0 22px color-mix(in oklab, var(--accent) 32%, transparent),
       0 0 56px color-mix(in oklab, var(--accent) 16%, transparent),
       inset 0 0 20px color-mix(in oklab, var(--accent) 9%, transparent);
+  }
+}
+
+@keyframes halo-pulse {
+  50% {
+    opacity: 1;
+  }
+}
+
+/* On the terminal's wrapper — outside the panel's overflow clip, so the
+   pulsing outer glow can extend beyond the rounded border. */
+@utility terminal-halo {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-xl);
+    pointer-events: none;
+    opacity: 0;
+    box-shadow:
+      0 0 20px color-mix(in oklab, var(--accent) 30%, transparent),
+      0 0 52px color-mix(in oklab, var(--accent) 15%, transparent);
+    animation: halo-pulse 3.2s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
+  &:focus-within::before {
+    animation: none;
   }
 }
