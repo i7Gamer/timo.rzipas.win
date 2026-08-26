@@ -73,8 +73,18 @@ if (-not (Test-Path $OutDir)) {
   New-Item -ItemType Directory -Path $OutDir | Out-Null
 }
 
-# Write atomically so nginx never serves a half-written file.
+# Write atomically so nginx never serves a half-written or missing file.
+# (Move-Item -Force would delete + rename, leaving a gap; File.Replace is a
+# true same-volume swap. It requires an existing target, hence the fallback
+# plain move on the very first run.)
 $json = $payload | ConvertTo-Json
 $tmp = Join-Path $OutDir 'status.json.tmp'
+$target = Join-Path $OutDir 'status.json'
 [System.IO.File]::WriteAllText($tmp, $json, [System.Text.UTF8Encoding]::new($false))
-Move-Item -Path $tmp -Destination (Join-Path $OutDir 'status.json') -Force
+if (Test-Path $target) {
+  # [NullString]::Value, because PowerShell turns $null into "" for .NET
+  # string parameters — Replace then rejects the empty backup path.
+  [System.IO.File]::Replace($tmp, $target, [NullString]::Value)
+} else {
+  Move-Item -Path $tmp -Destination $target
+}

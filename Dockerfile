@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
+# Keep the Node major in sync with .nvmrc — CI runs the tests on that
+# version, and Dependabot is told not to bump this major on its own.
 FROM node:22-alpine AS build
 WORKDIR /app
 # corepack installs the pnpm version pinned in package.json's packageManager field.

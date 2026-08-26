@@ -5,6 +5,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  /* Native scrollbars and form controls follow the theme. */
+  color-scheme: light;
   --surface: oklch(98.5% 0.004 95);
   --panel: oklch(96.5% 0.005 95);
   --ink: oklch(25% 0.012 260);
@@ -15,6 +17,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --surface: oklch(17% 0.011 260);
   --panel: oklch(21% 0.013 260);
   --ink: oklch(90% 0.006 260);
@@ -22,6 +25,22 @@
   --line: oklch(30% 0.014 260);
   --accent: oklch(80% 0.17 155);
   --accent-soft: oklch(30% 0.055 155);
+}
+
+/* Print in the light palette even when the dark theme is active — the about
+   page doubles as a CV, and printers skip backgrounds, so what matters is
+   dark ink instead of near-white. Keep the values in sync with :root above. */
+@media print {
+  .dark {
+    color-scheme: light;
+    --surface: oklch(98.5% 0.004 95);
+    --panel: oklch(96.5% 0.005 95);
+    --ink: oklch(25% 0.012 260);
+    --muted: oklch(47% 0.014 260);
+    --line: oklch(88% 0.006 260);
+    --accent: oklch(52% 0.14 155);
+    --accent-soft: oklch(93% 0.045 155);
+  }
 }
 
 @theme inline {
@@ -159,5 +178,15 @@
 
   &:focus-within::before {
     animation: none;
+  }
+}
+
+/* iOS Safari zooms the viewport into inputs whose font-size is below 16px,
+   so the interactive terminal (marked by terminal-halo) runs at 1rem on
+   touch devices — prompt, output and input stay consistent. Un-layered, so
+   it wins over the utility text-sm on the content element. */
+@media (pointer: coarse) {
+  .terminal-halo [data-terminal-content] {
+    font-size: 1rem;
   }
 }

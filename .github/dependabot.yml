@@ -21,3 +21,8 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    ignore:
+      # Node majors are bumped by hand together with .nvmrc, so the image
+      # never ships on a Node the CI tests did not run on.
+      - dependency-name: 'node'
+        update-types: ['version-update:semver-major']
