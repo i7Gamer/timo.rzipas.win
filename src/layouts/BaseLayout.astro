@@ -5,8 +5,8 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { JOBS } from '../data/jobs';
 import { AUTHOR, GITHUB_URL, LINKEDIN_URL, SITE_URL } from '../data/site';
-import { getLocale, LOCALES, t } from '../i18n';
-import { DEFAULT_THEME, THEME_STORAGE_KEY } from '../lib/theme';
+import { getLocale, LOCALES, t, type Locale } from '../i18n';
+import { DEFAULT_THEME, THEME_COLORS, THEME_STORAGE_KEY } from '../lib/theme';
 
 interface Props {
   title?: string;
@@ -22,6 +22,9 @@ const description = Astro.props.description ?? t(locale, 'site.description');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const ogImageUrl = new URL('/og.png', Astro.site);
 const alternateLocales = LOCALES.filter((other) => other !== locale);
+
+// og:locale expects language_TERRITORY, not a bare language code.
+const OG_LOCALE: Record<Locale, string> = { en: 'en_US', de: 'de_DE' };
 
 // Structured data so a search for the name gets a proper card.
 const currentJob = JOBS.find((job) => job.to === undefined);
@@ -49,17 +52,19 @@ const personSchema = {
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content={THEME_COLORS[DEFAULT_THEME]} />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={ogImageUrl} />
-    <meta property="og:locale" content={locale} />
+    <meta property="og:locale" content={OG_LOCALE[locale]} />
     {
       alternateLocales.map((other) => (
-        <meta property="og:locale:alternate" content={other} />
+        <meta property="og:locale:alternate" content={OG_LOCALE[other]} />
       ))
     }
     <meta name="twitter:card" content="summary_large_image" />
@@ -74,6 +79,7 @@ const personSchema = {
       define:vars={{
         storageKey: THEME_STORAGE_KEY,
         defaultTheme: DEFAULT_THEME,
+        themeColors: THEME_COLORS,
       }}
     >
       // Runs before first paint so the stored theme never flashes.
@@ -87,6 +93,9 @@ const personSchema = {
         /* storage unavailable — keep the default */
       }
       document.documentElement.classList.toggle('dark', theme === 'dark');
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', themeColors[theme]);
     </script>
   </head>
   <body

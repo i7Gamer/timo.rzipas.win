@@ -8,6 +8,12 @@ import type { UIKey } from '../i18n';
 export const STORAGE_TOTAL = '140 TB';
 
 /**
+ * Server memory, single-sourced for the same reason: quoted in the spec
+ * sheet and the hero stats. src/data/hardware.test.ts guards it too.
+ */
+export const RAM_TOTAL = '64 GB';
+
+/**
  * One row in a machine's spec sheet. The value is either a literal
  * (product names, which are the same in every language) or a UI key
  * (anything that needs translating).
@@ -33,7 +39,7 @@ export const MACHINES: readonly Machine[] = [
     terminalTitle: 'timo@homelab:~',
     specs: [
       { labelKey: 'homelab.hw.cpu', value: 'Intel Core i5-13500 · 14C / 20T' },
-      { labelKey: 'homelab.hw.ram', value: '64 GB DDR4' },
+      { labelKey: 'homelab.hw.ram', value: `${RAM_TOTAL} DDR4` },
       { labelKey: 'homelab.hw.board', value: 'Gigabyte Z690 UD DDR4' },
       {
         labelKey: 'homelab.hw.storage',

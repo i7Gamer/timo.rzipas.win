@@ -3,7 +3,7 @@ import ProjectCard from '../components/ProjectCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TerminalLine from '../components/TerminalLine.astro';
 import TerminalWindow from '../components/TerminalWindow.astro';
-import { STORAGE_TOTAL } from '../data/hardware';
+import { RAM_TOTAL, STORAGE_TOTAL } from '../data/hardware';
 import { PROJECTS } from '../data/projects';
 import { SERVICES } from '../data/services';
 import { getLocale, t, type UIKey } from '../i18n';
@@ -15,7 +15,7 @@ const featured = featuredProjects(PROJECTS);
 
 const STATS: ReadonlyArray<{ value: string; labelKey: UIKey }> = [
   { value: STORAGE_TOTAL, labelKey: 'stats.storage' },
-  { value: '64 GB', labelKey: 'stats.ram' },
+  { value: RAM_TOTAL, labelKey: 'stats.ram' },
   { value: '24/7', labelKey: 'stats.uptime' },
   { value: `${SERVICES.length}+`, labelKey: 'stats.services' },
 ];

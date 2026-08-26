@@ -49,19 +49,21 @@ const locale = getLocale();
 <script>
   import {
     DARK_CLASS,
+    THEME_COLORS,
     THEME_STORAGE_KEY,
     nextTheme,
-    resolveTheme,
   } from '../lib/theme';
 
   const root = document.documentElement;
   document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
-      const current = resolveTheme(
+      const next = nextTheme(
         root.classList.contains(DARK_CLASS) ? 'dark' : 'light',
       );
-      const next = nextTheme(current);
       root.classList.toggle(DARK_CLASS, next === 'dark');
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', THEME_COLORS[next]);
       try {
         localStorage.setItem(THEME_STORAGE_KEY, next);
       } catch {

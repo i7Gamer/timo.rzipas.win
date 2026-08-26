@@ -51,7 +51,7 @@ const en = {
 
   'homelab.title': 'Homelab',
   'homelab.intro':
-    'Programming is half the story. The other half is the infrastructure it runs on: a self-built server in the living room instead of somebody else’s cloud.',
+    "Programming is half the story. The other half is the infrastructure it runs on: a self-built server in the living room instead of somebody else's cloud.",
   'homelab.hardware.title': 'Hardware',
   'homelab.machine.server': 'Server',
   'homelab.machine.workstation': 'Workstation',
@@ -61,7 +61,7 @@ const en = {
   'homelab.hw.gpu': 'Graphics',
   'homelab.hw.network': 'Network',
   'homelab.hw.storage': 'Storage',
-  'homelab.hw.storage.value': `${STORAGE_TOTAL} combined HDD · 10 drives`,
+  'homelab.hw.storage.value': `${STORAGE_TOTAL} across 10 drives`,
   'homelab.hw.storage.workstation': '3.2 TB SSD',
   'homelab.hw.os': 'Operating system',
   'homelab.hw.os.workstation': 'Windows 11 Pro + CachyOS',
@@ -88,7 +88,7 @@ const en = {
 
   'about.title': 'About',
   'about.intro':
-    'I’m a software engineer from Austria’s Lake Constance region. Since 2019 I’ve been building business software in Java at Abacus Research in Switzerland; before that I worked on rail data services at Stadler. Away from the keyboard — who am I kidding, still at the keyboard — I run a homelab and turn “I could self-host that” into weekend projects.',
+    "I'm a software engineer from Austria's Lake Constance region. Since 2019 I've been building business software in Java at Abacus Research in Switzerland; before that I worked on rail data services at Stadler. Away from the keyboard — who am I kidding, still at the keyboard — I run a homelab and turn \"I could self-host that\" into weekend projects.",
   'about.experience.title': 'Experience',
   'about.education.title': 'Education',
   'about.skills.title': 'Skills',
@@ -112,7 +112,7 @@ export type UIKey = keyof typeof en;
 
 const de: Partial<Record<UIKey, string>> = {
   'site.description':
-    'Timo Rzipa — Softwareentwickler und Self-Hosting-Enthusiast. Projekte, Homelab und die Infrastruktur, die genau diese Seite ausliefert.',
+    'Timo Rzipa — Software Engineer und Self-Hosting-Enthusiast. Projekte, Homelab und die Infrastruktur, die genau diese Seite ausliefert.',
 
   'skip.content': 'Zum Inhalt springen',
 
@@ -122,7 +122,7 @@ const de: Partial<Record<UIKey, string>> = {
   'nav.about': 'Über mich',
 
   'hero.greeting': 'Hi, ich bin Timo.',
-  'hero.tagline': 'Softwareentwickler im Beruf, Self-Hoster nach Feierabend.',
+  'hero.tagline': 'Software Engineer im Beruf, Self-Hoster nach Feierabend.',
   'hero.intro':
     'Beruflich entwickle ich Business-Software in Java bei Abacus Research — privat betreibe ich ein kleines Rechenzentrum im Wohnzimmer. Diese Seite wird direkt daraus ausgeliefert.',
   'hero.location': 'Bodenseeregion (AT/CH)',
@@ -160,7 +160,7 @@ const de: Partial<Record<UIKey, string>> = {
   'homelab.hw.gpu': 'Grafik',
   'homelab.hw.network': 'Netzwerk',
   'homelab.hw.storage': 'Speicher',
-  'homelab.hw.storage.value': `${STORAGE_TOTAL} HDD gesamt · 10 Platten`,
+  'homelab.hw.storage.value': `${STORAGE_TOTAL} auf 10 Platten`,
   'homelab.hw.storage.workstation': '3,2 TB SSD',
   'homelab.hw.os': 'Betriebssystem',
   'homelab.hw.os.workstation': 'Windows 11 Pro + CachyOS',
@@ -186,7 +186,7 @@ const de: Partial<Record<UIKey, string>> = {
 
   'about.title': 'Über mich',
   'about.intro':
-    'Ich bin Softwareentwickler aus der Bodenseeregion. Seit 2019 entwickle ich bei Abacus Research in der Schweiz Business-Software in Java; davor habe ich bei Stadler an Rail Data Services gearbeitet. Abseits der Tastatur — wen will ich täuschen: immer noch an der Tastatur — betreibe ich ein Homelab und mache aus „das könnte ich selbst hosten“ Wochenendprojekte.',
+    'Ich bin Software Engineer aus der Bodenseeregion. Seit 2019 entwickle ich bei Abacus Research in der Schweiz Business-Software in Java; davor habe ich bei Stadler an Rail Data Services gearbeitet. Abseits der Tastatur — machen wir uns nichts vor: immer noch an der Tastatur — betreibe ich ein Homelab und mache aus „das könnte ich selbst hosten“ Wochenendprojekte.',
   'about.experience.title': 'Berufserfahrung',
   'about.education.title': 'Ausbildung',
   'about.languages.title': 'Sprachen',

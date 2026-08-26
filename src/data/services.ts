@@ -34,7 +34,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'Data', de: 'Daten' },
     description: {
       en: `${STORAGE_TOTAL} of spinning disks for media, backups and experiments.`,
-      de: `${STORAGE_TOTAL} rotierende Platten für Medien, Backups und Experimente.`,
+      de: `${STORAGE_TOTAL} an rotierenden Platten für Medien, Backups und Experimente.`,
     },
     status: 'online',
   },

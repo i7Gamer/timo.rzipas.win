@@ -3,10 +3,25 @@ import { join, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { LOCALES, t, ui } from '../i18n';
-import { MACHINES, STORAGE_TOTAL } from './hardware';
+import { MACHINES, RAM_TOTAL, STORAGE_TOTAL } from './hardware';
 import { SERVICES } from './services';
 
 const SRC_DIR = join(import.meta.dirname, '..');
+
+/** Source files (outside data/hardware.ts) that write the figure down literally. */
+function filesQuoting(figure: string): string[] {
+  const sourceFiles = readdirSync(SRC_DIR, {
+    recursive: true,
+    encoding: 'utf8',
+  }).filter((file) => /\.(ts|astro)$/.test(file));
+
+  return sourceFiles.filter((file) => {
+    if (file.split(sep).join('/') === 'data/hardware.ts') {
+      return false;
+    }
+    return readFileSync(join(SRC_DIR, file), 'utf8').includes(figure);
+  });
+}
 
 describe('MACHINES', () => {
   it('describes at least the server and the workstation', () => {
@@ -84,18 +99,24 @@ describe('STORAGE_TOTAL', () => {
   });
 
   it('is the only place the figure is written down', () => {
-    const sourceFiles = readdirSync(SRC_DIR, {
-      recursive: true,
-      encoding: 'utf8',
-    }).filter((file) => /\.(ts|astro)$/.test(file));
+    expect(filesQuoting(STORAGE_TOTAL)).toEqual([]);
+  });
+});
 
-    const offenders = sourceFiles.filter((file) => {
-      if (file.split(sep).join('/') === 'data/hardware.ts') {
-        return false;
-      }
-      return readFileSync(join(SRC_DIR, file), 'utf8').includes(STORAGE_TOTAL);
-    });
+describe('RAM_TOTAL', () => {
+  it('is a plain capacity figure', () => {
+    expect(RAM_TOTAL).toMatch(/^\d+ GB$/);
+  });
 
-    expect(offenders).toEqual([]);
+  it('is what the server spec sheet quotes', () => {
+    const server = MACHINES.find((machine) => machine.id === 'server');
+    const ram = server?.specs.find(
+      (spec) => spec.labelKey === 'homelab.hw.ram',
+    );
+    expect(ram?.value).toContain(RAM_TOTAL);
+  });
+
+  it('is the only place the figure is written down', () => {
+    expect(filesQuoting(RAM_TOTAL)).toEqual([]);
   });
 });

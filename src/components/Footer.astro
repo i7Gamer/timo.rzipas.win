@@ -24,7 +24,12 @@ const ICON_LINK_CLASS = 'text-muted hover:text-accent transition-colors';
     <div class="space-y-1">
       <p>© {year} {AUTHOR} · {t(locale, 'footer.selfHosted')}</p>
       <p class="font-mono text-xs">
-        <a href={REPO_URL} rel="noopener" class="link-underline">
+        <a
+          href={REPO_URL}
+          target="_blank"
+          rel="noopener"
+          class="link-underline"
+        >
           {t(locale, 'footer.source')}
         </a>
         {
@@ -34,6 +39,7 @@ const ICON_LINK_CLASS = 'text-muted hover:text-accent transition-colors';
               {t(locale, 'footer.build')}{' '}
               <a
                 href={`${REPO_URL}/commit/${buildSha}`}
+                target="_blank"
                 rel="noopener"
                 class="link-underline"
               >
@@ -49,7 +55,9 @@ const ICON_LINK_CLASS = 'text-muted hover:text-accent transition-colors';
       <li>
         <a
           href={GITHUB_URL}
+          target="_blank"
           rel="noopener"
+          data-no-arrow
           aria-label="GitHub"
           class={ICON_LINK_CLASS}
         >
@@ -68,7 +76,9 @@ const ICON_LINK_CLASS = 'text-muted hover:text-accent transition-colors';
       <li>
         <a
           href={LINKEDIN_URL}
+          target="_blank"
           rel="noopener"
+          data-no-arrow
           aria-label="LinkedIn"
           class={ICON_LINK_CLASS}
         >

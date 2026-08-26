@@ -50,15 +50,25 @@ const statusKey = `project.status.${project.status}` as const;
   <div class="flex gap-4 pt-1">
     {
       project.repo && (
-        <a href={project.repo} rel="noopener" class="link-accent text-xs">
-          → {t(locale, 'project.source')}
+        <a
+          href={project.repo}
+          target="_blank"
+          rel="noopener"
+          class="link-accent text-xs"
+        >
+          {t(locale, 'project.source')}
         </a>
       )
     }
     {
       project.link && (
-        <a href={project.link} rel="noopener" class="link-accent text-xs">
-          → {t(locale, 'project.visit')}
+        <a
+          href={project.link}
+          target="_blank"
+          rel="noopener"
+          class="link-accent text-xs"
+        >
+          {t(locale, 'project.visit')}
         </a>
       )
     }

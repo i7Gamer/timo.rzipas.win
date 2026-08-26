@@ -5,6 +5,7 @@ import type { Service } from '../data/services';
 import type { Project } from '../lib/projects';
 import ProjectCard from './ProjectCard.astro';
 import ServiceCard from './ServiceCard.astro';
+import TimelineItem from './TimelineItem.astro';
 
 const project: Project = {
   slug: 'demo',
@@ -79,6 +80,18 @@ describe('ProjectCard live links', () => {
     });
     expect(html).not.toContain('Visit');
   });
+
+  it('opens external links in a new tab', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ProjectCard, {
+      props: { project: hosted, locale: 'en' },
+    });
+    expect(html.match(/target="_blank"/g)).toHaveLength(2);
+    // The ↗ arrow comes from the a[target="_blank"] rule in global.css;
+    // the markup must neither repeat it nor opt out of it.
+    expect(html).not.toContain('↗');
+    expect(html).not.toContain('data-no-arrow');
+  });
 });
 
 describe('ProjectCard forks', () => {
@@ -117,6 +130,31 @@ describe('ProjectCard forks', () => {
     });
     expect(html).toContain('fork');
     expect(html).toContain('archived');
+  });
+});
+
+describe('TimelineItem', () => {
+  const props = {
+    period: 'Sep 2019 – today',
+    title: 'Software Engineer',
+    org: 'ACME AG',
+  };
+
+  it('opens the org link in a new tab, without opting out of the arrow', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(TimelineItem, {
+      props: { ...props, orgUrl: 'https://acme.example' },
+    });
+    expect(html).toContain('https://acme.example');
+    expect(html).toContain('target="_blank"');
+    expect(html).not.toContain('data-no-arrow');
+  });
+
+  it('renders the org as plain text without a URL', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(TimelineItem, { props });
+    expect(html).toContain('ACME AG');
+    expect(html).not.toContain('target="_blank"');
   });
 });
 

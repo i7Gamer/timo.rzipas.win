@@ -17,6 +17,8 @@ const PAGE_ROUTES: Readonly<Record<string, string>> = {
   projects: '/projects/',
   homelab: '/homelab/',
   about: '/about/',
+  // German alias, so the German help text's `cd <seite>` hint holds up.
+  projekte: '/projects/',
 };
 
 const SKILLS_FILE = 'skills.txt';
@@ -67,6 +69,9 @@ export function runTerminalCommand(
       const href = PAGE_ROUTES[cleaned];
       if (href !== undefined) {
         return { type: 'navigate', href };
+      }
+      if (cleaned === SKILLS_FILE) {
+        return print(`bash: cd: ${target}: Not a directory`);
       }
       return print(`bash: cd: ${target}: No such file or directory`);
     }

@@ -1,7 +1,9 @@
 .git
 .astro
+.claude
 node_modules
 dist
 deploy/docker-compose.example.yml
+deploy/status
 .github
 *.md

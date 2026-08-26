@@ -2,8 +2,9 @@
 
 FROM node:22-alpine AS build
 WORKDIR /app
-# Version must match the packageManager field in package.json.
-RUN npm install -g pnpm@8.15.6
+# corepack installs the pnpm version pinned in package.json's packageManager field.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .

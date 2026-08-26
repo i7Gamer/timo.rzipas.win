@@ -61,6 +61,7 @@ describe('runTerminalCommand', () => {
     ['cd ~/projects', '/projects/'],
     ['cd homelab', '/homelab/'],
     ['cd about', '/about/'],
+    ['cd projekte', '/projects/'],
   ])('%s navigates to %s', (input, href) => {
     expect(run(input)).toEqual({ type: 'navigate', href });
   });
@@ -69,6 +70,13 @@ describe('runTerminalCommand', () => {
     expect(run('cd secrets')).toEqual({
       type: 'print',
       lines: ['bash: cd: secrets: No such file or directory'],
+    });
+  });
+
+  it('rejects cd into a file like bash', () => {
+    expect(run('cd skills.txt')).toEqual({
+      type: 'print',
+      lines: ['bash: cd: skills.txt: Not a directory'],
     });
   });
 

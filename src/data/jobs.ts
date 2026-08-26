@@ -16,14 +16,14 @@ export const JOBS: readonly Job[] = [
   {
     company: 'Abacus Research AG',
     url: 'https://www.abacus.ch',
-    role: { en: 'Software Engineer', de: 'Softwareentwickler' },
+    role: { en: 'Software Engineer', de: 'Software Engineer' },
     location: {
       en: 'Wittenbach SG, Switzerland',
       de: 'Wittenbach SG, Schweiz',
     },
     from: { year: 2019, month: 9 },
     summary: {
-      en: 'Building business software in Java for one of Switzerland’s leading ERP vendors.',
+      en: "Building business software in Java for one of Switzerland's leading ERP vendors.",
       de: 'Entwicklung von Business-Software in Java für einen der führenden Schweizer ERP-Hersteller.',
     },
     tech: ['Java', 'Vaadin'],
@@ -31,7 +31,7 @@ export const JOBS: readonly Job[] = [
   {
     company: 'Stadler',
     url: 'https://www.stadlerrail.com',
-    role: { en: 'Software Developer', de: 'Softwareentwickler' },
+    role: { en: 'Software Developer', de: 'Software Developer' },
     location: { en: 'Bussnang, Switzerland', de: 'Bussnang, Schweiz' },
     from: { year: 2018, month: 10 },
     to: { year: 2019, month: 8 },

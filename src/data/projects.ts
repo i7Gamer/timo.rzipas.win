@@ -82,7 +82,7 @@ export const PROJECTS: readonly Project[] = [
       de: 'Web-App mit Java-REST-Backend (FH Vorarlberg, 2018).',
     },
     description: {
-      en: 'The practical part of my bachelor thesis: a JavaScript front end talking to a Java REST service.',
+      en: 'The practical part of my bachelor thesis: a JavaScript frontend talking to a Java REST service.',
       de: 'Der praktische Teil meiner Bachelorarbeit: ein JavaScript-Frontend, das mit einem Java-REST-Service spricht.',
     },
     tech: ['Java', 'JavaScript', 'REST'],
