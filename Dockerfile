@@ -12,6 +12,6 @@ ARG PUBLIC_BUILD_SHA=""
 ENV PUBLIC_BUILD_SHA=$PUBLIC_BUILD_SHA
 RUN node scripts/build.mjs
 
-FROM nginx:1.29-alpine
+FROM nginx:1.31-alpine
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
