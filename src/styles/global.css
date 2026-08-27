@@ -44,6 +44,10 @@
 }
 
 @theme inline {
+  /* Content width shared by the header, main and footer — one column,
+     one number. Wide enough for the hero terminal to keep its longest
+     line on one row. */
+  --container-page: 75rem;
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono:
     'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', Consolas,
@@ -101,8 +105,31 @@
 }
 
 /* Shared idioms — used across components; one-off styles stay inline. */
+
+/* One panel surface, three scales. Only the corner radius changes; the
+   section-sized one also brings the padding it always pairs with. */
 @utility panel {
   @apply border-line bg-panel rounded-xl border;
+}
+
+/* Label-sized boxes — the request-flow diagram steps. */
+@utility panel-sm {
+  @apply panel rounded-md;
+}
+
+/* Section-sized cards carrying a heading and body copy. */
+@utility panel-lg {
+  @apply panel rounded-2xl p-6 sm:p-8;
+}
+
+/* Scroll without a visible bar — the mobile nav only ever scrolls on the
+   narrowest phones, where a scrollbar would eat the header row's height. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @utility chip {
@@ -117,8 +144,24 @@
   @apply text-accent font-mono underline-offset-4 hover:underline;
 }
 
-@utility btn-outline {
-  @apply rounded-md border px-4 py-2 font-mono text-sm transition-colors;
+/* One button box; the variants below only change colour. */
+@utility btn {
+  @apply rounded-md px-4 py-2 font-mono text-sm transition-colors;
+}
+
+/* Solid — the single primary action on a page. */
+@utility btn-primary {
+  @apply btn bg-accent text-surface font-semibold transition-opacity hover:opacity-85;
+}
+
+/* Outlined accent — the standard call to action. */
+@utility btn-accent {
+  @apply btn border-accent hover:bg-accent-soft text-accent border;
+}
+
+/* Outlined quiet — sits next to a primary without competing with it. */
+@utility btn-muted {
+  @apply btn border-line hover:border-accent hover:text-accent text-ink border;
 }
 
 /* Retro CRT glow for the interactive hero terminal. Applied by its script,

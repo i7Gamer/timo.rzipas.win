@@ -19,16 +19,19 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
   class="border-line bg-surface/90 sticky top-0 z-10 border-b backdrop-blur"
 >
   <div
-    class="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6"
+    class="max-w-page mx-auto flex w-full items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6"
   >
     <a
       href="/"
-      class="text-ink hover:text-accent font-mono text-sm font-semibold transition-colors"
+      class="text-ink hover:text-accent shrink-0 font-mono text-sm font-semibold transition-colors"
     >
       <span class="text-accent">~</span>/timo
     </a>
 
-    <nav aria-label={t(locale, 'a11y.mainNav')} class="flex items-center gap-1">
+    <nav
+      aria-label={t(locale, 'a11y.mainNav')}
+      class="-my-1.5 flex min-w-0 scrollbar-none items-center gap-0.5 overflow-x-auto py-1.5 sm:gap-1"
+    >
       {
         NAV_ITEMS.map((item) => {
           const active = isActivePath(currentPath, item.href);
@@ -37,7 +40,7 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
               href={item.href}
               aria-current={active ? 'page' : undefined}
               class:list={[
-                'rounded-md px-2 py-1 text-sm transition-colors sm:px-3',
+                'shrink-0 rounded-md px-1.5 py-1 text-xs whitespace-nowrap transition-colors sm:px-3 sm:text-sm',
                 active
                   ? 'text-accent font-medium'
                   : 'text-muted hover:text-ink',
@@ -51,7 +54,7 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
       }
     </nav>
 
-    <div class="flex items-center gap-2">
+    <div class="flex shrink-0 items-center gap-2">
       <LanguageSwitcher />
       <ThemeToggle />
     </div>
