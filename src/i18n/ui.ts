@@ -7,6 +7,8 @@ const en = {
 
   'skip.content': 'Skip to content',
 
+  'og.imageAlt': 'Timo Rzipa — software engineer and self-hoster',
+
   'nav.home': 'Home',
   'nav.projects': 'Projects',
   'nav.homelab': 'Homelab',
@@ -84,7 +86,7 @@ const en = {
   'status.online': 'online',
   'status.planned': 'planned',
   'status.offline': 'offline',
-  'status.asOf': 'as of {time}',
+  'status.asOf': '(as of {time})',
 
   'about.title': 'About',
   'about.intro':
@@ -117,6 +119,8 @@ const de: Partial<Record<UIKey, string>> = {
     'Timo Rzipa — Software Engineer und Self-Hosting-Enthusiast. Projekte, Homelab und die Infrastruktur, die genau diese Seite ausliefert.',
 
   'skip.content': 'Zum Inhalt springen',
+
+  'og.imageAlt': 'Timo Rzipa — Software Engineer und Self-Hoster',
 
   'nav.home': 'Start',
   'nav.projects': 'Projekte',
@@ -207,6 +211,35 @@ const de: Partial<Record<UIKey, string>> = {
   'notFound.message': `Diese Seite existiert nicht — nicht einmal auf ${STORAGE_TOTAL} Speicher.`,
   'notFound.home': 'Zur Startseite',
 };
+
+/**
+ * Keys deliberately identical in every locale, so the German dictionary
+ * leaves them out and the English value is used verbatim: proper nouns, the
+ * shell commands the fake terminal types, and words German borrows as-is.
+ *
+ * Everything NOT listed here must be translated — src/i18n/index.test.ts
+ * fails otherwise, so a forgotten translation can no longer ship silently
+ * as English on the German site.
+ */
+export const SHARED_KEYS: readonly UIKey[] = [
+  // Names and product strings that do not translate.
+  'site.name',
+  'hero.role',
+  'terminal.whoami.out',
+  'homelab.hw.os.workstation',
+  // The terminal types real shell commands, whatever the page language.
+  'terminal.title',
+  'terminal.whoami.cmd',
+  'terminal.skills.cmd',
+  'terminal.skills.out',
+  'terminal.health.cmd',
+  // Same word in German.
+  'homelab.title',
+  'homelab.hardware.title',
+  'homelab.hw.cpu',
+  'status.online',
+  'about.skills.title',
+];
 
 export const ui: {
   en: Record<UIKey, string>;

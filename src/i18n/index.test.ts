@@ -8,6 +8,7 @@ import {
   nextLocale,
   pick,
   resolveLocale,
+  SHARED_KEYS,
   t,
   translate,
   ui,
@@ -139,10 +140,38 @@ describe('ui dictionaries', () => {
     }
   });
 
+  // Without this, a forgotten German string just renders in English and
+  // nobody notices. Exact equality, so a stale SHARED_KEYS entry fails too.
+  it('translates every key that is not deliberately shared', () => {
+    const untranslated = (Object.keys(ui.en) as UIKey[]).filter(
+      (key) => ui.de[key] === undefined,
+    );
+    expect([...untranslated].sort()).toEqual([...SHARED_KEYS].sort());
+  });
+
+  it('shares only keys that actually exist', () => {
+    for (const key of SHARED_KEYS) {
+      expect(ui.en[key], key).toBeTruthy();
+    }
+  });
+
   it('has a non-empty English value for every key', () => {
     for (const [key, value] of Object.entries(ui.en)) {
       expect(value, `ui.en["${key}"]`).toBeTruthy();
     }
+  });
+});
+
+describe('status timestamp label', () => {
+  it('keeps the {time} placeholder in every locale', () => {
+    for (const locale of LOCALES) {
+      expect(t(locale, 'status.asOf'), locale).toContain('{time}');
+    }
+  });
+
+  it('reads as its own clause after the note sentence', () => {
+    // homelab.astro appends it to a sentence that ends in a full stop.
+    expect(t('en', 'status.asOf')).toMatch(/^[(]as of /);
   });
 });
 

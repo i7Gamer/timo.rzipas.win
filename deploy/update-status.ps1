@@ -52,14 +52,15 @@ foreach ($entry in $Checks.GetEnumerator()) {
     Invoke-WebRequest -Uri $entry.Value -Method Get `
       -TimeoutSec $RequestTimeoutSeconds -UseBasicParsing | Out-Null
     $online = $true
-  } catch [System.Net.WebException] {
-    # Windows PowerShell throws on 4xx/5xx. A 4xx (e.g. 401 from an
-    # auth-protected UI) still means the service answered; only 5xx and
-    # no-response at all count as offline.
-    $status = $_.Exception.Response.StatusCode
-    $online = ($null -ne $status) -and ([int]$status -lt 500)
   } catch {
-    $online = $false
+    # Both shells throw on 4xx/5xx, but not the same exception: Windows
+    # PowerShell 5.1 raises WebException while PowerShell 7 raises
+    # HttpResponseException, so catching either by type silently misses the
+    # other and marks answering services offline. Go by the response
+    # instead — a 4xx (e.g. 401 from an auth-protected UI) still means the
+    # service answered; only 5xx and no response at all count as offline.
+    $response = $_.Exception.Response
+    $online = ($null -ne $response) -and ([int]$response.StatusCode -lt 500)
   }
   $services[$entry.Key] = if ($online) { 'online' } else { 'offline' }
 }

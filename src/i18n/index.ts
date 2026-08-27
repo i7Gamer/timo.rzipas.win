@@ -4,6 +4,7 @@ import { ui, type UIKey } from './ui';
 export type Locale = 'en' | 'de';
 export type { UIKey };
 export { ui };
+export { SHARED_KEYS } from './ui';
 
 // locales.json is the single source of truth, shared with scripts/*.mjs and astro.config.ts.
 export const LOCALES = localeList as readonly Locale[];

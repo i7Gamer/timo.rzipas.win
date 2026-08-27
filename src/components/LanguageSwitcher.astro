@@ -9,6 +9,7 @@ const target = nextLocale(locale);
   type="button"
   data-lang-switch
   data-target={target}
+  lang={target}
   aria-label={t(locale, 'lang.switch.label')}
   class="border-line text-muted hover:border-accent hover:text-accent grid h-9 min-w-9 place-items-center rounded-md border px-1.5 font-mono text-xs font-semibold transition-colors"
 >
@@ -16,10 +17,7 @@ const target = nextLocale(locale);
 </button>
 
 <script>
-  import {
-    LANG_COOKIE_MAX_AGE_SECONDS,
-    LANG_COOKIE_NAME,
-  } from '../i18n/cookie';
+  import { langCookie } from '../i18n/cookie';
 
   document
     .querySelectorAll<HTMLButtonElement>('[data-lang-switch]')
@@ -29,7 +27,7 @@ const target = nextLocale(locale);
         if (!target) {
           return;
         }
-        document.cookie = `${LANG_COOKIE_NAME}=${target}; path=/; max-age=${LANG_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax; Secure`;
+        document.cookie = langCookie(target, window.location.protocol);
         window.location.reload();
       });
     });
