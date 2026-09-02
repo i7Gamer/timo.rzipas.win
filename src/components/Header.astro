@@ -1,18 +1,12 @@
 ---
-import { getLocale, t, type UIKey } from '../i18n';
+import { HOME_HREF, NAV } from '../data/routes';
+import { getLocale, t } from '../i18n';
 import { isActivePath } from '../lib/paths';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import ThemeToggle from './ThemeToggle.astro';
 
 const locale = getLocale();
 const currentPath = Astro.url.pathname;
-
-const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
-  { href: '/', key: 'nav.home' },
-  { href: '/projects/', key: 'nav.projects' },
-  { href: '/homelab/', key: 'nav.homelab' },
-  { href: '/about/', key: 'nav.about' },
-];
 ---
 
 <header
@@ -22,7 +16,7 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
     class="max-w-page mx-auto flex w-full items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-6"
   >
     <a
-      href="/"
+      href={HOME_HREF}
       class="text-ink hover:text-accent shrink-0 font-mono text-sm font-semibold transition-colors"
     >
       <span class="text-accent">~</span>/timo
@@ -33,7 +27,7 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
       class="-my-1.5 flex min-w-0 scrollbar-none items-center gap-0.5 overflow-x-auto py-1.5 sm:gap-1"
     >
       {
-        NAV_ITEMS.map((item) => {
+        NAV.map((item) => {
           const active = isActivePath(currentPath, item.href);
           return (
             <a
@@ -44,10 +38,10 @@ const NAV_ITEMS: ReadonlyArray<{ href: string; key: UIKey }> = [
                 active
                   ? 'text-accent font-medium'
                   : 'text-muted hover:text-ink',
-                item.href === '/' && 'hidden sm:inline-block',
+                item.href === HOME_HREF && 'hidden sm:inline-block',
               ]}
             >
-              {t(locale, item.key)}
+              {t(locale, item.labelKey)}
             </a>
           );
         })

@@ -5,6 +5,7 @@ import TerminalLine from '../components/TerminalLine.astro';
 import TerminalWindow from '../components/TerminalWindow.astro';
 import { RAM_TOTAL, STORAGE_TOTAL } from '../data/hardware';
 import { PROJECTS } from '../data/projects';
+import { pageHref } from '../data/routes';
 import { SERVICES } from '../data/services';
 import { getLocale, t, type UIKey } from '../i18n';
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -43,10 +44,10 @@ const TERMINAL_STRINGS = {
         <p class="text-ink text-lg font-medium">{t(locale, 'hero.tagline')}</p>
         <p class="text-muted">{t(locale, 'hero.intro')}</p>
         <div class="flex flex-wrap gap-3 pt-2">
-          <a href="/projects/" class="btn-primary">
+          <a href={pageHref('projects')} class="btn-primary">
             {t(locale, 'hero.cta.projects')}
           </a>
-          <a href="/homelab/" class="btn-muted">
+          <a href={pageHref('homelab')} class="btn-muted">
             {t(locale, 'hero.cta.homelab')}
           </a>
         </div>
@@ -82,7 +83,7 @@ const TERMINAL_STRINGS = {
     <section>
       <div class="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading>{t(locale, 'section.featured.title')}</SectionHeading>
-        <a href="/projects/" class="link-accent text-sm">
+        <a href={pageHref('projects')} class="link-accent text-sm">
           {t(locale, 'section.featured.all')} →
         </a>
       </div>
@@ -117,7 +118,7 @@ const TERMINAL_STRINGS = {
             ))
           }
         </dl>
-        <a href="/homelab/" class="btn-accent mt-6 inline-block">
+        <a href={pageHref('homelab')} class="btn-accent mt-6 inline-block">
           {t(locale, 'section.homelabTeaser.cta')} →
         </a>
       </div>

@@ -27,8 +27,8 @@ flowchart LR
 - [Tailwind CSS 4](https://tailwindcss.com) — dark-first terminal theme, light mode toggle
 - Self-hosted fonts (Inter, JetBrains Mono) — no external requests at all
 - [Vitest](https://vitest.dev) + Astro Container API — unit tests for every helper, render tests for cards
-- nginx in Docker — language negotiation, caching, security headers, `/healthz`, live `/status.json`
-- GitHub Actions — check, lint, test, build, then multi-arch image to GHCR
+- nginx in Docker — language negotiation, caching, security headers incl. HSTS, `/healthz`, live `/status.json`
+- GitHub Actions — check, lint, test, build; smoke-test a built image (`deploy/smoke-test.sh`); then multi-arch image to GHCR
 
 ## Development
 
@@ -40,6 +40,14 @@ pnpm test       # Vitest
 pnpm check      # astro check (types)
 pnpm lint       # ESLint
 pnpm build      # builds BOTH locales into dist/en and dist/de
+```
+
+The nginx side (language negotiation, redirects, headers, health check) is covered by a smoke test against a running container, which CI runs on every push and pull request:
+
+```sh
+docker build -t timo-website:smoke .
+docker run -d --rm --name smoke --health-interval=2s -p 127.0.0.1:18093:80 timo-website:smoke
+bash deploy/smoke-test.sh http://127.0.0.1:18093 smoke
 ```
 
 ### Adding a language
@@ -59,7 +67,7 @@ Every push to `main` builds `ghcr.io/i7gamer/timo.rzipas.win` (amd64 + arm64). O
 docker compose -f deploy/docker-compose.example.yml up -d
 ```
 
-Point a Cloudflare Tunnel public hostname at the container (TLS terminates at the Cloudflare edge; nothing is forwarded through the router) and create the DNS record for `timo.rzipas.win`. `GET /healthz` returns `200 ok — served from the living room` (language-negotiated, like the rest of the site) for uptime monitoring.
+Point a Cloudflare Tunnel public hostname at the container (TLS terminates at the Cloudflare edge; nothing is forwarded through the router) and create the DNS record for `timo.rzipas.win`. `GET /healthz` returns `200 ok — served from the living room` (language-negotiated, like the rest of the site) for uptime monitoring. The image polls it itself through a built-in Docker `HEALTHCHECK`, so `docker ps` shows the container as healthy without any compose configuration.
 
 ### Live service status
 

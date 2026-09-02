@@ -17,7 +17,13 @@ import {
   SITE_URL,
 } from '../data/site';
 import { getLocale, LOCALES, t, type Locale } from '../i18n';
-import { DEFAULT_THEME, THEME_COLORS, THEME_STORAGE_KEY } from '../lib/theme';
+import {
+  DARK_CLASS,
+  DARK_THEME,
+  DEFAULT_THEME,
+  THEME_COLORS,
+  THEME_STORAGE_KEY,
+} from '../lib/theme';
 
 interface Props {
   title?: string;
@@ -53,7 +59,7 @@ const personSchema = {
 ---
 
 <!doctype html>
-<html lang={locale} class="dark">
+<html lang={locale} class:list={{ [DARK_CLASS]: DEFAULT_THEME === DARK_THEME }}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -107,6 +113,8 @@ const personSchema = {
       define:vars={{
         storageKey: THEME_STORAGE_KEY,
         defaultTheme: DEFAULT_THEME,
+        darkTheme: DARK_THEME,
+        darkClass: DARK_CLASS,
         themeColors: THEME_COLORS,
       }}
     >
@@ -114,13 +122,13 @@ const personSchema = {
       let theme = defaultTheme;
       try {
         const stored = localStorage.getItem(storageKey);
-        if (stored === 'light' || stored === 'dark') {
+        if (stored !== null && Object.hasOwn(themeColors, stored)) {
           theme = stored;
         }
       } catch {
         /* storage unavailable — keep the default */
       }
-      document.documentElement.classList.toggle('dark', theme === 'dark');
+      document.documentElement.classList.toggle(darkClass, theme === darkTheme);
       document
         .querySelector('meta[name="theme-color"]')
         ?.setAttribute('content', themeColors[theme]);

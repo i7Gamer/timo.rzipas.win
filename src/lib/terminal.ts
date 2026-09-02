@@ -1,3 +1,5 @@
+import { HOME_HREF, PAGES, shellNames } from '../data/routes';
+
 /** Localized outputs for the interactive hero terminal. */
 export interface TerminalStrings {
   whoami: string;
@@ -13,16 +15,12 @@ export type TerminalAction =
   | { type: 'navigate'; href: string }
   | { type: 'print'; lines: string[] };
 
-const PAGE_ROUTES: Readonly<Record<string, string>> = {
-  projects: '/projects/',
-  homelab: '/homelab/',
-  about: '/about/',
-  // German alias, so the German help text's `cd <seite>` hint holds up.
-  projekte: '/projects/',
-};
+// Directory names come from the one page list the nav uses too.
+const PAGE_ROUTES: ReadonlyMap<string, string> = shellNames();
 
 const SKILLS_FILE = 'skills.txt';
-const LS_OUTPUT = `about  homelab  projects  ${SKILLS_FILE}`;
+// ls sorts its listing, like the real thing.
+const LS_OUTPUT = [...Object.keys(PAGES), SKILLS_FILE].sort().join('  ');
 
 const HISTORY_LIMIT = 50;
 
@@ -112,9 +110,9 @@ export function runTerminalCommand(
       // "~/projects" · "/projects" · "projects/" all mean "projects".
       const cleaned = target.replace(/^~\/?/, '').replace(/^\/+|\/+$/g, '');
       if (cleaned === '') {
-        return { type: 'navigate', href: '/' };
+        return { type: 'navigate', href: HOME_HREF };
       }
-      const href = PAGE_ROUTES[cleaned];
+      const href = PAGE_ROUTES.get(cleaned);
       if (href !== undefined) {
         return { type: 'navigate', href };
       }

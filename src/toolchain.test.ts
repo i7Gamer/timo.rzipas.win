@@ -18,9 +18,11 @@ function nvmrcMajor(): string {
   return read('.nvmrc').trim().replace(/^v/, '').split('.')[0];
 }
 
-/** The Node major the production image builds on. */
+/** The Node major the production image builds on (the FROM may carry a --platform flag). */
 function dockerfileMajor(): string | undefined {
-  return /^FROM node:(\d+)[.-]/m.exec(read('Dockerfile'))?.[1];
+  return /^FROM (?:--platform=\S+ )?node:(\d+)[.-]/m.exec(
+    read('Dockerfile'),
+  )?.[1];
 }
 
 describe('Node version', () => {

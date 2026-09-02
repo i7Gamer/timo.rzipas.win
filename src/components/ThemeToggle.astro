@@ -1,12 +1,12 @@
 ---
 import { getLocale, t } from '../i18n';
-import { DEFAULT_THEME } from '../lib/theme';
+import { DARK_THEME, DEFAULT_THEME } from '../lib/theme';
 
 const locale = getLocale();
 
 // Rendered for the default theme; the inline script in BaseLayout may flip
 // the class before paint, so the toggle's own script re-syncs this on load.
-const pressed = DEFAULT_THEME === 'dark';
+const pressed = DEFAULT_THEME === DARK_THEME;
 ---
 
 <button
@@ -54,19 +54,21 @@ const pressed = DEFAULT_THEME === 'dark';
 
 <script>
   import {
-    DARK_CLASS,
+    applyTheme,
+    currentTheme,
+    DARK_THEME,
+    nextTheme,
     THEME_COLORS,
     THEME_STORAGE_KEY,
-    nextTheme,
   } from '../lib/theme';
 
   const root = document.documentElement;
 
-  /** Keep the button's state in step with the class actually on <html>. */
+  /** Keep the button's state in step with the theme actually on <html>. */
   const syncPressed = (button: Element) => {
     button.setAttribute(
       'aria-pressed',
-      String(root.classList.contains(DARK_CLASS)),
+      String(currentTheme(root) === DARK_THEME),
     );
   };
 
@@ -74,10 +76,8 @@ const pressed = DEFAULT_THEME === 'dark';
     // The stored theme may differ from what the server rendered.
     syncPressed(button);
     button.addEventListener('click', () => {
-      const next = nextTheme(
-        root.classList.contains(DARK_CLASS) ? 'dark' : 'light',
-      );
-      root.classList.toggle(DARK_CLASS, next === 'dark');
+      const next = nextTheme(currentTheme(root));
+      applyTheme(root, next);
       syncPressed(button);
       document
         .querySelector('meta[name="theme-color"]')
