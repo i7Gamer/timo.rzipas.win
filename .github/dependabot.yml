@@ -1,26 +1,39 @@
+version: 2
+
 # Weekly dependency PRs; minor/patch npm bumps arrive as one grouped PR.
 # Note: the pinned pnpm version (packageManager in package.json) is not
 # covered by Dependabot and stays a manual bump.
-version: 2
 updates:
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: 'weekly'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
     groups:
       npm-minor-patch:
-        applies-to: version-updates
+        patterns:
+          - '*'
         update-types:
           - 'minor'
           - 'patch'
+
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
       interval: 'weekly'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(ci)'
+
   - package-ecosystem: 'docker'
     directory: '/'
     schedule:
       interval: 'weekly'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(docker)'
     ignore:
       # Node majors are bumped by hand together with .nvmrc, so the image
       # never ships on a Node the CI tests did not run on.
