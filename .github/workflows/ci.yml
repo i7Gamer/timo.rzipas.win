@@ -13,11 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          # The default self-installer goes through npm and took one to four
-          # minutes per run; the standalone binary is a single download.
-          standalone: true
+      # No pnpm/action-setup: it installs pnpm through npm, which took one to
+      # four minutes per run. The runner image ships pnpm, and pnpm 10+
+      # switches itself to the packageManager version on first use.
+      - run: pnpm --version
       - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'

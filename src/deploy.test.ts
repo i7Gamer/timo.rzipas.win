@@ -195,6 +195,14 @@ describe('CI', () => {
     expect(SMOKE_SCRIPT).toContain('set -euo pipefail');
   });
 
+  // pnpm/action-setup installs pnpm through npm, which took one to four
+  // minutes per run; the runner image ships pnpm, and pnpm 10+ switches
+  // itself to the packageManager version in a second.
+  it('uses the preinstalled pnpm instead of the npm self-installer', () => {
+    expect(CI).not.toContain('uses: pnpm/action-setup');
+    expect(CI).toContain('cache: pnpm');
+  });
+
   it('runs that smoke test against a freshly built image', () => {
     expect(CI).toContain('bash deploy/smoke-test.sh');
   });
