@@ -150,6 +150,18 @@ describe('image build', () => {
   });
 });
 
+/** The lines of one top-level job in ci.yml, up to the next job. */
+function jobBlock(name: string): string {
+  const lines = CI.split('\n');
+  const start = lines.findIndex((line) => line === `  ${name}:`);
+  if (start < 0) {
+    throw new Error(`no job "${name}" in ci.yml`);
+  }
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex((line) => /^ {2}\S/.test(line));
+  return rest.slice(0, end < 0 ? rest.length : end).join('\n');
+}
+
 describe('CI', () => {
   it('has a bash smoke test for a running image', () => {
     expect(SMOKE_SCRIPT.startsWith('#!/usr/bin/env bash\n')).toBe(true);
@@ -161,6 +173,13 @@ describe('CI', () => {
   });
 
   it('publishes the image only after test and smoke passed', () => {
-    expect(CI).toMatch(/^\s+docker:\n(?:\s+.*\n)*?\s+needs: \[test, smoke\]$/m);
+    expect(jobBlock('docker')).toContain('needs: [test, smoke]');
+  });
+
+  // Guards the slicing above: run past the next job and this would see
+  // the publish job's needs line too.
+  it('lets test and smoke run without waiting on each other', () => {
+    expect(jobBlock('test')).not.toContain('needs:');
+    expect(jobBlock('smoke')).not.toContain('needs:');
   });
 });
