@@ -196,11 +196,17 @@ describe('CI', () => {
   });
 
   // pnpm/action-setup installs pnpm through npm, which took one to four
-  // minutes per run; the runner image ships pnpm, and pnpm 10+ switches
-  // itself to the packageManager version in a second.
-  it('uses the preinstalled pnpm instead of the npm self-installer', () => {
+  // minutes per run. corepack, bundled with Node, installs the pinned pnpm
+  // in seconds — the same way the Dockerfile does.
+  it('installs pnpm through corepack, like the image build', () => {
     expect(CI).not.toContain('uses: pnpm/action-setup');
-    expect(CI).toContain('cache: pnpm');
+    expect(CI).toContain('corepack enable');
+    expect(DOCKERFILE).toContain('corepack enable');
+  });
+
+  it('caches the pnpm store by lockfile hash', () => {
+    expect(CI).toContain('pnpm store path');
+    expect(CI).toContain("hashFiles('pnpm-lock.yaml')");
   });
 
   it('runs that smoke test against a freshly built image', () => {
