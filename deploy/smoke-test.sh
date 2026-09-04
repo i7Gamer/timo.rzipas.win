@@ -140,6 +140,28 @@ check_hashed_assets_are_immutable() {
   expect_status 200 && expect_header Cache-Control "$IMMUTABLE"
 }
 
+# server_tokens off: the LAN sees this header directly (Cloudflare replaces
+# it publicly).
+check_server_header_hides_the_version() {
+  request /
+  expect_status 200 && expect_header Server nginx
+}
+
+# access_log off on /healthz: the readiness loop, the checks above and the
+# health check have all hit it by now, while / was fetched several times.
+check_health_probes_are_not_logged() {
+  local logs
+  logs="$(docker logs "$container" 2>&1)"
+  grep -q '"GET / HTTP' <<<"$logs" || {
+    echo '    expected page requests in the access log'
+    return 1
+  }
+  ! grep -q '/healthz HTTP' <<<"$logs" || {
+    echo '    /healthz requests appear in the access log'
+    return 1
+  }
+}
+
 check_container_reports_healthy() {
   local i state=''
   for ((i = 0; i < HEALTHY_ATTEMPTS; i++)); do
@@ -182,8 +204,10 @@ run 'directory redirect is relative' check_directory_redirect_is_relative
 run 'missing page is a localized 404 with the shared headers' check_missing_page_is_a_localized_404
 run '/status.json is a 404 without the mount' check_status_json_is_404_without_the_mount
 run 'hashed assets are immutable' check_hashed_assets_are_immutable
+run 'Server header hides the nginx version' check_server_header_hides_the_version
 if [[ -n "$container" ]]; then
   run "docker reports $container healthy" check_container_reports_healthy
+  run 'health probes are not logged' check_health_probes_are_not_logged
 fi
 
 if ((failures > 0)); then

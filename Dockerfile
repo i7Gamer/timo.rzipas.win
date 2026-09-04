@@ -17,7 +17,9 @@ ARG PUBLIC_BUILD_SHA=""
 ENV PUBLIC_BUILD_SHA=$PUBLIC_BUILD_SHA
 RUN node scripts/build.mjs
 
-FROM nginx:1.31-alpine
+# -slim: the same nginx without the module packages (njs, geoip, xslt, image
+# filter) this config never loads.
+FROM nginx:1.31-alpine-slim
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 # Included by nginx.conf at exactly this path (src/deploy.test.ts checks both sides).
 COPY deploy/security-headers.conf /etc/nginx/snippets/security-headers.conf

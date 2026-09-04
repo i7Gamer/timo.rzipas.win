@@ -74,6 +74,19 @@ describe('nginx blocks', () => {
   });
 });
 
+describe('nginx hygiene', () => {
+  // Cloudflare masks the Server header publicly; the LAN sees it directly.
+  it('hides the nginx version', () => {
+    expect(nginxBlocks().server).toContain('server_tokens off;');
+  });
+
+  // The image health check and the host status probe hit /healthz every
+  // minute; logging those would bury real traffic.
+  it('keeps the health probes out of the access log', () => {
+    expect(nginxBlocks()['location = /healthz']).toContain('access_log off;');
+  });
+});
+
 describe('nginx redirects', () => {
   // TLS ends at the Cloudflare edge, so nginx only sees plain HTTP and would
   // otherwise build http:// Locations for /projects -> /projects/.
@@ -143,6 +156,12 @@ const CI = read('.github/workflows/ci.yml');
 const SMOKE_SCRIPT = read('deploy/smoke-test.sh');
 
 describe('image build', () => {
+  // The full alpine image bundles modules (njs, geoip, xslt, image filter)
+  // this config never loads.
+  it('serves from the slim nginx image', () => {
+    expect(DOCKERFILE).toMatch(/^FROM nginx:[0-9.]+-alpine-slim$/m);
+  });
+
   // The output is static files, so the Node stage never has to run on the
   // target architecture; under QEMU it took longer than the whole test job.
   it('compiles the site on the build host instead of under emulation', () => {
