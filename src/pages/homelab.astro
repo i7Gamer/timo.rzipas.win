@@ -110,60 +110,14 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
 </BaseLayout>
 
 <script>
-  import {
-    isStale,
-    parseGeneratedAt,
-    parseStatusPayload,
-    STATUS_DOT_CLASS,
-    STATUS_STALE_AFTER_MINUTES,
-  } from '../lib/status';
-
-  async function applyLiveStatus(root: HTMLElement): Promise<void> {
-    const labels: Record<string, string | undefined> = {
-      online: root.dataset.labelOnline,
-      offline: root.dataset.labelOffline,
-    };
-    const response = await fetch('/status.json', { cache: 'no-store' });
-    if (!response.ok) {
-      return;
-    }
-    const payload: unknown = await response.json();
-    const statuses = parseStatusPayload(payload);
-    markStaleData(payload);
-    for (const [name, status] of statuses) {
-      const card = root.querySelector(`[data-service="${CSS.escape(name)}"]`);
-      const dot = card?.querySelector('[data-status-dot]');
-      const label = card?.querySelector('[data-status-label]');
-      if (!dot || !label) {
-        continue;
-      }
-      dot.classList.remove(...Object.values(STATUS_DOT_CLASS));
-      dot.classList.add(STATUS_DOT_CLASS[status]);
-      label.textContent = labels[status] ?? status;
-    }
-  }
-
-  /** When status.json is old, say so instead of pretending it is live. */
-  function markStaleData(payload: unknown): void {
-    const asOf = document.querySelector('[data-status-asof]');
-    const generatedAt = parseGeneratedAt(payload);
-    if (!(asOf instanceof HTMLElement) || generatedAt === null) {
-      return;
-    }
-    if (!isStale(generatedAt, new Date(), STATUS_STALE_AFTER_MINUTES)) {
-      return;
-    }
-    const time = generatedAt.toLocaleTimeString(document.documentElement.lang, {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    asOf.textContent = (asOf.dataset.label ?? '{time}').replace('{time}', time);
-    asOf.hidden = false;
-  }
+  import { loadLiveStatus } from '../lib/live-status';
 
   const grid = document.querySelector('[data-status-grid]');
+  const asOf = document.querySelector('[data-status-asof]');
   if (grid instanceof HTMLElement) {
     // Fire and forget — without status.json the build-time labels remain.
-    applyLiveStatus(grid).catch(() => {});
+    loadLiveStatus(grid, asOf instanceof HTMLElement ? asOf : null).catch(
+      () => {},
+    );
   }
 </script>

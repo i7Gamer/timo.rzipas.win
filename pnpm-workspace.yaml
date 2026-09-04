@@ -1,0 +1,6 @@
+# pnpm 10+ runs no dependency install scripts unless allowed here. esbuild's
+# postinstall only swaps in the platform binary it would otherwise resolve at
+# runtime, so allowing it is safe and keeps the "ignored build scripts"
+# error out of every install.
+allowBuilds:
+  esbuild: true

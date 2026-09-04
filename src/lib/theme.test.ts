@@ -12,6 +12,7 @@ import {
   LIGHT_THEME,
   nextTheme,
   THEME_COLORS,
+  themeBootstrapScript,
   type ThemedRoot,
 } from './theme';
 
@@ -122,5 +123,62 @@ describe('dark class', () => {
     // The inline bootstrap gets its names via define:vars.
     expect(layout).not.toMatch(/=== '(?:dark|light)'/);
     expect(layout).not.toMatch(/toggle\('dark'/);
+  });
+});
+
+describe('themeBootstrapScript', () => {
+  /** Runs the inline script against fakes, the way a browser would before first paint. */
+  function boot(stored: string | null | (() => never)) {
+    const root = fakeRoot('other');
+    const meta = {
+      content: 'unset',
+      setAttribute(name: string, value: string) {
+        if (name === 'content') {
+          this.content = value;
+        }
+      },
+    };
+    const document = {
+      documentElement: root,
+      querySelector: (selector: string) =>
+        selector === 'meta[name="theme-color"]' ? meta : null,
+    };
+    const localStorage = {
+      getItem: () => (typeof stored === 'function' ? stored() : stored),
+    };
+    new Function('document', 'localStorage', themeBootstrapScript())(
+      document,
+      localStorage,
+    );
+    return { root, meta };
+  }
+
+  it('is the same text on every call, so its CSP hash is stable', () => {
+    expect(themeBootstrapScript()).toBe(themeBootstrapScript());
+  });
+
+  it('applies the default theme when nothing is stored', () => {
+    const { root, meta } = boot(null);
+    expect(currentTheme(root)).toBe(DEFAULT_THEME);
+    expect(meta.content).toBe(THEME_COLORS[DEFAULT_THEME]);
+  });
+
+  it('applies a stored theme and its colour', () => {
+    const { root, meta } = boot(LIGHT_THEME);
+    expect(currentTheme(root)).toBe(LIGHT_THEME);
+    expect(meta.content).toBe(THEME_COLORS[LIGHT_THEME]);
+  });
+
+  it.each(['bogus', '', 'constructor'])('ignores stored value %j', (value) => {
+    const { root } = boot(value);
+    expect(currentTheme(root)).toBe(DEFAULT_THEME);
+  });
+
+  it('keeps the default when storage throws', () => {
+    const { root } = boot(() => {
+      throw new Error('storage disabled');
+    });
+    expect(currentTheme(root)).toBe(DEFAULT_THEME);
+    expect(root.classes.has('other')).toBe(true);
   });
 });

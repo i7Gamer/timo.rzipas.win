@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Smoke-tests a running website container: the nginx behaviour the unit tests
 # cannot see (language negotiation, redirects, the headers on every kind of
-# response, the health check baked into the image). CI runs it against the
-# freshly built image before the multi-arch publish. Locally:
+# response, the page-level CSP, the health check baked into the image). CI
+# runs it against the freshly built image before the multi-arch publish.
+# Locally:
 #
 #   docker build -t timo-website:smoke .
 #   docker run -d --rm --name smoke --health-interval=2s -p 127.0.0.1:18093:80 timo-website:smoke
 #   bash deploy/smoke-test.sh http://127.0.0.1:18093 smoke
 #
 # The container name is optional; with it the script also waits for Docker to
-# report the container healthy, which proves the image's HEALTHCHECK works.
+# report the container healthy, which proves the image's HEALTHCHECK works,
+# and reads the container log.
 set -euo pipefail
 
 base="${1:?usage: smoke-test.sh <base-url> [container-name]}"
@@ -17,6 +19,7 @@ container="${2:-}"
 
 # Must match deploy/security-headers.conf and deploy/nginx.conf.
 HSTS='max-age=31536000; includeSubDomains'
+HEADER_CSP="frame-ancestors 'none'"
 HEALTHZ_EN='ok — served from the living room'
 HEALTHZ_DE='ok — ausgeliefert aus dem Wohnzimmer'
 IMMUTABLE='public, max-age=31536000, immutable'
@@ -58,13 +61,6 @@ expect_header() {
   }
 }
 
-expect_header_present() {
-  [[ -n "$(header "$1")" ]] || {
-    echo "    missing header $1"
-    return 1
-  }
-}
-
 expect_body() {
   grep -qF -- "$1" "$tmp/body" || {
     echo "    body lacks: $1"
@@ -79,7 +75,7 @@ expect_shared_headers() {
     expect_header X-Content-Type-Options nosniff &&
     expect_header X-Frame-Options DENY &&
     expect_header Referrer-Policy strict-origin-when-cross-origin &&
-    expect_header_present Content-Security-Policy
+    expect_header Content-Security-Policy "$HEADER_CSP"
 }
 
 check_home_is_english_by_default() {
@@ -128,6 +124,8 @@ check_status_json_is_404_without_the_mount() {
   expect_status 404 && expect_shared_headers
 }
 
+# Hashed assets are the same bytes in every language tree, so they carry no
+# Vary: a language switch must not make browsers refetch fonts and CSS.
 check_hashed_assets_are_immutable() {
   request /
   local css
@@ -137,7 +135,8 @@ check_hashed_assets_are_immutable() {
     return 1
   }
   request "$css"
-  expect_status 200 && expect_header Cache-Control "$IMMUTABLE"
+  expect_status 200 && expect_header Cache-Control "$IMMUTABLE" &&
+    expect_header Vary ''
 }
 
 # server_tokens off: the LAN sees this header directly (Cloudflare replaces
@@ -145,6 +144,45 @@ check_hashed_assets_are_immutable() {
 check_server_header_hides_the_version() {
   request /
   expect_status 200 && expect_header Server nginx
+}
+
+# Astro's CSP is a <meta>: every inline script on the page must be listed
+# by hash, or browsers refuse to run it — and the theme would flash.
+check_inline_scripts_are_hashed() {
+  request /
+  local csp
+  csp="$(perl -0ne 'print $1 if /<meta http-equiv="[Cc]ontent-[Ss]ecurity-[Pp]olicy" content="([^"]*)"/' "$tmp/body")"
+  [[ -n "$csp" ]] || {
+    echo '    no Content-Security-Policy meta on /'
+    return 1
+  }
+  [[ "$csp" != *unsafe-inline* ]] || {
+    echo '    the page policy still allows unsafe-inline'
+    return 1
+  }
+  local hashes
+  hashes="$(perl -0 -MDigest::SHA=sha256_base64 -ne 'while (/<script(?![^>]*\bsrc=)(?![^>]*ld\+json)[^>]*>(.*?)<\/script>/gs) { my $h = sha256_base64($1); $h .= "=" while length($h) % 4; print "$h\n"; }' "$tmp/body")"
+  [[ -n "$hashes" ]] || {
+    echo '    no inline scripts found on /'
+    return 1
+  }
+  local hash
+  while read -r hash; do
+    [[ "$csp" == *"sha256-$hash"* ]] || {
+      echo "    inline script not in the page policy: sha256-$hash"
+      return 1
+    }
+  done <<<"$hashes"
+}
+
+# The policy only applies to markup after the <meta>; a script before it
+# would run unpoliced.
+check_policy_precedes_every_inline_script() {
+  request /
+  perl -0ne 'my $meta = /<meta http-equiv="[Cc]ontent-[Ss]ecurity-[Pp]olicy"/ ? $-[0] : -1; my $script = /<script(?![^>]*\bsrc=)(?![^>]*ld\+json)/ ? $-[0] : 1e9; exit(($meta >= 0 && $meta < $script) ? 0 : 1)' "$tmp/body" || {
+    echo '    an inline script comes before the Content-Security-Policy meta'
+    return 1
+  }
 }
 
 # access_log off on /healthz: the readiness loop, the checks above and the
@@ -203,8 +241,10 @@ run '/healthz speaks both languages with the shared headers' check_healthz_speak
 run 'directory redirect is relative' check_directory_redirect_is_relative
 run 'missing page is a localized 404 with the shared headers' check_missing_page_is_a_localized_404
 run '/status.json is a 404 without the mount' check_status_json_is_404_without_the_mount
-run 'hashed assets are immutable' check_hashed_assets_are_immutable
+run 'hashed assets are immutable and carry no Vary' check_hashed_assets_are_immutable
 run 'Server header hides the nginx version' check_server_header_hides_the_version
+run 'every inline script is hashed in the page policy' check_inline_scripts_are_hashed
+run 'the page policy precedes every inline script' check_policy_precedes_every_inline_script
 if [[ -n "$container" ]]; then
   run "docker reports $container healthy" check_container_reports_healthy
   run 'health probes are not logged' check_health_probes_are_not_logged

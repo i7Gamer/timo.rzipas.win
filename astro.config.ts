@@ -16,6 +16,20 @@ export default defineConfig({
   site: 'https://timo.rzipas.win',
   outDir: `./dist/${locale}`,
   integrations: [sitemap()],
+  security: {
+    // Page-level policy in a <meta>, with a hash for every inline script and
+    // style Astro emits; deploy/security-headers.conf carries only what a
+    // <meta> cannot (frame-ancestors). src/deploy.test.ts keeps both in step.
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+      ],
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
     define: {

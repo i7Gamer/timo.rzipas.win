@@ -45,3 +45,37 @@ export function currentTheme(root: ThemedRoot): Theme {
 export function applyTheme(root: ThemedRoot, theme: Theme): void {
   root.classList.toggle(DARK_CLASS, theme === DARK_THEME);
 }
+
+/**
+ * Source of the inline script that applies the stored theme before first
+ * paint. A plain string, so BaseLayout can hash it for the page's CSP and
+ * the tests can run it against fakes; the constants above are baked in.
+ */
+export function themeBootstrapScript(): string {
+  const config = JSON.stringify({
+    storageKey: THEME_STORAGE_KEY,
+    defaultTheme: DEFAULT_THEME,
+    darkTheme: DARK_THEME,
+    darkClass: DARK_CLASS,
+    themeColors: THEME_COLORS,
+  });
+  return [
+    '(function () {',
+    `  var config = ${config};`,
+    '  var theme = config.defaultTheme;',
+    '  try {',
+    '    var stored = localStorage.getItem(config.storageKey);',
+    '    if (stored !== null && Object.hasOwn(config.themeColors, stored)) {',
+    '      theme = stored;',
+    '    }',
+    '  } catch (_error) {',
+    '    // storage unavailable - keep the default',
+    '  }',
+    '  document.documentElement.classList.toggle(config.darkClass, theme === config.darkTheme);',
+    '  var meta = document.querySelector(\'meta[name="theme-color"]\');',
+    '  if (meta) {',
+    '    meta.setAttribute("content", config.themeColors[theme]);',
+    '  }',
+    '})();',
+  ].join('\n');
+}

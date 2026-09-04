@@ -2,6 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { SITE_URL } from '../data/site';
+
 const SRC_DIR = join(import.meta.dirname, '..');
 
 function read(file: string): string {
@@ -111,5 +113,41 @@ describe('vertical rhythm', () => {
 describe('hero', () => {
   it('splits into equal columns so the terminal gets a full-width line', () => {
     expect(read('pages/index.astro')).toMatch(/\blg:grid-cols-2\b/);
+  });
+});
+
+describe('BaseLayout render', () => {
+  async function render(): Promise<string> {
+    const { experimental_AstroContainer: AstroContainer } =
+      await import('astro/container');
+    const { default: BaseLayout } = await import('./BaseLayout.astro');
+    // The layout builds canonical and og:image URLs from Astro.site.
+    const container = await AstroContainer.create({
+      astroConfig: { site: SITE_URL },
+    });
+    return container.renderToString(BaseLayout, {
+      request: new Request('https://timo.rzipas.win/about/'),
+      slots: { default: '<p>body copy</p>' },
+    });
+  }
+
+  it('starts in the default theme with the canonical URL of the page', async () => {
+    const html = await render();
+    expect(html).toContain('<html lang="en" class="dark">');
+    expect(html).toContain(
+      'rel="canonical" href="https://timo.rzipas.win/about/"',
+    );
+    expect(html).toContain('body copy');
+  });
+
+  // The bootstrap must sit after Astro's CSP <meta>, which is appended to
+  // <head>, so it belongs at the very start of <body>.
+  it('runs the theme bootstrap as the first thing in the body', async () => {
+    const html = await render();
+    const body = html.indexOf('<body');
+    const bootstrap = html.indexOf('var config = {"storageKey"');
+    expect(bootstrap).toBeGreaterThan(body);
+    expect(html.slice(body, bootstrap)).not.toContain('<a ');
+    expect(html).not.toContain('define:vars');
   });
 });

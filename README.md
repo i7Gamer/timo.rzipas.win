@@ -32,6 +32,8 @@ flowchart LR
 
 ## Development
 
+Node comes from `.nvmrc`, pnpm from the `packageManager` field via corepack (`corepack enable` once).
+
 ```sh
 pnpm install
 pnpm dev        # English dev server

@@ -17,12 +17,13 @@ import {
   SITE_URL,
 } from '../data/site';
 import { getLocale, LOCALES, t, type Locale } from '../i18n';
+import { cspHash } from '../lib/csp';
 import {
   DARK_CLASS,
   DARK_THEME,
   DEFAULT_THEME,
   THEME_COLORS,
-  THEME_STORAGE_KEY,
+  themeBootstrapScript,
 } from '../lib/theme';
 
 interface Props {
@@ -56,6 +57,12 @@ const personSchema = {
   }),
   sameAs: [GITHUB_URL, LINKEDIN_URL],
 };
+
+// The theme bootstrap is inline so it runs before first paint. Astro hashes
+// only the scripts it bundles, so this one is hashed here and handed to the
+// page's CSP.
+const themeBootstrap = themeBootstrapScript();
+Astro.csp?.insertScriptHash(cspHash(themeBootstrap));
 ---
 
 <!doctype html>
@@ -107,36 +114,14 @@ const personSchema = {
       type="application/ld+json"
       set:html={JSON.stringify(personSchema)}
     />
-
-    <script
-      is:inline
-      define:vars={{
-        storageKey: THEME_STORAGE_KEY,
-        defaultTheme: DEFAULT_THEME,
-        darkTheme: DARK_THEME,
-        darkClass: DARK_CLASS,
-        themeColors: THEME_COLORS,
-      }}
-    >
-      // Runs before first paint so the stored theme never flashes.
-      let theme = defaultTheme;
-      try {
-        const stored = localStorage.getItem(storageKey);
-        if (stored !== null && Object.hasOwn(themeColors, stored)) {
-          theme = stored;
-        }
-      } catch {
-        /* storage unavailable — keep the default */
-      }
-      document.documentElement.classList.toggle(darkClass, theme === darkTheme);
-      document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', themeColors[theme]);
-    </script>
   </head>
   <body
     class="bg-surface text-ink flex min-h-dvh flex-col font-sans antialiased"
   >
+    <!-- Astro appends the CSP <meta> to the end of <head>, so the one inline
+         script of our own sits here, right after it: still before any content
+         is parsed, but inside the policy that lists its hash. -->
+    <script is:inline set:html={themeBootstrap} />
     <a
       href="#content"
       class="focus:bg-accent focus:text-surface sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-20 focus:rounded-md focus:px-3 focus:py-2"

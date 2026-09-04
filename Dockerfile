@@ -10,7 +10,8 @@ WORKDIR /app
 # corepack installs the pnpm version pinned in package.json's packageManager field.
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
+# pnpm-workspace.yaml carries the build-script allow list pnpm 10+ insists on.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 ARG PUBLIC_BUILD_SHA=""
