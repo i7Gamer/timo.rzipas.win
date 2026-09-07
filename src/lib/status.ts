@@ -2,19 +2,20 @@
 export type LiveStatus = 'online' | 'offline';
 
 /** Everything the status dot on a service card can display. */
-export type IndicatorStatus = LiveStatus | 'planned';
+export type IndicatorStatus = LiveStatus | 'planned' | 'unknown';
 
 export const STATUS_DOT_CLASS: Record<IndicatorStatus, string> = {
   online: 'bg-emerald-400',
   planned: 'bg-amber-400',
   offline: 'bg-red-400',
+  unknown: 'bg-muted',
 };
 
 /**
  * Parses the payload of /status.json (written by deploy/update-status.ps1
  * on the Docker host) into service name → live status. Anything that does
  * not match the expected shape is ignored so a broken generator can never
- * break the page — the static labels simply remain.
+ * break the page — unverified services are shown as unknown.
  */
 export function parseStatusPayload(payload: unknown): Map<string, LiveStatus> {
   const result = new Map<string, LiveStatus>();
@@ -39,6 +40,12 @@ export function parseStatusPayload(payload: unknown): Map<string, LiveStatus> {
 
 /** Minutes after which a status.json is considered outdated. */
 export const STATUS_STALE_AFTER_MINUTES = 15;
+export const STATUS_FUTURE_TOLERANCE_MS = 60_000;
+
+// Require a full, timezone-qualified timestamp, including PowerShell's
+// seven fractional digits. Date.parse alone accepts dates like February 30.
+const TIMESTAMP_PATTERN =
+  /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 
 /** Reads the generation timestamp of /status.json, or null if unusable. */
 export function parseGeneratedAt(payload: unknown): Date | null {
@@ -47,6 +54,17 @@ export function parseGeneratedAt(payload: unknown): Date | null {
   }
   const generatedAt = (payload as { generatedAt?: unknown }).generatedAt;
   if (typeof generatedAt !== 'string') {
+    return null;
+  }
+  const match = TIMESTAMP_PATTERN.exec(generatedAt);
+  if (match === null) {
+    return null;
+  }
+  const calendarDate = new Date(`${match[1]}T00:00:00Z`);
+  if (
+    !Number.isFinite(calendarDate.getTime()) ||
+    !calendarDate.toISOString().startsWith(match[1])
+  ) {
     return null;
   }
   const date = new Date(generatedAt);

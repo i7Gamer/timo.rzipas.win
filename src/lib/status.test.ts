@@ -48,6 +48,15 @@ describe('parseStatusPayload', () => {
 });
 
 describe('parseGeneratedAt', () => {
+  it.each([
+    ['2026-09-07T09:00:00.1234567Z', '2026-09-07T09:00:00.123Z'],
+    ['2026-09-07T11:00:00+02:00', '2026-09-07T09:00:00.000Z'],
+    ['2024-02-29T00:00:00Z', '2024-02-29T00:00:00.000Z'],
+  ])('accepts qualified timestamp %s', (timestamp, expected) => {
+    expect(parseGeneratedAt({ generatedAt: timestamp })?.toISOString()).toBe(
+      expected,
+    );
+  });
   it('parses a valid ISO timestamp', () => {
     const date = parseGeneratedAt({
       generatedAt: '2026-08-24T15:00:00.000Z',
@@ -62,6 +71,12 @@ describe('parseGeneratedAt', () => {
     {},
     { generatedAt: 42 },
     { generatedAt: 'not a date' },
+    { generatedAt: '2026-09-07' },
+    { generatedAt: '2026-09-07T09:00:00' },
+    { generatedAt: '2026-02-30T09:00:00Z' },
+    { generatedAt: '2026-09-07T24:00:00Z' },
+    { generatedAt: '2026-13-01T00:00:00Z' },
+    { generatedAt: '2026-09-07T09:00:00+99:00' },
   ])('returns null for %j', (payload) => {
     expect(parseGeneratedAt(payload)).toBeNull();
   });

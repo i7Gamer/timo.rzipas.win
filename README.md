@@ -18,7 +18,7 @@ flowchart LR
 ```
 
 - An explicit `lang` cookie (set by the language switcher) wins
-- Otherwise the browser's `Accept-Language` decides
+- Otherwise nginx's njs parser chooses the highest supported `Accept-Language` quality; ties follow header order, and explicit preferences override wildcards
 - Default is English; HTML responses carry `Vary: Cookie, Accept-Language`
 
 ## Stack
@@ -57,7 +57,7 @@ bash deploy/smoke-test.sh http://127.0.0.1:18093 smoke
 1. Add the code to `src/i18n/locales.json` **and** to the `Locale` union in `src/i18n/index.ts`
 2. Add a dictionary in `src/i18n/ui.ts` and translations in `src/data/*` — each dictionary's `lang.switch.*` keys must name its `nextLocale`
 3. Add the locale to `OG_LOCALE` in `src/layouts/BaseLayout.astro` (the type errors until you do)
-4. Add one line to each `map` block in `deploy/nginx.conf`
+4. Add the locale to `LOCALES` in `deploy/language.js` and to the language cookie and health response maps in `deploy/nginx.conf`
 
 Untranslated keys automatically fall back to English.
 
@@ -73,7 +73,8 @@ Point a Cloudflare Tunnel public hostname at the container (TLS terminates at th
 
 ### Live service status
 
-`/homelab` upgrades its build-time status dots at runtime from `GET /status.json`.
+`/homelab` starts with unknown status dots and reads `GET /status.json` on load,
+every minute, and when returning to the page. Requests time out after 10 seconds.
 The file is generated on the host by `deploy/update-status.ps1`: copy it next
 to your `docker-compose.yml` and point the URLs in its table at your own
 services. It writes `status.json` into a `status` folder beside itself, which
@@ -92,7 +93,11 @@ The script runs on Windows PowerShell 5.1, so the fixed `powershell.exe` path
 is used rather than `pwsh`, whose Store install has no reliable path for a
 scheduled task. Pass `-OutDir` if the status folder lives somewhere else.
 
-If the file is missing or malformed the page silently keeps its static labels.
+Missing, malformed, unmonitored, or stale readings show **unknown**; planned
+services retain their planned label. Readings require a timezone-qualified
+generation timestamp no older than 15 minutes and no more than one minute in
+the future (to tolerate small clock differences). Fresh readings restore the
+online/offline labels automatically. Old payloads retain their as-of note.
 
 ## License
 

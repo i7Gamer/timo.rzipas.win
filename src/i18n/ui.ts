@@ -69,7 +69,7 @@ const en = {
   'homelab.hw.os.workstation': 'Windows 11 Pro + CachyOS',
   'homelab.services.title': 'Running services',
   'homelab.services.note':
-    'Status dots are live — checked from inside the homelab every few minutes.',
+    'Services are checked from inside the homelab every few minutes. Unverified statuses are shown as unknown.',
   'homelab.why.title': 'Why self-host?',
   'homelab.why.text':
     'Running services myself means understanding the whole stack — DNS, TLS, reverse proxies, backups, monitoring — and it turns abstract cloud concepts into hardware I can actually touch. It also keeps my data on my own disks — where it is mine to measure, query and turn into a chart whenever something makes me curious.',
@@ -86,6 +86,7 @@ const en = {
   'status.online': 'online',
   'status.planned': 'planned',
   'status.offline': 'offline',
+  'status.unknown': 'unknown',
   'status.asOf': '(as of {time})',
 
   'about.title': 'About',
@@ -171,7 +172,7 @@ const de: Partial<Record<UIKey, string>> = {
   'homelab.hw.os': 'Betriebssystem',
   'homelab.services.title': 'Laufende Dienste',
   'homelab.services.note':
-    'Die Status-Punkte sind live — alle paar Minuten direkt aus dem Homelab geprüft.',
+    'Die Dienste werden alle paar Minuten direkt aus dem Homelab geprüft. Nicht überprüfbare Status werden als unbekannt angezeigt.',
   'homelab.why.title': 'Warum Self-Hosting?',
   'homelab.why.text':
     'Dienste selbst zu betreiben heißt, den ganzen Stack zu verstehen — DNS, TLS, Reverse Proxies, Backups, Monitoring — und aus abstrakten Cloud-Konzepten wird Hardware, die man anfassen kann. Und meine Daten bleiben auf meinen eigenen Platten — dort kann ich sie messen, auswerten und visualisieren, sobald mich etwas neugierig macht.',
@@ -187,6 +188,7 @@ const de: Partial<Record<UIKey, string>> = {
   'stats.services': 'Dienste',
   'status.planned': 'geplant',
   'status.offline': 'offline',
+  'status.unknown': 'unbekannt',
   'status.asOf': 'Stand: {time}',
 
   'about.title': 'Über mich',

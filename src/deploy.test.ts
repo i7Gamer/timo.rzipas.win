@@ -164,10 +164,16 @@ describe('image build', () => {
     );
   });
 
-  // The full alpine image bundles modules (njs, geoip, xslt, image filter)
-  // this config never loads.
-  it('serves from the slim nginx image', () => {
-    expect(DOCKERFILE).toMatch(/^FROM nginx:[0-9.]+-alpine-slim$/m);
+  it('loads and ships the njs language parser', () => {
+    expect(DOCKERFILE).toMatch(/^FROM nginx:[0-9.]+-alpine$/m);
+    expect(DOCKERFILE).toContain('load_module modules/ngx_http_js_module.so;');
+    expect(DOCKERFILE).toContain(
+      'COPY deploy/language.js /etc/nginx/language.js',
+    );
+    expect(NGINX_CONF).toContain(
+      'js_import language from /etc/nginx/language.js;',
+    );
+    expect(NGINX_CONF).toContain('js_set $lang_accept language.accept;');
   });
 
   // The output is static files, so the Node stage never has to run on the

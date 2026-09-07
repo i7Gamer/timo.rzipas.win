@@ -4,18 +4,21 @@ import {
   parseStatusPayload,
   STATUS_DOT_CLASS,
   STATUS_STALE_AFTER_MINUTES,
+  STATUS_FUTURE_TOLERANCE_MS,
   type LiveStatus,
 } from './status';
 
 /** Translated labels for the statuses status.json can report. */
-export type StatusLabels = Partial<Record<LiveStatus, string | undefined>>;
+export type StatusLabels = Partial<
+  Record<LiveStatus | 'unknown', string | undefined>
+>;
 
 const ALL_DOT_CLASSES = Object.values(STATUS_DOT_CLASS);
 
 /**
  * Flips the dot and label of every service card under `root` that the
- * payload names, and returns how many cards changed. A malformed payload
- * changes nothing, so the build-time labels remain. Cards are matched on
+ * payload names, and returns how many cards were updated. Missing or invalid
+ * statuses become unknown; planned services keep their label. Cards are matched on
  * their data attribute rather than through a selector, because names may
  * contain quotes.
  */
@@ -27,10 +30,14 @@ export function applyStatuses(
   const statuses = parseStatusPayload(payload);
   let updated = 0;
   for (const card of root.querySelectorAll<HTMLElement>('[data-service]')) {
-    const status = statuses.get(card.dataset.service ?? '');
+    const reported = statuses.get(card.dataset.service ?? '');
+    if (card.dataset.planned === 'true') {
+      continue;
+    }
+    const status = reported ?? 'unknown';
     const dot = card.querySelector('[data-status-dot]');
     const label = card.querySelector('[data-status-label]');
-    if (status === undefined || dot === null || label === null) {
+    if (dot === null || label === null) {
       continue;
     }
     dot.classList.remove(...ALL_DOT_CLASSES);
@@ -58,6 +65,8 @@ export function markStaleData(
   lang?: string,
 ): boolean {
   const generatedAt = parseGeneratedAt(payload);
+  asOf.hidden = true;
+  asOf.textContent = '';
   if (
     generatedAt === null ||
     !isStale(generatedAt, now, STATUS_STALE_AFTER_MINUTES)
@@ -74,33 +83,99 @@ export function markStaleData(
 }
 
 const STATUS_URL = '/status.json';
+export const STATUS_REFRESH_MS = 60_000;
+export const STATUS_REQUEST_TIMEOUT_MS = 10_000;
 
 /**
  * Fetches the live statuses and applies them to the cards under `grid`,
- * whose data attributes carry the translated labels. A missing file leaves
- * the page untouched; a network failure rejects, for the caller to swallow.
+ * whose data attributes carry the translated labels. Only fresh, timestamped
+ * readings are trusted. Failed checks reset previous results to unknown.
  */
 export async function loadLiveStatus(
   grid: HTMLElement,
   asOf: HTMLElement | null,
-  now: Date = new Date(),
+  now?: Date,
 ): Promise<void> {
-  const response = await fetch(STATUS_URL, { cache: 'no-store' });
-  if (!response.ok) {
-    return;
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    STATUS_REQUEST_TIMEOUT_MS,
+  );
+  let payload: unknown;
+  try {
+    const response = await fetch(STATUS_URL, {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (response.ok) {
+      payload = await response.json();
+    }
+  } catch {
+    // Unavailable data must not look like a successful service check.
+  } finally {
+    clearTimeout(timeout);
   }
-  const payload: unknown = await response.json();
-  applyStatuses(grid, payload, {
+  const checkedAt = now ?? new Date();
+  const generatedAt = parseGeneratedAt(payload);
+  const fresh =
+    generatedAt !== null &&
+    Number.isFinite(checkedAt.getTime()) &&
+    generatedAt.getTime() - checkedAt.getTime() <= STATUS_FUTURE_TOLERANCE_MS &&
+    !isStale(generatedAt, checkedAt, STATUS_STALE_AFTER_MINUTES);
+  applyStatuses(grid, fresh ? payload : null, {
     online: grid.dataset.labelOnline,
     offline: grid.dataset.labelOffline,
+    unknown: grid.dataset.labelUnknown,
   });
   if (asOf !== null) {
     // An empty lang attribute would make toLocaleTimeString throw.
     markStaleData(
       asOf,
       payload,
-      now,
+      checkedAt,
       document.documentElement.lang || undefined,
     );
   }
+}
+
+/** Refresh while mounted, and restart when restored from the back/forward cache. */
+export function startLiveStatus(
+  grid: HTMLElement,
+  asOf: HTMLElement | null,
+): () => void {
+  let inFlight = false;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  const refresh = async () => {
+    if (inFlight) return;
+    inFlight = true;
+    try {
+      await loadLiveStatus(grid, asOf);
+    } finally {
+      inFlight = false;
+    }
+  };
+  const pause = () => {
+    clearInterval(timer);
+    timer = undefined;
+  };
+  const resume = () => {
+    if (timer === undefined)
+      timer = setInterval(() => {
+        void refresh();
+      }, STATUS_REFRESH_MS);
+    void refresh();
+  };
+  const onVisibility = () => {
+    if (!document.hidden) void refresh();
+  };
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('pagehide', pause);
+  window.addEventListener('pageshow', resume);
+  resume();
+  return () => {
+    pause();
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('pagehide', pause);
+    window.removeEventListener('pageshow', resume);
+  };
 }

@@ -18,9 +18,10 @@ ARG PUBLIC_BUILD_SHA=""
 ENV PUBLIC_BUILD_SHA=$PUBLIC_BUILD_SHA
 RUN node scripts/build.mjs
 
-# -slim: the same nginx without the module packages (njs, geoip, xslt, image
-# filter) this config never loads.
-FROM nginx:1.31-alpine-slim
+# The full image includes njs for weighted Accept-Language negotiation.
+FROM nginx:1.31-alpine
+RUN sed -i '1i load_module modules/ngx_http_js_module.so;' /etc/nginx/nginx.conf
+COPY deploy/language.js /etc/nginx/language.js
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 # Included by nginx.conf at exactly this path (src/deploy.test.ts checks both sides).
 COPY deploy/security-headers.conf /etc/nginx/snippets/security-headers.conf

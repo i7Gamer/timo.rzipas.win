@@ -69,6 +69,8 @@
   --line: oklch(88% 0.006 260);
   --accent: oklch(50% 0.14 155);
   --accent-soft: oklch(93% 0.045 155);
+  --fork: oklch(47.3% 0.137 46.201);
+  --fork-soft: oklch(96.2% 0.059 95.617);
 }
 
 .dark {
@@ -80,6 +82,8 @@
   --line: oklch(30% 0.014 260);
   --accent: oklch(80% 0.17 155);
   --accent-soft: oklch(30% 0.055 155);
+  --fork: oklch(87.9% 0.169 91.605);
+  --fork-soft: oklch(30% 0.035 70);
 }
 
 /* Print in the light palette even when the dark theme is active — the about
@@ -95,6 +99,8 @@
     --line: oklch(88% 0.006 260);
     --accent: oklch(50% 0.14 155);
     --accent-soft: oklch(93% 0.045 155);
+    --fork: oklch(47.3% 0.137 46.201);
+    --fork-soft: oklch(96.2% 0.059 95.617);
   }
 }
 
@@ -114,6 +120,8 @@
   --color-line: var(--line);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-fork: var(--fork);
+  --color-fork-soft: var(--fork-soft);
 }
 
 @layer base {

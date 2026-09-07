@@ -117,6 +117,7 @@ describe('palette contrast', () => {
     ['accent on accent-soft', '--accent', '--accent-soft'],
     // Solid accent buttons put surface-coloured text on the accent.
     ['surface on accent', '--surface', '--accent'],
+    ['fork badge', '--fork', '--fork-soft'],
   ] as const;
 
   for (const [theme, tokens] of [

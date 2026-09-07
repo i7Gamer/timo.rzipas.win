@@ -97,6 +97,7 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
           data-status-grid
           data-label-online={t(locale, 'status.online')}
           data-label-offline={t(locale, 'status.offline')}
+          data-label-unknown={t(locale, 'status.unknown')}
         >
           {
             SERVICES.map((service) => (
@@ -110,14 +111,11 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
 </BaseLayout>
 
 <script>
-  import { loadLiveStatus } from '../lib/live-status';
+  import { startLiveStatus } from '../lib/live-status';
 
   const grid = document.querySelector('[data-status-grid]');
   const asOf = document.querySelector('[data-status-asof]');
   if (grid instanceof HTMLElement) {
-    // Fire and forget — without status.json the build-time labels remain.
-    loadLiveStatus(grid, asOf instanceof HTMLElement ? asOf : null).catch(
-      () => {},
-    );
+    startLiveStatus(grid, asOf instanceof HTMLElement ? asOf : null);
   }
 </script>

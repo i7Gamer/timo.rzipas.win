@@ -89,6 +89,33 @@ check_accept_language_picks_german() {
   expect_status 200 && expect_body '<html lang="de"'
 }
 
+check_weighted_language_preferences() {
+  local expected preferences
+  while IFS='|' read -r expected preferences; do
+    request / -H "Accept-Language: $preferences"
+    expect_status 200 && expect_body "<html lang=\"$expected\"" || return 1
+  done <<'CASES'
+de|fr-CH,fr;q=0.9,de;q=0.8,en;q=0.7
+en|de;q=0,en;q=1
+de|en;q=0.2,de;q=0.9
+en|de;q=0.2,en;q=0.9
+de|DE-at;q=0.8,en;q=0.7
+de|en;q=0,*;q=1
+en|de;q=0,*;q=1
+en|de;q=bogus,en;q=0.5
+de|de,en
+en|en,de
+CASES
+}
+
+check_unverified_statuses_start_unknown() {
+  request /homelab/
+  expect_status 200 && expect_body 'data-status-label>unknown</span>' || return 1
+  ! grep -q 'data-status-label>online</span>' "$tmp/body" || return 1
+  request /homelab/ -H 'Cookie: lang=de'
+  expect_status 200 && expect_body 'data-status-label>unbekannt</span>'
+}
+
 check_cookie_beats_accept_language() {
   request / -H 'Accept-Language: en' -H 'Cookie: lang=de'
   expect_status 200 && expect_body '<html lang="de"'
@@ -235,6 +262,8 @@ done
 
 run 'home page is English by default and carries every header' check_home_is_english_by_default
 run 'Accept-Language picks German' check_accept_language_picks_german
+run 'Accept-Language respects weights, exclusions, wildcards and ordering' check_weighted_language_preferences
+run 'unverified service statuses start unknown in both languages' check_unverified_statuses_start_unknown
 run 'lang cookie beats Accept-Language' check_cookie_beats_accept_language
 run 'unknown lang cookie falls back to Accept-Language' check_unknown_cookie_falls_back_to_accept_language
 run '/healthz speaks both languages with the shared headers' check_healthz_speaks_both_languages

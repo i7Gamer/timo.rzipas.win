@@ -104,6 +104,8 @@ describe('ProjectCard forks', () => {
     });
     expect(html).toContain('fork');
     expect(html).toContain('active');
+    expect(html).toContain('text-fork');
+    expect(html).toContain('bg-fork-soft');
   });
 
   it('translates both badges', async () => {
@@ -159,6 +161,20 @@ describe('TimelineItem', () => {
 });
 
 describe('ServiceCard', () => {
+  it.each([
+    ['en', 'unknown'],
+    ['de', 'unbekannt'],
+  ] as const)(
+    'renders unverified services as unknown in %s',
+    async (locale, label) => {
+      const container = await AstroContainer.create();
+      const html = await container.renderToString(ServiceCard, {
+        props: { service: { ...service, status: 'online' }, locale },
+      });
+      expect(html).toContain(`data-status-label>${label}</span>`);
+      expect(html).not.toContain('bg-emerald-400');
+    },
+  );
   it('renders English content with the status label', async () => {
     const container = await AstroContainer.create();
     const html = await container.renderToString(ServiceCard, {

@@ -10,11 +10,13 @@ interface Props {
 
 const { service, locale } = Astro.props;
 
-const statusKey = `status.${service.status}` as const;
+const initialStatus = service.status === 'planned' ? 'planned' : 'unknown';
+const statusKey = `status.${initialStatus}` as const;
 ---
 
 <article
   data-service={service.name}
+  data-planned={service.status === 'planned' ? 'true' : undefined}
   class="panel flex h-full flex-col gap-2 p-4"
 >
   <div class="flex items-center justify-between gap-2">
@@ -23,7 +25,7 @@ const statusKey = `status.${service.status}` as const;
       <span
         aria-hidden="true"
         data-status-dot
-        class:list={['size-1.5 rounded-full', STATUS_DOT_CLASS[service.status]]}
+        class:list={['size-1.5 rounded-full', STATUS_DOT_CLASS[initialStatus]]}
       ></span>
       <span data-status-label>{t(locale, statusKey)}</span>
     </span>
