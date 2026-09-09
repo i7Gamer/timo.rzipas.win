@@ -1,11 +1,10 @@
 ---
 import PathHeading from '../components/PathHeading.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import ServiceCard from '../components/ServiceCard.astro';
+import ServiceGroups from '../components/ServiceGroups.astro';
 import TerminalLine from '../components/TerminalLine.astro';
 import TerminalWindow from '../components/TerminalWindow.astro';
 import { MACHINES } from '../data/hardware';
-import { SERVICES } from '../data/services';
 import { getLocale, t, type UIKey } from '../i18n';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
@@ -92,19 +91,7 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
             ></span>
           </p>
         </div>
-        <div
-          class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          data-status-grid
-          data-label-online={t(locale, 'status.online')}
-          data-label-offline={t(locale, 'status.offline')}
-          data-label-unknown={t(locale, 'status.unknown')}
-        >
-          {
-            SERVICES.map((service) => (
-              <ServiceCard service={service} locale={locale} />
-            ))
-          }
-        </div>
+        <ServiceGroups locale={locale} />
       </div>
     </div>
   </section>

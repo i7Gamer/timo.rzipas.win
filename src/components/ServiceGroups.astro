@@ -1,0 +1,45 @@
+---
+import { SERVICE_GROUPS, SERVICES } from '../data/services';
+import { pick, t, type Locale } from '../i18n';
+import ServiceCard from './ServiceCard.astro';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+---
+
+<div
+  class="mt-6 space-y-8"
+  data-status-grid
+  data-label-online={t(locale, 'status.online')}
+  data-label-offline={t(locale, 'status.offline')}
+  data-label-unknown={t(locale, 'status.unknown')}
+>
+  {
+    SERVICE_GROUPS.map((group) => (
+      <section
+        data-service-group={group.id}
+        aria-labelledby={`services-${group.id}`}
+      >
+        <h3
+          id={`services-${group.id}`}
+          class="text-ink border-line mb-4 border-b pb-2 font-mono text-base font-semibold"
+        >
+          {pick(locale, group.title)}
+        </h3>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {SERVICES.filter((service) => service.group === group.id).map(
+            (service) => (
+              <ServiceCard
+                service={service}
+                locale={locale}
+                headingLevel="h4"
+              />
+            ),
+          )}
+        </div>
+      </section>
+    ))
+  }
+</div>

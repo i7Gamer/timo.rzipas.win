@@ -6,9 +6,11 @@ import { STATUS_DOT_CLASS } from '../lib/status';
 interface Props {
   service: Service;
   locale: Locale;
+  headingLevel?: 'h3' | 'h4';
 }
 
 const { service, locale } = Astro.props;
+const Heading = Astro.props.headingLevel ?? 'h3';
 
 const initialStatus = service.status === 'planned' ? 'planned' : 'unknown';
 const statusKey = `status.${initialStatus}` as const;
@@ -20,7 +22,9 @@ const statusKey = `status.${initialStatus}` as const;
   class="panel flex h-full flex-col gap-2 p-4"
 >
   <div class="flex items-center justify-between gap-2">
-    <h3 class="text-ink font-mono text-sm font-semibold">{service.name}</h3>
+    <Heading class="text-ink font-mono text-sm font-semibold"
+      >{service.name}</Heading
+    >
     <span class="text-muted flex items-center gap-1.5 font-mono text-[11px]">
       <span
         aria-hidden="true"

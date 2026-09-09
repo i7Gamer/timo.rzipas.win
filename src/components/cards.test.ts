@@ -22,6 +22,7 @@ const project: Project = {
 
 const service: Service = {
   name: 'DemoService',
+  group: 'infrastructure',
   category: { en: 'Web', de: 'Web' },
   description: { en: 'English service text', de: 'Deutscher Diensttext' },
   status: 'planned',
