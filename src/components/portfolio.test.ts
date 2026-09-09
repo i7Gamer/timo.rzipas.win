@@ -49,9 +49,7 @@ describe('portfolio components', () => {
         expect(img.getAttribute('loading')).toBe('lazy');
         expect(Number(img.getAttribute('width'))).toBeGreaterThan(0);
         expect(Number(img.getAttribute('height'))).toBeGreaterThan(0);
-        expect(figure.querySelector('a')!.getAttribute('href')).toBe(
-          source.image.src,
-        );
+        expect(img.closest('a')).toBeNull();
         expect(figure.textContent).toContain(source.caption[locale]);
       });
       expect(document.querySelectorAll('h1')).toHaveLength(1);

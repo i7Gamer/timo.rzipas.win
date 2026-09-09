@@ -62,7 +62,7 @@ const SCREENSHOT_WIDTHS = [480, 800, 1200];
             rel="noopener"
             class="link-accent"
           >
-            {t(locale, 'project.upstream')} ↗
+            {t(locale, 'project.upstream')}
           </a>
         )}
       </aside>
@@ -99,21 +99,14 @@ const SCREENSHOT_WIDTHS = [480, 800, 1200];
           <div class="grid items-start gap-6 md:grid-cols-2">
             {story.images.map((figure) => (
               <figure class="panel overflow-hidden">
-                <a
-                  href={figure.image.src}
-                  target="_blank"
-                  rel="noopener"
-                  aria-label={`${pick(locale, figure.alt)} — ${t(locale, 'project.fullImage')}`}
-                >
-                  <Image
-                    src={figure.image}
-                    alt={pick(locale, figure.alt)}
-                    widths={SCREENSHOT_WIDTHS}
-                    sizes="(min-width: 768px) 45vw, 92vw"
-                    loading="lazy"
-                    class="h-auto w-full"
-                  />
-                </a>
+                <Image
+                  src={figure.image}
+                  alt={pick(locale, figure.alt)}
+                  widths={SCREENSHOT_WIDTHS}
+                  sizes="(min-width: 768px) 45vw, 92vw"
+                  loading="lazy"
+                  class="h-auto w-full"
+                />
                 <figcaption class="text-muted p-4 text-sm">
                   {pick(locale, figure.caption)}
                 </figcaption>
@@ -137,7 +130,7 @@ const SCREENSHOT_WIDTHS = [480, 800, 1200];
             rel="noopener"
             class="btn-muted"
           >
-            {t(locale, 'project.source')} ↗
+            {t(locale, 'project.source')}
           </a>
         )}
         {project.link && (
@@ -147,7 +140,7 @@ const SCREENSHOT_WIDTHS = [480, 800, 1200];
             rel="noopener"
             class="btn-primary"
           >
-            {t(locale, 'project.visit')} ↗
+            {t(locale, 'project.visit')}
           </a>
         )}
       </div>
