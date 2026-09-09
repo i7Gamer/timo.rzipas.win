@@ -1,0 +1,156 @@
+---
+import { Image } from 'astro:assets';
+import { pick, t, type Locale } from '../i18n';
+import type { Project, ProjectStoryContent } from '../lib/projects';
+
+interface Props {
+  project: Project & { story: ProjectStoryContent };
+  locale: Locale;
+}
+const { project, locale } = Astro.props;
+const { story } = project;
+const sections = ['problem', 'contribution', 'decisions', 'outcome'] as const;
+const SCREENSHOT_WIDTHS = [480, 800, 1200];
+---
+
+<article class="py-10">
+  <a href="/projects/" class="link-accent text-sm"
+    >← {t(locale, 'project.back')}</a
+  >
+  <header class="mt-7 max-w-3xl">
+    <p class="text-accent font-mono text-xs">
+      {t(locale, `project.status.${project.status}`)}{
+        project.fork && ` · ${t(locale, 'project.status.fork')}`
+      }
+    </p>
+    <h1 class="text-ink mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+      {project.name}
+    </h1>
+    <p class="text-muted mt-4 text-lg">{pick(locale, project.tagline)}</p>
+    <ul class="mt-5 flex flex-wrap gap-2">
+      {
+        project.tech.map((tech) => (
+          <li class="chip bg-panel text-ink">{tech}</li>
+        ))
+      }
+    </ul>
+  </header>
+  <div class="mt-10 grid gap-8 md:grid-cols-2">
+    {
+      sections.map((section) => (
+        <section>
+          <>
+            <h2 class="text-ink font-mono text-lg font-semibold">
+              {t(locale, `project.story.${section}`)}
+            </h2>
+            <p class="text-muted mt-3 leading-relaxed">
+              {pick(locale, story[section])}
+            </p>
+          </>
+        </section>
+      ))
+    }
+  </div>
+  {
+    story.provenance && (
+      <aside class="border-line text-muted mt-8 border-l-2 pl-4 text-sm">
+        {pick(locale, story.provenance)}{' '}
+        {story.upstream && (
+          <a
+            href={story.upstream}
+            target="_blank"
+            rel="noopener"
+            class="link-accent"
+          >
+            {t(locale, 'project.upstream')} ↗
+          </a>
+        )}
+      </aside>
+    )
+  }
+  {
+    story.diagram && (
+      <section class="panel-lg mt-10">
+        <>
+          <h2 class="text-ink font-mono font-semibold">
+            {pick(locale, story.diagram.title)}
+          </h2>
+          <ol class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {story.diagram.steps.map((step, index) => (
+              <li class="border-line bg-surface rounded-lg border p-4">
+                <span aria-hidden="true" class="text-accent font-mono text-sm">
+                  {index + 1} →
+                </span>
+                <p class="text-ink mt-2 text-sm">{pick(locale, step)}</p>
+              </li>
+            ))}
+          </ol>
+        </>
+      </section>
+    )
+  }
+  {
+    story.images && story.images.length > 0 && (
+      <section class="mt-10">
+        <>
+          <h2 class="text-ink mb-5 font-mono text-lg font-semibold">
+            {t(locale, 'project.screenshots')}
+          </h2>
+          <div class="grid items-start gap-6 md:grid-cols-2">
+            {story.images.map((figure) => (
+              <figure class="panel overflow-hidden">
+                <a
+                  href={figure.image.src}
+                  target="_blank"
+                  rel="noopener"
+                  aria-label={`${pick(locale, figure.alt)} — ${t(locale, 'project.fullImage')}`}
+                >
+                  <Image
+                    src={figure.image}
+                    alt={pick(locale, figure.alt)}
+                    widths={SCREENSHOT_WIDTHS}
+                    sizes="(min-width: 768px) 45vw, 92vw"
+                    loading="lazy"
+                    class="h-auto w-full"
+                  />
+                </a>
+                <figcaption class="text-muted p-4 text-sm">
+                  {pick(locale, figure.caption)}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </>
+      </section>
+    )
+  }
+  {
+    (project.repo || project.link) && (
+      <div
+        data-project-external
+        class="border-line mt-10 flex flex-wrap gap-4 border-t pt-6"
+      >
+        {project.repo && (
+          <a
+            href={project.repo}
+            target="_blank"
+            rel="noopener"
+            class="btn-muted"
+          >
+            {t(locale, 'project.source')} ↗
+          </a>
+        )}
+        {project.link && (
+          <a
+            href={project.link}
+            target="_blank"
+            rel="noopener"
+            class="btn-primary"
+          >
+            {t(locale, 'project.visit')} ↗
+          </a>
+        )}
+      </div>
+    )
+  }
+</article>

@@ -2,6 +2,8 @@
 import PathHeading from '../components/PathHeading.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TimelineItem from '../components/TimelineItem.astro';
+import ContactSection from '../components/ContactSection.astro';
+import { QUALIFICATIONS } from '../data/qualifications';
 import { EDUCATION } from '../data/education';
 import { JOBS } from '../data/jobs';
 import { SKILL_GROUPS, SPOKEN_LANGUAGES } from '../data/skills';
@@ -27,7 +29,15 @@ const presentLabel = t(locale, 'about.present');
           {
             JOBS.map((job) => (
               <TimelineItem
-                period={formatPeriod(locale, job.from, job.to, presentLabel)}
+                id={job.id}
+                period={
+                  job.periodLabel
+                    ? pick(locale, job.periodLabel)
+                    : formatPeriod(locale, job.from, job.to, presentLabel)
+                }
+                highlights={job.highlights?.map((highlight) =>
+                  pick(locale, highlight),
+                )}
                 title={pick(locale, job.role)}
                 org={job.company}
                 orgUrl={job.url}
@@ -38,6 +48,11 @@ const presentLabel = t(locale, 'about.present');
             ))
           }
         </ol>
+        <a
+          href="/projects/carini-management-system/"
+          class="link-accent mt-5 inline-block text-sm"
+          >{t(locale, 'about.carini')} →</a
+        >
       </div>
 
       <div>
@@ -76,6 +91,17 @@ const presentLabel = t(locale, 'about.present');
                       <li class="chip bg-panel text-ink">{item}</li>
                     ))}
                   </ul>
+                  {group.evidence && (
+                    <ul class="mt-3 space-y-2 text-sm">
+                      {group.evidence.map((evidence) => (
+                        <li>
+                          <a href={evidence.href} class="link-accent">
+                            {pick(locale, evidence.text)} →
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               ))
             }
@@ -97,6 +123,38 @@ const presentLabel = t(locale, 'about.present');
           </ul>
         </div>
       </div>
+      <section>
+        <SectionHeading
+          >{t(locale, 'about.qualifications.title')}</SectionHeading
+        >
+        <ul class="mt-6 space-y-4">
+          {
+            QUALIFICATIONS.map((qualification) => (
+              <li>
+                <>
+                  <h3 class="text-ink font-medium">
+                    {pick(locale, qualification.title)}
+                  </h3>
+                  <p class="text-muted mt-1 text-sm">
+                    {qualification.issuer} ·{' '}
+                    <time datetime={qualification.date}>
+                      {new Date(
+                        `${qualification.date}T00:00:00Z`,
+                      ).toLocaleDateString(locale, {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        timeZone: 'UTC',
+                      })}
+                    </time>
+                  </p>
+                </>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+      <ContactSection locale={locale} />
     </div>
   </section>
 </BaseLayout>

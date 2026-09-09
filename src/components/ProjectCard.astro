@@ -1,13 +1,16 @@
 ---
 import { pick, t, type Locale } from '../i18n';
 import type { Project } from '../lib/projects';
+import { projectHref } from '../lib/projects';
 
 interface Props {
   project: Project;
   locale: Locale;
+  headingLevel?: 'h2' | 'h3';
 }
 
 const { project, locale } = Astro.props;
+const Heading = Astro.props.headingLevel ?? 'h3';
 
 const BADGE_CLASS =
   'rounded-full border px-2 py-0.5 font-mono text-[11px] whitespace-nowrap';
@@ -23,7 +26,9 @@ const statusKey = `project.status.${project.status}` as const;
   class="panel hover:border-accent/60 flex h-full flex-col gap-3 p-5 transition-colors"
 >
   <div class="flex items-start justify-between gap-3">
-    <h3 class="text-ink font-mono text-base font-semibold">{project.name}</h3>
+    <Heading class="text-ink font-mono text-base font-semibold"
+      >{project.name}</Heading
+    >
     <div class="flex flex-wrap justify-end gap-1.5">
       {
         project.fork && (
@@ -46,30 +51,35 @@ const statusKey = `project.status.${project.status}` as const;
       ))
     }
   </ul>
-  <div class="flex gap-4 pt-1">
-    {
-      project.repo && (
-        <a
-          href={project.repo}
-          target="_blank"
-          rel="noopener"
-          class="link-accent text-xs"
-        >
-          {t(locale, 'project.source')}
-        </a>
-      )
-    }
-    {
-      project.link && (
-        <a
-          href={project.link}
-          target="_blank"
-          rel="noopener"
-          class="link-accent text-xs"
-        >
-          {t(locale, 'project.visit')}
-        </a>
-      )
-    }
-  </div>
+  {
+    (project.story || project.repo || project.link) && (
+      <div data-project-actions class="flex flex-wrap gap-4 pt-1">
+        {project.story && (
+          <a href={projectHref(project.slug)} class="link-accent text-xs">
+            {t(locale, 'project.details')} →
+          </a>
+        )}
+        {project.repo && (
+          <a
+            href={project.repo}
+            target="_blank"
+            rel="noopener"
+            class="link-accent text-xs"
+          >
+            {t(locale, 'project.source')}
+          </a>
+        )}
+        {project.link && (
+          <a
+            href={project.link}
+            target="_blank"
+            rel="noopener"
+            class="link-accent text-xs"
+          >
+            {t(locale, 'project.visit')}
+          </a>
+        )}
+      </div>
+    )
+  }
 </article>

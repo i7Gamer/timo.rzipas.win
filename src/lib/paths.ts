@@ -6,3 +6,11 @@ export function normalizePath(path: string): string {
 export function isActivePath(currentPath: string, href: string): boolean {
   return normalizePath(currentPath) === normalizePath(href);
 }
+
+export function isSectionPath(currentPath: string, href: string): boolean {
+  const section = normalizePath(href);
+  return (
+    isActivePath(currentPath, section) ||
+    (section !== '/' && normalizePath(currentPath).startsWith(`${section}/`))
+  );
+}

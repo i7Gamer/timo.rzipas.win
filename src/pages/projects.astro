@@ -19,7 +19,7 @@ const projects = sortProjects(PROJECTS);
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {
         projects.map((project) => (
-          <ProjectCard project={project} locale={locale} />
+          <ProjectCard project={project} locale={locale} headingLevel="h2" />
         ))
       }
     </div>

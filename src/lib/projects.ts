@@ -1,4 +1,20 @@
-import type { Localized } from '../i18n';
+import type { Locale, Localized } from '../i18n';
+import type { ImageMetadata } from 'astro';
+
+export interface ProjectStoryContent {
+  problem: Record<Locale, string>;
+  contribution: Record<Locale, string>;
+  decisions: Record<Locale, string>;
+  outcome: Record<Locale, string>;
+  provenance?: Record<Locale, string>;
+  upstream?: string;
+  images?: Array<{
+    image: ImageMetadata;
+    alt: Record<Locale, string>;
+    caption: Record<Locale, string>;
+  }>;
+  diagram?: { title: Record<Locale, string>; steps: Record<Locale, string>[] };
+}
 
 export type ProjectStatus = 'active' | 'archived';
 
@@ -15,6 +31,20 @@ export interface Project {
   fork?: boolean;
   featured: boolean;
   order: number;
+  story?: ProjectStoryContent;
+}
+
+export function projectHref(slug: string): string {
+  return `/projects/${slug}/`;
+}
+
+export function storyProjects(
+  projects: readonly Project[],
+): Array<Project & { story: ProjectStoryContent }> {
+  return sortProjects(projects).filter(
+    (project): project is Project & { story: ProjectStoryContent } =>
+      project.story !== undefined,
+  );
 }
 
 export function sortProjects(projects: readonly Project[]): Project[] {

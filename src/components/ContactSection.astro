@@ -1,0 +1,39 @@
+---
+import { CV_DOWNLOADS } from '../data/cv';
+import { EMAIL, LINKEDIN_URL } from '../data/site';
+import { t, type Locale } from '../i18n';
+import SectionHeading from './SectionHeading.astro';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const languages: Locale[] = [locale, locale === 'en' ? 'de' : 'en'];
+---
+
+<section id="contact" class="panel-lg scroll-mt-24">
+  <SectionHeading>{t(locale, 'contact.title')}</SectionHeading>
+  <p class="text-muted mt-4">{t(locale, 'contact.intro')}</p>
+  <div class="mt-4 flex flex-wrap gap-5">
+    <a href={`mailto:${EMAIL}`} class="link-accent break-all">{EMAIL}</a>
+    <a href={LINKEDIN_URL} target="_blank" rel="noopener" class="link-accent"
+      >LinkedIn ↗</a
+    >
+  </div>
+  <h3 class="text-ink mt-6 font-semibold">{t(locale, 'contact.cv')}</h3>
+  <div class="mt-3 flex flex-wrap gap-3">
+    {
+      languages.map((language) => (
+        <a
+          href={CV_DOWNLOADS[language]}
+          download
+          hreflang={language}
+          type="application/pdf"
+          class="btn-muted"
+        >
+          {t(locale, language === 'en' ? 'contact.cv.en' : 'contact.cv.de')}
+        </a>
+      ))
+    }
+  </div>
+</section>

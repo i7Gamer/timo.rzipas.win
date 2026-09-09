@@ -14,6 +14,11 @@ async function renderHeader(pathname: string): Promise<string> {
 }
 
 describe('Header', () => {
+  it('marks the Projects section, not its listing page, on a nested story', async () => {
+    const html = await renderHeader('/projects/tutto/');
+    expect(html).toMatch(/href="\/projects\/"[^>]*aria-current="location"/);
+    expect(html).not.toContain('aria-current="page"');
+  });
   it('links every section of the site', async () => {
     const html = await renderHeader('/');
     for (const href of ['/', '/projects/', '/homelab/', '/about/']) {

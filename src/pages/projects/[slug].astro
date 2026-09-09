@@ -1,0 +1,23 @@
+---
+import ProjectStory from '../../components/ProjectStory.astro';
+import { PROJECTS } from '../../data/projects';
+import { getLocale, pick } from '../../i18n';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { storyProjects } from '../../lib/projects';
+
+export function getStaticPaths() {
+  return storyProjects(PROJECTS).map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+const { project } = Astro.props;
+const locale = getLocale();
+---
+
+<BaseLayout
+  title={project.name}
+  description={pick(locale, project.description)}
+>
+  <ProjectStory project={project} locale={locale} />
+</BaseLayout>

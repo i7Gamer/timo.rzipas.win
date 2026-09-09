@@ -1,7 +1,7 @@
 ---
 import { HOME_HREF, NAV } from '../data/routes';
 import { getLocale, t } from '../i18n';
-import { isActivePath } from '../lib/paths';
+import { isActivePath, isSectionPath } from '../lib/paths';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import ThemeToggle from './ThemeToggle.astro';
 
@@ -29,13 +29,16 @@ const currentPath = Astro.url.pathname;
       {
         NAV.map((item) => {
           const active = isActivePath(currentPath, item.href);
+          const inSection = isSectionPath(currentPath, item.href);
           return (
             <a
               href={item.href}
-              aria-current={active ? 'page' : undefined}
+              aria-current={
+                active ? 'page' : inSection ? 'location' : undefined
+              }
               class:list={[
                 'shrink-0 rounded-md px-1.5 py-1 text-xs whitespace-nowrap transition-colors sm:px-3 sm:text-sm',
-                active
+                inSection
                   ? 'text-accent font-medium'
                   : 'text-muted hover:text-ink',
                 item.href === HOME_HREF && 'hidden sm:inline-block',

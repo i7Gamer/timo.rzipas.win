@@ -22,6 +22,7 @@ const en = {
   'hero.location': 'Lake Constance region (AT/CH)',
   'hero.cta.projects': 'View projects',
   'hero.cta.homelab': 'Tour the homelab',
+  'hero.cta.contact': 'Get in touch',
 
   'terminal.title': 'timo@homelab:~',
   'terminal.whoami.cmd': 'whoami',
@@ -46,6 +47,15 @@ const en = {
   'projects.intro':
     'I like turning my own data into something I can actually look at: collect it myself, host it myself, then chart it until it answers the question I started with.',
   'project.source': 'Source',
+  'project.details': 'Project details',
+  'project.back': 'All projects',
+  'project.story.problem': 'Starting point',
+  'project.story.contribution': 'What I built',
+  'project.story.decisions': 'Engineering decisions',
+  'project.story.outcome': 'The result',
+  'project.upstream': 'Original project',
+  'project.screenshots': 'A look inside',
+  'project.fullImage': 'Open full-size image',
   'project.visit': 'Visit',
   'project.status.active': 'active',
   'project.status.archived': 'archived',
@@ -97,6 +107,14 @@ const en = {
   'about.skills.title': 'Skills',
   'about.languages.title': 'Languages',
   'about.present': 'present',
+  'about.carini': 'My technical contribution to the Carini diploma project',
+  'about.qualifications.title': 'Certificates & courses',
+  'contact.title': 'Get in touch',
+  'contact.intro':
+    'Want to talk about software, self-hosting or one of these projects? Send me an email or find me on LinkedIn.',
+  'contact.cv': 'Download my CV',
+  'contact.cv.en': 'English CV · PDF',
+  'contact.cv.de': 'German CV · PDF',
 
   'lang.switch.label': 'Zu Deutsch wechseln',
   'lang.switch.code': 'DE',
@@ -135,6 +153,7 @@ const de: Partial<Record<UIKey, string>> = {
   'hero.location': 'Bodenseeregion (AT/CH)',
   'hero.cta.projects': 'Projekte ansehen',
   'hero.cta.homelab': 'Homelab erkunden',
+  'hero.cta.contact': 'Kontakt aufnehmen',
 
   'terminal.health.out': 'ok — ausgeliefert aus dem Wohnzimmer',
   'terminal.help.out':
@@ -153,6 +172,15 @@ const de: Partial<Record<UIKey, string>> = {
   'projects.intro':
     'Ich mache aus meinen eigenen Daten gerne etwas, das man sich ansehen kann: selbst erfassen, selbst hosten und so lange visualisieren, bis es die Frage beantwortet, mit der alles anfing.',
   'project.source': 'Quellcode',
+  'project.details': 'Mehr zum Projekt',
+  'project.back': 'Alle Projekte',
+  'project.story.problem': 'Ausgangslage',
+  'project.story.contribution': 'Meine Umsetzung',
+  'project.story.decisions': 'Technische Entscheidungen',
+  'project.story.outcome': 'Das Ergebnis',
+  'project.upstream': 'Ursprüngliches Projekt',
+  'project.screenshots': 'Ein Blick in die Anwendung',
+  'project.fullImage': 'Bild in voller Größe öffnen',
   'project.visit': 'Ansehen',
   'project.status.active': 'aktiv',
   'project.status.archived': 'archiviert',
@@ -198,6 +226,14 @@ const de: Partial<Record<UIKey, string>> = {
   'about.education.title': 'Ausbildung',
   'about.languages.title': 'Sprachen',
   'about.present': 'heute',
+  'about.carini': 'Mein technischer Beitrag zur Diplomarbeit bei Carini',
+  'about.qualifications.title': 'Zertifikate & Kurse',
+  'contact.title': 'Kontakt',
+  'contact.intro':
+    'Du möchtest dich über Software, Self-Hosting oder eines dieser Projekte austauschen? Schreib mir eine E-Mail oder melde dich auf LinkedIn.',
+  'contact.cv': 'Lebenslauf herunterladen',
+  'contact.cv.en': 'Lebenslauf auf Englisch · PDF',
+  'contact.cv.de': 'Lebenslauf auf Deutsch · PDF',
 
   'lang.switch.label': 'Switch to English',
   'lang.switch.code': 'EN',

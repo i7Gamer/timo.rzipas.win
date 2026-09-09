@@ -1,5 +1,7 @@
 ---
 interface Props {
+  id?: string;
+  highlights?: string[];
   period: string;
   title: string;
   org?: string;
@@ -10,6 +12,8 @@ interface Props {
 }
 
 const {
+  id,
+  highlights = [],
   period,
   title,
   org,
@@ -20,7 +24,10 @@ const {
 } = Astro.props;
 ---
 
-<li class="border-line relative border-l pb-8 pl-6 last:pb-0">
+<li
+  id={id}
+  class="border-line relative scroll-mt-24 border-l pb-8 pl-6 last:pb-0"
+>
   <span
     aria-hidden="true"
     class="border-surface bg-accent absolute top-1 -left-[5.5px] size-2.5 rounded-full border-2"
@@ -51,6 +58,15 @@ const {
     }
   </h3>
   {summary && <p class="text-muted mt-1 text-sm">{summary}</p>}
+  {
+    highlights.length > 0 && (
+      <ul class="text-muted mt-3 list-disc space-y-1 pl-4 text-sm">
+        {highlights.map((highlight) => (
+          <li>{highlight}</li>
+        ))}
+      </ul>
+    )
+  }
   {
     tags.length > 0 && (
       <ul class="mt-2 flex flex-wrap gap-1.5">
