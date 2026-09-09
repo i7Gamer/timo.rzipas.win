@@ -66,8 +66,8 @@ export const MYSPEED_STORY: ProjectStoryContent = {
     de: 'Pro Durchlauf werden die Ziele nacheinander gemessen, damit sich die Tests nicht gegenseitig Bandbreite wegnehmen. Heller und dunkler Modus sowie die automatische Anpassung an das System lassen sich mit den Farbschemata Slate, Nord, Carbon und Ember kombinieren. Die React-Oberfläche nutzt Chart.js und ein Express-Backend auf Bun oder Node.js. Standardmäßig speichert SQLite die Daten; MySQL wird ebenfalls unterstützt.',
   },
   outcome: {
-    en: 'The application now compares latency and throughput across targets and periods. The additions also cover daily operation: alerts for deviations from usual measurements, traceroute diagnostics, connection-change history and scoped API tokens.',
-    de: 'Die Anwendung vergleicht Latenz und Datenrate über mehrere Ziele und Zeiträume hinweg. Auch den laufenden Betrieb habe ich erweitert: mit Warnungen bei Abweichungen von üblichen Messwerten, Traceroute-Diagnose, einem Verlauf von Verbindungsänderungen und API-Tokens mit gezielten Berechtigungen.',
+    en: 'I resolved nearly all issues reported upstream and implemented nearly all requested features, alongside extensive translation fixes. The application now compares latency and throughput across targets and periods. The additions also cover daily operation: alerts for deviations from usual measurements, traceroute diagnostics, connection-change history and scoped API tokens.',
+    de: 'Ich habe nahezu alle im ursprünglichen Projekt gemeldeten Probleme behoben und fast alle dort gewünschten Funktionen umgesetzt. Dazu kommen umfangreiche Korrekturen an den Übersetzungen. Die Anwendung vergleicht Latenz und Datenrate über mehrere Ziele und Zeiträume hinweg. Auch den laufenden Betrieb habe ich erweitert: mit Warnungen bei Abweichungen von üblichen Messwerten, Traceroute-Diagnose, einem Verlauf von Verbindungsänderungen und API-Tokens mit gezielten Berechtigungen.',
   },
   provenance: {
     en: 'This remains a fork of gnmyt/MySpeed. The provider, target, design and operational additions described here are my extensions to that project.',
