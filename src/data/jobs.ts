@@ -36,8 +36,16 @@ export const JOBS: readonly Job[] = [
         de: 'Automatische Belegverarbeitung im ERP-System weiterentwickeln und warten.',
       },
       {
-        en: 'Investigate and fix bugs in existing workflows, with a strong focus on maintenance.',
-        de: 'Fehler in bestehenden Abläufen analysieren und beheben; ein wesentlicher Teil meiner Arbeit ist die Wartung.',
+        en: 'Investigate and fix bugs, and maintain existing applications.',
+        de: 'Fehler analysieren und beheben sowie bestehende Anwendungen pflegen.',
+      },
+      {
+        en: 'Build new applications and features for accounts receivable and payable.',
+        de: 'Neue Anwendungen und Funktionen für die Debitoren- und Kreditorenbuchhaltung entwickeln.',
+      },
+      {
+        en: 'Work with other teams to integrate our features into their applications and bring features from other products into ours.',
+        de: 'Mit anderen Teams zusammenarbeiten, um eigene Funktionen in deren Anwendungen einzubinden und Funktionen anderer Produkte in unsere Anwendungen zu integrieren.',
       },
     ],
     tech: ['Java', 'Vaadin'],
@@ -56,6 +64,10 @@ export const JOBS: readonly Job[] = [
     },
     tech: ['Java', 'Angular', 'JavaScript'],
     highlights: [
+      {
+        en: 'Built a new Angular frontend to manage the VPN certificates used for communication between trains and RDS.',
+        de: 'Ein neues Angular-Frontend zur Verwaltung der VPN-Zertifikate entwickelt, die für die Kommunikation zwischen den Zügen und RDS benötigt werden.',
+      },
       {
         en: 'Worked across feature development, bug fixes and ongoing system maintenance.',
         de: 'Neue Funktionen umgesetzt, Fehler behoben und das bestehende System gewartet.',
