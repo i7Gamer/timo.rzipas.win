@@ -74,7 +74,7 @@ export const PROJECTS: readonly Project[] = [
     },
     description: {
       en: 'My extended MySpeed fork adds iperf3, multi-target testing, a redesigned interface, new color themes and broader language support.',
-      de: 'Mein erweiterter MySpeed-Fork bietet iperf3, Tests gegen mehrere Ziele, eine neu gestaltete Oberfläche, neue Farbschemata und zusätzliche Sprachen.',
+      de: 'Mein erweiterter MySpeed-Fork bietet iperf3, Geschwindigkeitstests zu mehreren Testzielen, eine neu gestaltete Oberfläche, neue Farbschemata und zusätzliche Sprachen.',
     },
     tech: ['JavaScript', 'React', 'Bun', 'SQLite'],
     story: MYSPEED_STORY,
@@ -97,7 +97,16 @@ export const PROJECTS: readonly Project[] = [
       de: 'Der praktische Teil meiner Bachelorarbeit: ein JavaScript-Frontend, das mit einem Java-REST-Service spricht.',
     },
     tech: ['Java', 'JavaScript', 'REST'],
-    repo: 'https://github.com/i7Gamer/BachelorThesisWEB',
+    sources: [
+      {
+        href: 'https://github.com/i7Gamer/BachelorThesisWEB',
+        label: { en: 'Web frontend', de: 'Web-Frontend' },
+      },
+      {
+        href: 'https://github.com/i7Gamer/BachelorThesisREST',
+        label: { en: 'REST backend', de: 'REST-Backend' },
+      },
+    ],
     status: 'archived',
     featured: false,
     order: 5,

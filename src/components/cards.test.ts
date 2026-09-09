@@ -2,6 +2,7 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, expect, it } from 'vitest';
 
 import type { Service } from '../data/services';
+import { PROJECTS } from '../data/projects';
 import type { Project } from '../lib/projects';
 import ProjectCard from './ProjectCard.astro';
 import ServiceCard from './ServiceCard.astro';
@@ -27,6 +28,28 @@ const service: Service = {
 };
 
 describe('ProjectCard', () => {
+  it.each(['en', 'de'] as const)(
+    'links both bachelor thesis repositories in %s',
+    async (locale) => {
+      const container = await AstroContainer.create();
+      const thesis = PROJECTS.find(
+        (entry) => entry.slug === 'bachelor-thesis',
+      )!;
+      const html = await container.renderToString(ProjectCard, {
+        props: { project: thesis, locale },
+      });
+      expect(html).toContain(
+        'href="https://github.com/i7Gamer/BachelorThesisWEB"',
+      );
+      expect(html).toContain(
+        'href="https://github.com/i7Gamer/BachelorThesisREST"',
+      );
+      expect(html).toContain(locale === 'en' ? 'Web frontend' : 'Web-Frontend');
+      expect(html).toContain(locale === 'en' ? 'REST backend' : 'REST-Backend');
+      expect(html.match(/target="_blank"/g)).toHaveLength(2);
+      expect(html).not.toContain('↗');
+    },
+  );
   it('renders English content with links and tags', async () => {
     const container = await AstroContainer.create();
     const html = await container.renderToString(ProjectCard, {

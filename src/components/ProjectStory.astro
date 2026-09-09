@@ -8,6 +8,14 @@ interface Props {
   locale: Locale;
 }
 const { project, locale } = Astro.props;
+const sources =
+  project.sources?.map((source) => ({
+    href: source.href,
+    label: pick(locale, source.label),
+  })) ??
+  (project.repo
+    ? [{ href: project.repo, label: t(locale, 'project.source') }]
+    : []);
 const { story } = project;
 const sections = ['problem', 'contribution', 'decisions', 'outcome'] as const;
 const SCREENSHOT_WIDTHS = [480, 800, 1200];
@@ -118,21 +126,21 @@ const SCREENSHOT_WIDTHS = [480, 800, 1200];
     )
   }
   {
-    (project.repo || project.link) && (
+    (sources.length > 0 || project.link) && (
       <div
         data-project-external
         class="border-line mt-10 flex flex-wrap gap-4 border-t pt-6"
       >
-        {project.repo && (
+        {sources.map((source) => (
           <a
-            href={project.repo}
+            href={source.href}
             target="_blank"
             rel="noopener"
             class="btn-muted"
           >
-            {t(locale, 'project.source')}
+            {source.label}
           </a>
-        )}
+        ))}
         {project.link && (
           <a
             href={project.link}

@@ -25,6 +25,7 @@ export interface Project {
   description: Localized<string>;
   tech: string[];
   repo?: string;
+  sources?: Array<{ href: string; label: Localized<string> }>;
   link?: string;
   status: ProjectStatus;
   /** Set when the project is a fork I contribute to rather than my own. */

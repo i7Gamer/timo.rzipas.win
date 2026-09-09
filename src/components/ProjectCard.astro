@@ -10,6 +10,14 @@ interface Props {
 }
 
 const { project, locale } = Astro.props;
+const sources =
+  project.sources?.map((source) => ({
+    href: source.href,
+    label: pick(locale, source.label),
+  })) ??
+  (project.repo
+    ? [{ href: project.repo, label: t(locale, 'project.source') }]
+    : []);
 const Heading = Astro.props.headingLevel ?? 'h3';
 
 const BADGE_CLASS =
@@ -52,23 +60,23 @@ const statusKey = `project.status.${project.status}` as const;
     }
   </ul>
   {
-    (project.story || project.repo || project.link) && (
+    (project.story || sources.length > 0 || project.link) && (
       <div data-project-actions class="flex flex-wrap gap-4 pt-1">
         {project.story && (
           <a href={projectHref(project.slug)} class="link-accent text-xs">
             {t(locale, 'project.details')} →
           </a>
         )}
-        {project.repo && (
+        {sources.map((source) => (
           <a
-            href={project.repo}
+            href={source.href}
             target="_blank"
             rel="noopener"
             class="link-accent text-xs"
           >
-            {t(locale, 'project.source')}
+            {source.label}
           </a>
-        )}
+        ))}
         {project.link && (
           <a
             href={project.link}

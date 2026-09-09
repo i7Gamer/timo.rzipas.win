@@ -146,9 +146,9 @@ const de: Partial<Record<UIKey, string>> = {
   'nav.about': 'Über mich',
 
   'hero.greeting': 'Hi, ich bin Timo.',
-  'hero.tagline': 'Software Engineer im Beruf, Self-Hoster nach Feierabend.',
+  'hero.tagline': 'Software Engineer von Beruf, Self-Hoster nach Feierabend.',
   'hero.intro':
-    'Beruflich entwickle ich Business-Software in Java bei Abacus Research — privat betreibe ich ein kleines Rechenzentrum im Wohnzimmer. Diese Seite wird direkt daraus ausgeliefert.',
+    'Beruflich entwickle ich Business-Software in Java bei Abacus Research — privat betreibe ich ein kleines Rechenzentrum im Wohnzimmer. Auch diese Website läuft auf meinem Server zu Hause.',
   'hero.location': 'Bodenseeregion (AT/CH)',
   'hero.cta.projects': 'Projekte ansehen',
   'hero.cta.homelab': 'Homelab erkunden',
@@ -201,7 +201,7 @@ const de: Partial<Record<UIKey, string>> = {
     'Die Dienste werden alle paar Minuten direkt aus dem Homelab geprüft. Liegen keine aktuellen Messdaten vor, wird der Status als unbekannt angezeigt.',
   'homelab.why.title': 'Warum Self-Hosting?',
   'homelab.why.text':
-    'Dienste selbst zu betreiben heißt, den ganzen Stack zu verstehen — DNS, TLS, Reverse Proxies, Backups, Monitoring — und aus abstrakten Cloud-Konzepten wird Hardware, die man anfassen kann. Und meine Daten bleiben auf meinen eigenen Platten — dort kann ich sie messen, auswerten und visualisieren, sobald mich etwas neugierig macht.',
+    'Dienste selbst zu betreiben heißt, den ganzen Stack zu verstehen — DNS, TLS, Reverse Proxies, Backups, Monitoring — und aus abstrakten Cloud-Konzepten wird Hardware, die man anfassen kann. Meine Daten bleiben dabei auf meiner eigenen Hardware – und ich kann selbst entscheiden, wie ich sie nutze und auswerte.',
   'homelab.diagram.title': 'Wie eine Anfrage diese Seite erreicht',
   'diagram.visitor': 'Besucher',
   'diagram.cloudflare': 'Cloudflare · DNS + TLS',

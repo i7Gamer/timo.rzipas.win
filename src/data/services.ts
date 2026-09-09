@@ -30,7 +30,7 @@ export const SERVICES: readonly Service[] = [
     status: 'online',
   },
   {
-    name: 'Bulk storage',
+    name: 'Bulk Storage',
     category: { en: 'Data', de: 'Daten' },
     description: {
       en: `${STORAGE_TOTAL} of spinning disks for media, backups and experiments.`,

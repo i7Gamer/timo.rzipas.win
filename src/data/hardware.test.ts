@@ -91,7 +91,7 @@ describe('STORAGE_TOTAL', () => {
       expect(t(locale, 'notFound.message')).toContain(STORAGE_TOTAL);
     }
     const bulkStorage = SERVICES.find(
-      (service) => service.name === 'Bulk storage',
+      (service) => service.name === 'Bulk Storage',
     );
     for (const locale of LOCALES) {
       expect(bulkStorage?.description[locale]).toContain(STORAGE_TOTAL);
