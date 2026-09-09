@@ -45,7 +45,7 @@ const en = {
 
   'projects.title': 'Projects',
   'projects.intro':
-    'I like turning my own data into something I can actually look at: collect it myself, host it myself, then chart it until it answers the question I started with.',
+    'I build software for things I want to use myself: listening statistics, network monitoring and games with friends. Alongside those projects, you’ll find this website and earlier academic work.',
   'project.source': 'Source',
   'project.details': 'Project details',
   'project.back': 'All projects',
@@ -55,7 +55,6 @@ const en = {
   'project.story.outcome': 'The result',
   'project.upstream': 'Original project',
   'project.screenshots': 'A look inside',
-  'project.fullImage': 'Open full-size image',
   'project.visit': 'Visit',
   'project.status.active': 'active',
   'project.status.archived': 'archived',
@@ -170,7 +169,7 @@ const de: Partial<Record<UIKey, string>> = {
 
   'projects.title': 'Projekte',
   'projects.intro':
-    'Ich mache aus meinen eigenen Daten gerne etwas, das man sich ansehen kann: selbst erfassen, selbst hosten und so lange visualisieren, bis es die Frage beantwortet, mit der alles anfing.',
+    'Ich entwickle Software, die ich selbst nutzen möchte: für Hörstatistiken, Netzwerküberwachung und Spiele mit Freunden. Dazu kommen diese Website und frühere Abschlussarbeiten.',
   'project.source': 'Quellcode',
   'project.details': 'Mehr zum Projekt',
   'project.back': 'Alle Projekte',
@@ -180,7 +179,6 @@ const de: Partial<Record<UIKey, string>> = {
   'project.story.outcome': 'Das Ergebnis',
   'project.upstream': 'Ursprüngliches Projekt',
   'project.screenshots': 'Ein Blick in die Anwendung',
-  'project.fullImage': 'Bild in voller Größe öffnen',
   'project.visit': 'Ansehen',
   'project.status.active': 'aktiv',
   'project.status.archived': 'archiviert',
@@ -200,7 +198,7 @@ const de: Partial<Record<UIKey, string>> = {
   'homelab.hw.os': 'Betriebssystem',
   'homelab.services.title': 'Laufende Dienste',
   'homelab.services.note':
-    'Die Dienste werden alle paar Minuten direkt aus dem Homelab geprüft. Nicht überprüfbare Status werden als unbekannt angezeigt.',
+    'Die Dienste werden alle paar Minuten direkt aus dem Homelab geprüft. Liegen keine aktuellen Messdaten vor, wird der Status als unbekannt angezeigt.',
   'homelab.why.title': 'Warum Self-Hosting?',
   'homelab.why.text':
     'Dienste selbst zu betreiben heißt, den ganzen Stack zu verstehen — DNS, TLS, Reverse Proxies, Backups, Monitoring — und aus abstrakten Cloud-Konzepten wird Hardware, die man anfassen kann. Und meine Daten bleiben auf meinen eigenen Platten — dort kann ich sie messen, auswerten und visualisieren, sobald mich etwas neugierig macht.',
@@ -241,7 +239,7 @@ const de: Partial<Record<UIKey, string>> = {
   'a11y.mainNav': 'Hauptnavigation',
   'a11y.email': 'E-Mail',
 
-  'footer.selfHosted': 'Self-hosted auf eigener Hardware',
+  'footer.selfHosted': 'Selbst gehostet auf eigener Hardware',
   'footer.source': 'Quellcode',
   'footer.build': 'Build',
 

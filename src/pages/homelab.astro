@@ -40,11 +40,11 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
                 <TerminalWindow title={machine.terminalTitle}>
                   <TerminalLine cmd="fastfetch" />
                   {machine.specs.map((spec) => (
-                    <p class="flex flex-wrap gap-x-2">
-                      <span class="text-accent w-36 shrink-0">
+                    <p class="grid gap-x-2 sm:grid-cols-[9rem_minmax(0,1fr)]">
+                      <span class="text-accent">
                         {t(locale, spec.labelKey)}
                       </span>
-                      <span class="text-ink">
+                      <span class="text-ink min-w-0 break-words">
                         {spec.valueKey ? t(locale, spec.valueKey) : spec.value}
                       </span>
                     </p>

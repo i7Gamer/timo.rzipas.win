@@ -34,7 +34,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'Data', de: 'Daten' },
     description: {
       en: `${STORAGE_TOTAL} of spinning disks for media, backups and experiments.`,
-      de: `${STORAGE_TOTAL} an rotierenden Platten für Medien, Backups und Experimente.`,
+      de: `${STORAGE_TOTAL} Festplattenspeicher für Medien, Backups und Experimente.`,
     },
     status: 'online',
   },
@@ -52,7 +52,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'Monitoring', de: 'Monitoring' },
     description: {
       en: 'Around-the-clock internet speed history of my connection.',
-      de: 'Rund-um-die-Uhr-Verlauf der Internetgeschwindigkeit meiner Leitung.',
+      de: 'Regelmäßige Messungen zeigen, wie sich die Geschwindigkeit meiner Internetverbindung im Laufe der Zeit verändert.',
     },
     status: 'online',
   },
@@ -79,7 +79,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'AI', de: 'KI' },
     description: {
       en: 'Chat interface in front of the local models, reachable from every device.',
-      de: 'Chat-Oberfläche vor den lokalen Modellen, von jedem Gerät erreichbar.',
+      de: 'Chat-Oberfläche für die lokalen Sprachmodelle, von jedem Gerät erreichbar.',
     },
     status: 'online',
   },
@@ -88,7 +88,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'Media', de: 'Medien' },
     description: {
       en: 'Media server for the household — films, series and music off the bulk storage.',
-      de: 'Medienserver für den Haushalt — Filme, Serien und Musik von den großen Platten.',
+      de: 'Medienserver für den Haushalt — Filme, Serien und Musik vom eigenen Speicher.',
     },
     status: 'online',
   },
@@ -97,7 +97,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'Media', de: 'Medien' },
     description: {
       en: 'Request and discovery frontend for the media library — the successor to Overseerr.',
-      de: 'Wunsch- und Entdeckungs-Frontend für die Medienbibliothek — der Nachfolger von Overseerr.',
+      de: 'Filme und Serien entdecken und für die Medienbibliothek anfragen — der Nachfolger von Overseerr.',
     },
     status: 'online',
   },

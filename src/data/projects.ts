@@ -56,7 +56,7 @@ export const PROJECTS: readonly Project[] = [
     },
     description: {
       en: 'Static Astro build per language behind nginx content negotiation, shipped as a Docker image by GitHub Actions and self-hosted on the homelab.',
-      de: 'Statischer Astro-Build pro Sprache, ausgeliefert per Content-Negotiation in nginx — als Docker-Image aus GitHub Actions, self-hosted im Homelab.',
+      de: 'Für jede Sprache ein statischer Astro-Build; nginx liefert die passende Version aus. GitHub Actions erstellt das Docker-Image für den Betrieb im eigenen Homelab.',
     },
     tech: ['Astro', 'TypeScript', 'Docker', 'nginx'],
     repo: REPO_URL,
