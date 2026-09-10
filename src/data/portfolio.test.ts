@@ -1,13 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { LOCALES } from '../i18n';
-import { featuredProjects, projectHref, storyProjects } from '../lib/projects';
+import { LOCALES, pick, t } from '../i18n';
+import {
+  featuredProjects,
+  projectHref,
+  projectName,
+  storyProjects,
+} from '../lib/projects';
 import { JOBS } from './jobs';
 import { PROJECTS } from './projects';
 import { QUALIFICATIONS } from './qualifications';
 import { CV_DOWNLOADS } from './cv';
 import { SKILL_GROUPS } from './skills';
+import { SERVICES } from './services';
 
 describe('portfolio content contracts', () => {
   it('keeps the documented qualification award dates', () => {
@@ -119,6 +125,23 @@ describe('portfolio content contracts', () => {
       const bytes = readFileSync(resolve('public', paper.path.slice(1)));
       expect(bytes.subarray(0, '%PDF-'.length).toString()).toBe('%PDF-');
     }
+  });
+
+  it('provides natural German labels for localized names and project media', () => {
+    const bachelor = PROJECTS.find(
+      (project) => project.slug === 'bachelor-thesis',
+    )!;
+    expect(projectName(bachelor, 'de')).toBe('Bachelorarbeit');
+
+    const serviceLabels = Object.fromEntries(
+      SERVICES.map((service) => [
+        service.name,
+        service.displayName ? pick('de', service.displayName) : service.name,
+      ]),
+    );
+    expect(serviceLabels['Bulk Storage']).toBe('Datenspeicher');
+    expect(serviceLabels['Local LLM']).toBe('Lokales Sprachmodell');
+    expect(t('de', 'project.screenshots')).toBe('Einblicke ins Projekt');
   });
 
   it('distinguishes course completion and supports skill claims with real anchors', () => {

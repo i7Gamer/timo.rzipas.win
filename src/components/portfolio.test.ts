@@ -30,6 +30,23 @@ const project: Project = {
 };
 
 describe('portfolio components', () => {
+  it('uses a localized project display name in the German story', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ProjectStory, {
+      props: {
+        project: {
+          ...project,
+          name: 'Bachelor thesis',
+          displayName: { en: 'Bachelor thesis', de: 'Bachelorarbeit' },
+        },
+        locale: 'de',
+      },
+    });
+
+    expect(html).toContain('>Bachelorarbeit</h1>');
+    expect(html).not.toContain('>Bachelor thesis</h1>');
+  });
+
   it.each(LOCALES)(
     'renders readable, localized project screenshots in %s',
     async (locale) => {

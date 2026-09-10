@@ -43,7 +43,13 @@ describe('grouped homelab services', () => {
           [...section.querySelectorAll('h4')].map(
             (heading) => heading.textContent,
           ),
-        ).toEqual(members.map((service) => service.name));
+        ).toEqual(
+          members.map((service) =>
+            service.displayName
+              ? pick(locale, service.displayName)
+              : service.name,
+          ),
+        );
       }
       const statuses = Object.fromEntries(
         SERVICES.map((service) => [service.name, 'offline']),

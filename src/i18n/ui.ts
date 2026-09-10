@@ -165,7 +165,7 @@ const de: Partial<Record<UIKey, string>> = {
   'section.featured.all': 'Alle Projekte',
   'section.homelabTeaser.title': 'Das Homelab',
   'section.homelabTeaser.text': `Ein selbst gebauter Server mit ${STORAGE_TOTAL} Speicher, auf dem die Dienste laufen, die ich täglich nutze — inklusive dieser Website.`,
-  'section.homelabTeaser.cta': 'Zur Tour',
+  'section.homelabTeaser.cta': 'Homelab erkunden',
 
   'projects.title': 'Projekte',
   'projects.intro':
@@ -178,14 +178,14 @@ const de: Partial<Record<UIKey, string>> = {
   'project.story.decisions': 'Technische Entscheidungen',
   'project.story.outcome': 'Das Ergebnis',
   'project.upstream': 'Ursprüngliches Projekt',
-  'project.screenshots': 'Ein Blick in die Anwendung',
+  'project.screenshots': 'Einblicke ins Projekt',
   'project.visit': 'Ansehen',
   'project.status.active': 'aktiv',
   'project.status.archived': 'archiviert',
   'project.status.fork': 'Fork',
 
   'homelab.intro':
-    'Programmieren ist die halbe Geschichte. Die andere Hälfte ist die Infrastruktur, auf der alles läuft: ein selbst gebauter Server im Wohnzimmer statt einer fremden Cloud.',
+    'Zur Software gehört auch die Infrastruktur, auf der sie läuft: ein selbst gebauter Server im Wohnzimmer statt einer fremden Cloud.',
   'homelab.machine.server': 'Server',
   'homelab.machine.workstation': 'Workstation',
   'homelab.hw.ram': 'Arbeitsspeicher',

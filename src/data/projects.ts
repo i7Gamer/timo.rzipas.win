@@ -89,13 +89,14 @@ export const PROJECTS: readonly Project[] = [
   {
     slug: 'bachelor-thesis',
     name: 'Bachelor thesis',
+    displayName: { en: 'Bachelor thesis', de: 'Bachelorarbeit' },
     tagline: {
       en: 'Web app with a Java REST backend (FH Vorarlberg, 2018).',
       de: 'Web-App mit Java-REST-Backend (FH Vorarlberg, 2018).',
     },
     description: {
       en: 'A visual PDM editor backed by Java services for critical-path, PERT and Monte Carlo schedule analysis.',
-      de: 'Ein visueller PDM-Editor mit Java-Services für Terminanalysen mittels kritischem Pfad, PERT und Monte-Carlo-Simulation.',
+      de: 'Ein visueller PDM-Editor mit Java-Services zur Terminplanung mit der Methode des kritischen Pfads, PERT und Monte-Carlo-Simulation.',
     },
     tech: ['Java', 'Spring Boot', 'JavaScript', 'JointJS', 'REST'],
     story: BACHELOR_STORY,
@@ -126,7 +127,7 @@ export const PROJECTS: readonly Project[] = [
     },
     description: {
       en: 'A team diploma project in which I carried out most of the technical design and implementation, and wrote nearly all technical thesis sections.',
-      de: 'Eine gemeinsame Diplomarbeit, bei der ich den Großteil des technischen Entwurfs und der Umsetzung sowie nahezu alle technischen Kapitel übernommen habe.',
+      de: 'Eine Diplomarbeit im Team: Ich übernahm den Großteil des technischen Entwurfs und der Umsetzung und verfasste nahezu alle technischen Kapitel.',
     },
     tech: ['SharePoint 2013', 'JavaScript', 'jQuery', 'HTML & CSS'],
     sources: [

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { featuredProjects, sortProjects, type Project } from './projects';
+import {
+  featuredProjects,
+  projectName,
+  sortProjects,
+  type Project,
+} from './projects';
 
 function makeProject(overrides: Partial<Project>): Project {
   return {
@@ -55,5 +60,20 @@ describe('featuredProjects', () => {
 
   it('returns an empty list when nothing is featured', () => {
     expect(featuredProjects([makeProject({})])).toEqual([]);
+  });
+});
+
+describe('projectName', () => {
+  it('uses the localized display name when one is provided', () => {
+    const project = makeProject({
+      name: 'Bachelor thesis',
+      displayName: { en: 'Bachelor thesis', de: 'Bachelorarbeit' },
+    });
+
+    expect(projectName(project, 'de')).toBe('Bachelorarbeit');
+  });
+
+  it('falls back to the canonical project name', () => {
+    expect(projectName(makeProject({ name: 'Tutto' }), 'de')).toBe('Tutto');
   });
 });

@@ -9,7 +9,7 @@ import type { ProjectStoryContent } from '../lib/projects';
 export const SPOTIFY_STORY: ProjectStoryContent = {
   problem: {
     en: 'I wanted several people to keep their Spotify listening history on one self-hosted instance, with useful statistics and a way to recover plays missed while offline or during interruptions.',
-    de: 'Ich wollte, dass mehrere Nutzer ihren Spotify-Hörverlauf auf einer selbst gehosteten Instanz erfassen können – mit aussagekräftigen Statistiken und einer Möglichkeit, verpasste Wiedergaben nach Offline-Hören oder Ausfällen nachzutragen.',
+    de: 'Ich wollte, dass mehrere Nutzer ihren Spotify-Hörverlauf auf einer selbst gehosteten Instanz erfassen können – mit aussagekräftigen Statistiken und einer Möglichkeit, verpasste Wiedergaben beim Offline-Hören oder während Ausfällen nachzutragen.',
   },
   contribution: {
     en: 'I rewrote the application, database layer and interface using Python, Flask and SQLite. Each account has its own history, settings and listener. A shared music catalog avoids duplicating track and artist information. Users can choose to share statistics and compare their listening habits. Last.fm adds genre information and artist and album biographies.',
@@ -21,7 +21,7 @@ export const SPOTIFY_STORY: ProjectStoryContent = {
   },
   outcome: {
     en: 'The result supports multiple users, genre insights, annual summaries and comparisons on a compact self-hosted setup. With working Spotify API authorization, backfill can recover missed plays that Spotify still exposes in its recent history. It cannot reconstruct arbitrarily long outages. Last.fm enriches the catalog; listening recovery comes from Spotify.',
-    de: 'Entstanden ist eine selbst gehostete Anwendung für mehrere Nutzer mit Genre-Auswertungen, Jahresrückblicken und Vergleichen. Mit gültigem Spotify-API-Zugang können verpasste Wiedergaben nachgetragen werden, solange Spotify sie noch im jüngsten Hörverlauf bereitstellt. Beliebig lange Ausfälle lassen sich damit nicht rekonstruieren. Last.fm liefert die Zusatzinformationen; fehlende Wiedergaben kommen über Spotify.',
+    de: 'Entstanden ist eine selbst gehostete Anwendung für mehrere Nutzer mit Genre-Auswertungen, Jahresrückblicken und Vergleichen. Mit gültigem Spotify-API-Zugang können verpasste Wiedergaben nachgetragen werden, solange Spotify sie noch im jüngsten Hörverlauf bereitstellt. Der Hörverlauf lässt sich nach längeren Ausfällen also nicht beliebig weit zurück wiederherstellen. Last.fm liefert die Zusatzinformationen; fehlende Wiedergaben kommen über Spotify.',
   },
   provenance: {
     en: 'The project began as a fork of TzurSoffer/SpotifyStatsTracker. I subsequently rewrote the application code, database layer and interface.',
@@ -69,7 +69,7 @@ export const MYSPEED_STORY: ProjectStoryContent = {
   },
   outcome: {
     en: 'I resolved nearly all issues reported upstream and implemented nearly all requested features, alongside extensive translation fixes. The application now compares latency and throughput across targets and periods. The additions also cover daily operation: alerts for deviations from usual measurements, traceroute diagnostics, connection-change history and scoped API tokens.',
-    de: 'Ich habe nahezu alle im ursprünglichen Projekt gemeldeten Probleme behoben und fast alle dort gewünschten Funktionen umgesetzt. Dazu kommen umfangreiche Korrekturen an den Übersetzungen. Die Anwendung vergleicht Latenz und Datenrate über mehrere Ziele und Zeiträume hinweg. Auch den laufenden Betrieb habe ich erweitert: mit Warnungen bei Abweichungen von üblichen Messwerten, Traceroute-Diagnose, einem Verlauf von Verbindungsänderungen und API-Tokens mit gezielten Berechtigungen.',
+    de: 'Ich habe nahezu alle im ursprünglichen Projekt gemeldeten Probleme behoben und fast alle dort gewünschten Funktionen umgesetzt. Dazu kommen umfangreiche Korrekturen an den Übersetzungen. Die Anwendung vergleicht Latenz und Datenrate über mehrere Ziele und Zeiträume hinweg. Für den laufenden Betrieb gibt es weitere Funktionen: Warnungen bei Abweichungen von üblichen Messwerten, Traceroute-Diagnose, einen Verlauf von Verbindungsänderungen und API-Tokens mit gezielten Berechtigungen.',
   },
   provenance: {
     en: 'This remains a fork of gnmyt/MySpeed. The provider, target, design and operational additions described here are my extensions to that project.',
@@ -124,7 +124,7 @@ export const TUTTO_STORY: ProjectStoryContent = {
     steps: [
       { en: 'Draw a card', de: 'Karte ziehen' },
       { en: 'Roll', de: 'Würfeln' },
-      { en: 'Choose scoring dice', de: 'Wertende Würfel auswählen' },
+      { en: 'Choose scoring dice', de: 'Würfel auswählen, die Punkte bringen' },
       {
         en: 'Bank or continue, depending on the card and rules',
         de: 'Punkte sichern oder weiterspielen, je nach Karte und Regeln',
@@ -163,7 +163,7 @@ export const WEBSITE_STORY: ProjectStoryContent = {
       },
       {
         en: 'Cloudflare Tunnel connects to the homelab',
-        de: 'Cloudflare Tunnel verbindet zum Homelab',
+        de: 'Cloudflare Tunnel stellt die Verbindung zum Homelab her',
       },
       {
         en: 'nginx selects the language and serves static files',
@@ -176,7 +176,7 @@ export const WEBSITE_STORY: ProjectStoryContent = {
 export const BACHELOR_STORY: ProjectStoryContent = {
   problem: {
     en: 'Project schedules become difficult to reason about when activities depend on one another and their durations are uncertain. Existing tools I reviewed did not combine graphical PDM networks with CPM, PERT and Monte Carlo analysis in one free application.',
-    de: 'Projekttermine werden schwer planbar, wenn Aktivitäten voneinander abhängen und ihre Dauer unsicher ist. Die untersuchten Werkzeuge kombinierten grafische PDM-Netzwerke, CPM, PERT und Monte-Carlo-Simulation nicht in einer frei nutzbaren Anwendung.',
+    de: 'Projekttermine werden schwer planbar, wenn Aktivitäten voneinander abhängen und ihre Dauer unsicher ist. Die untersuchten Werkzeuge kombinierten grafische PDM-Netzpläne, CPM, PERT und Monte-Carlo-Simulation nicht in einer frei nutzbaren Anwendung.',
   },
   contribution: {
     en: 'I built the browser-based diagram editor and the Java REST service. Users can create and connect activities, enter minimum, expected and maximum durations, and request the different analyses directly from the diagram.',
@@ -184,11 +184,11 @@ export const BACHELOR_STORY: ProjectStoryContent = {
   },
   decisions: {
     en: 'JointJS provides editable custom diagram elements and serializes the network as JSON. A Spring Boot service exposes separate endpoints for the critical path, PERT and Monte Carlo simulation. The critical-path calculation traverses every path with depth-first search; the simulation repeatedly samples beta-distributed durations and reuses that calculation.',
-    de: 'JointJS stellt bearbeitbare, eigene Diagrammelemente bereit und serialisiert das Netzwerk als JSON. Ein Spring-Boot-Service bietet getrennte Endpunkte für kritischen Pfad, PERT und Monte-Carlo-Simulation. Die Berechnung des kritischen Pfads durchläuft alle Pfade per Tiefensuche; die Simulation zieht wiederholt beta-verteilte Dauern und verwendet diese Berechnung erneut.',
+    de: 'JointJS ermöglicht eigene, bearbeitbare Diagrammelemente und serialisiert den Netzplan als JSON. Ein Spring-Boot-Service bietet separate Endpunkte für die Berechnung des kritischen Pfads, PERT und die Monte-Carlo-Simulation. Die Berechnung des kritischen Pfads durchläuft alle Pfade per Tiefensuche; die Simulation erzeugt wiederholt zufällige Dauern aus einer Betaverteilung und berechnet damit jeweils den kritischen Pfad.',
   },
   outcome: {
     en: 'The finished application models PDM networks, validates invalid graphs such as cycles, highlights critical activities, and displays early and late start and finish times. It also calculates PERT durations and, through Monte Carlo simulation, duration variance and each activity’s probability of lying on the critical path.',
-    de: 'Die fertige Anwendung modelliert PDM-Netzwerke, erkennt ungültige Graphen wie Zyklen, hebt kritische Aktivitäten hervor und zeigt früheste sowie späteste Start- und Endzeitpunkte. Zusätzlich berechnet sie PERT-Dauern und über die Monte-Carlo-Simulation die Varianz sowie die Wahrscheinlichkeit, dass eine Aktivität auf dem kritischen Pfad liegt.',
+    de: 'Die fertige Anwendung modelliert PDM-Netzpläne, erkennt ungültige Graphen, etwa solche mit Zyklen, hebt kritische Aktivitäten hervor und zeigt früheste sowie späteste Start- und Endzeitpunkte. Zusätzlich berechnet sie PERT-Dauern und über die Monte-Carlo-Simulation die Varianz der Projektdauer sowie die Wahrscheinlichkeit, dass eine Aktivität auf dem kritischen Pfad liegt.',
   },
   images: [
     {
@@ -212,22 +212,22 @@ export const CARINI_STORY: ProjectStoryContent = {
   },
   contribution: {
     en: 'The diploma project was a team effort. My work concentrated on the technical solution: navigation and document views, implementation, technical design, documentation, and nearly all technical sections of the thesis.',
-    de: 'Die Diplomarbeit war eine Teamleistung. Mein Schwerpunkt lag auf der technischen Lösung: Navigation und Dokumentenansichten, Umsetzung, technischer Entwurf, Dokumentation sowie nahezu alle technischen Kapitel der Diplomarbeit.',
+    de: 'Die Diplomarbeit war eine Teamleistung. Mein Schwerpunkt lag auf dem technischen Entwurf und der Umsetzung, insbesondere auf Navigation und Dokumentenansichten. Außerdem übernahm ich die technische Dokumentation und verfasste nahezu alle technischen Kapitel der Diplomarbeit.',
   },
   decisions: {
     en: 'A three-level interface leads from a process map through sub-processes to a cross-library document view. Custom SharePoint Display Templates reproduce the familiar library view while filtering by process metadata and document type. JavaScript and jQuery add navigation, sorting, date-range search, contextual search help and document callouts.',
-    de: 'Eine dreistufige Oberfläche führt von der Prozesslandkarte über Unterprozesse zu einer bibliotheksübergreifenden Dokumentenansicht. Angepasste SharePoint Display Templates bilden die vertraute Bibliotheksansicht nach und filtern nach Prozess-Metadaten und Dokumenttyp. JavaScript und jQuery ergänzen Navigation, Sortierung, Datumsbereichssuche, kontextbezogene Suchhilfe und Dokument-Callouts.',
+    de: 'Eine dreistufige Oberfläche führt von der Prozesslandkarte über Unterprozesse zu einer bibliotheksübergreifenden Dokumentenansicht. Angepasste SharePoint-Anzeigevorlagen (Display Templates) bilden die vertraute Bibliotheksansicht nach und filtern nach Prozess-Metadaten und Dokumenttyp. JavaScript und jQuery ergänzen Navigation, Sortierung, die Suche nach Datumsbereichen, kontextbezogene Suchhilfe und Informationsfenster zu Dokumenten.',
   },
   outcome: {
     en: 'Carini put the system into production. The thesis records that every project goal was met, additional search-help and date features were delivered, and the project finished about six weeks early using 75% of the planned budget. The project ran from August 2014 to February 2015; my separate internship at Carini ran from July to September 2014.',
-    de: 'Carini nahm das System produktiv in Betrieb. Laut Diplomarbeit wurden alle Projektziele erreicht, zusätzliche Suchhilfe- und Datumsfunktionen umgesetzt und das Projekt rund sechs Wochen früher mit 75 Prozent des geplanten Budgets abgeschlossen. Das Projekt lief von August 2014 bis Februar 2015; mein separates Praktikum bei Carini dauerte von Juli bis September 2014.',
+    de: 'Carini nahm das System produktiv in Betrieb. Laut Diplomarbeit wurden alle Projektziele erreicht, zusätzliche Suchhilfe- und Datumsfunktionen umgesetzt und das Projekt rund sechs Wochen vor dem geplanten Termin mit 75 Prozent des vorgesehenen Budgets abgeschlossen. Das Projekt lief von August 2014 bis Februar 2015; mein separates Praktikum bei Carini dauerte von Juli bis September 2014.',
   },
   images: [
     {
       image: cariniProcessMap,
       alt: {
         en: 'SharePoint page showing a Carini business-process map.',
-        de: 'SharePoint-Seite mit einer Carini-Geschäftsprozesslandkarte.',
+        de: 'SharePoint-Seite mit der Geschäftsprozesslandkarte von Carini.',
       },
       caption: {
         en: 'The process map formed the first two navigation levels; selecting a sub-process opened its filtered document view.',

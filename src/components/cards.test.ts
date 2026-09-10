@@ -53,6 +53,9 @@ describe('ProjectCard', () => {
       expect(html).toContain(
         locale === 'en' ? 'Bachelor thesis · PDF' : 'Bachelorarbeit · PDF',
       );
+      expect(html).toContain(
+        locale === 'en' ? '>Bachelor thesis</' : '>Bachelorarbeit</',
+      );
       expect(html.match(/target="_blank"/g)).toHaveLength(3);
       expect(html).not.toContain('↗');
     },
@@ -222,5 +225,22 @@ describe('ServiceCard', () => {
     });
     expect(html).toContain('Deutscher Diensttext');
     expect(html).toContain('geplant');
+  });
+
+  it('localizes a service display name without changing its status identifier', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ServiceCard, {
+      props: {
+        service: {
+          ...service,
+          name: 'Bulk Storage',
+          displayName: { en: 'Bulk Storage', de: 'Datenspeicher' },
+        },
+        locale: 'de',
+      },
+    });
+
+    expect(html).toContain('data-service="Bulk Storage"');
+    expect(html).toContain('>Datenspeicher</');
   });
 });

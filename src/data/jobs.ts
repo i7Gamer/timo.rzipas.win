@@ -133,7 +133,7 @@ export const JOBS: readonly Job[] = [
     to: { year: 2014, month: 9 },
     summary: {
       en: 'Internship at Carini. A separate team diploma project on a SharePoint intranet for quality management ran from August 2014 to February 2015.',
-      de: 'Praktikum bei Carini. Eine separate gemeinsame Diplomarbeit zu einem SharePoint-Intranet für das Qualitätsmanagement lief von August 2014 bis Februar 2015.',
+      de: 'Praktikum bei Carini. Unabhängig davon arbeitete ich von August 2014 bis Februar 2015 im Team an einer Diplomarbeit über ein SharePoint-Intranet für das Qualitätsmanagement.',
     },
     tech: ['SharePoint'],
   },

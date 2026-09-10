@@ -3,7 +3,7 @@ import ProjectStory from '../../components/ProjectStory.astro';
 import { PROJECTS } from '../../data/projects';
 import { getLocale, pick } from '../../i18n';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { storyProjects } from '../../lib/projects';
+import { projectName, storyProjects } from '../../lib/projects';
 
 export function getStaticPaths() {
   return storyProjects(PROJECTS).map((project) => ({
@@ -16,7 +16,7 @@ const locale = getLocale();
 ---
 
 <BaseLayout
-  title={project.name}
+  title={projectName(project, locale)}
   description={pick(locale, project.description)}
 >
   <ProjectStory project={project} locale={locale} />

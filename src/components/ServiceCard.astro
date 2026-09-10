@@ -23,7 +23,9 @@ const statusKey = `status.${initialStatus}` as const;
 >
   <div class="flex items-center justify-between gap-2">
     <Heading class="text-ink font-mono text-sm font-semibold"
-      >{service.name}</Heading
+      >{
+        service.displayName ? pick(locale, service.displayName) : service.name
+      }</Heading
     >
     <span class="text-muted flex items-center gap-1.5 font-mono text-[11px]">
       <span

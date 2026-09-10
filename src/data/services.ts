@@ -28,6 +28,7 @@ export type ServiceGroup = (typeof SERVICE_GROUPS)[number]['id'];
 
 export interface Service {
   name: string;
+  displayName?: Localized<string>;
   group: ServiceGroup;
   category: Localized<string>;
   description: Localized<string>;
@@ -57,6 +58,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     name: 'Bulk Storage',
+    displayName: { en: 'Bulk Storage', de: 'Datenspeicher' },
     group: 'infrastructure',
     category: { en: 'Data', de: 'Daten' },
     description: {
@@ -97,6 +99,7 @@ export const SERVICES: readonly Service[] = [
   },
   {
     name: 'Local LLM',
+    displayName: { en: 'Local LLM', de: 'Lokales Sprachmodell' },
     group: 'ai',
     category: { en: 'AI', de: 'KI' },
     description: {
@@ -131,7 +134,7 @@ export const SERVICES: readonly Service[] = [
     category: { en: 'Media', de: 'Medien' },
     description: {
       en: 'Request and discovery frontend for the media library — the successor to Overseerr.',
-      de: 'Filme und Serien entdecken und für die Medienbibliothek anfragen — der Nachfolger von Overseerr.',
+      de: 'Filme und Serien entdecken und ihre Aufnahme in die Medienbibliothek anfragen — der Nachfolger von Overseerr.',
     },
     status: 'online',
   },

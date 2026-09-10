@@ -1,4 +1,4 @@
-import type { Locale, Localized } from '../i18n';
+import { pick, type Locale, type Localized } from '../i18n';
 import type { ImageMetadata } from 'astro';
 
 export interface ProjectStoryContent {
@@ -21,6 +21,7 @@ export type ProjectStatus = 'active' | 'archived';
 export interface Project {
   slug: string;
   name: string;
+  displayName?: Localized<string>;
   tagline: Localized<string>;
   description: Localized<string>;
   tech: string[];
@@ -33,6 +34,10 @@ export interface Project {
   featured: boolean;
   order: number;
   story?: ProjectStoryContent;
+}
+
+export function projectName(project: Project, locale: Locale): string {
+  return project.displayName ? pick(locale, project.displayName) : project.name;
 }
 
 export function projectHref(slug: string): string {
