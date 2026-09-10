@@ -2,6 +2,8 @@ import spotifyGenres from '../assets/projects/spotify-genres.png';
 import spotifyCompare from '../assets/projects/spotify-compare.png';
 import myspeedStatistics from '../assets/projects/myspeed-statistics.png';
 import myspeedComparison from '../assets/projects/myspeed-target-comparison.png';
+import bachelorMonteCarlo from '../assets/projects/bachelor-monte-carlo.png';
+import cariniProcessMap from '../assets/projects/carini-process-map.png';
 import type { ProjectStoryContent } from '../lib/projects';
 
 export const SPOTIFY_STORY: ProjectStoryContent = {
@@ -171,21 +173,66 @@ export const WEBSITE_STORY: ProjectStoryContent = {
   },
 };
 
-export const CARINI_STORY: ProjectStoryContent = {
+export const BACHELOR_STORY: ProjectStoryContent = {
   problem: {
-    en: 'Our team diploma project at Carini focused on making quality-management documents and process information easier for employees to find and use.',
-    de: 'Unsere gemeinsame Diplomarbeit bei Carini sollte Dokumente und Prozessinformationen aus dem Qualitätsmanagement für Mitarbeiter leichter auffindbar und nutzbar machen.',
+    en: 'Project schedules become difficult to reason about when activities depend on one another and their durations are uncertain. Existing tools I reviewed did not combine graphical PDM networks with CPM, PERT and Monte Carlo analysis in one free application.',
+    de: 'Projekttermine werden schwer planbar, wenn Aktivitäten voneinander abhängen und ihre Dauer unsicher ist. Die untersuchten Werkzeuge kombinierten grafische PDM-Netzwerke, CPM, PERT und Monte-Carlo-Simulation nicht in einer frei nutzbaren Anwendung.',
   },
   contribution: {
-    en: 'I carried out most of the technical work: technical design, implementation, and nearly all technical sections of the thesis. The diploma project was a team effort, with my contribution concentrated on the technical solution.',
-    de: 'Ich habe den Großteil der technischen Arbeit übernommen: den technischen Entwurf, die Umsetzung und nahezu alle technischen Kapitel der Diplomarbeit. Die Diplomarbeit war eine Teamleistung; mein Schwerpunkt lag auf der technischen Lösung.',
+    en: 'I built the browser-based diagram editor and the Java REST service. Users can create and connect activities, enter minimum, expected and maximum durations, and request the different analyses directly from the diagram.',
+    de: 'Ich entwickelte den browserbasierten Diagrammeditor und den Java-REST-Service. Nutzer können Aktivitäten anlegen und verbinden, minimale, erwartete und maximale Dauern erfassen und die verschiedenen Analysen direkt aus dem Diagramm starten.',
   },
   decisions: {
-    en: 'We organized the documents and process information in a SharePoint intranet, with a structure intended to help employees find the material relevant to their work. I documented the technical design and implementation as part of the thesis.',
-    de: 'Wir haben die Dokumente und Prozessinformationen in einem SharePoint-Intranet neu organisiert. Die Struktur sollte Mitarbeitern helfen, die für ihre Arbeit relevanten Unterlagen zu finden. Den technischen Entwurf und die Umsetzung habe ich in der Diplomarbeit dokumentiert.',
+    en: 'JointJS provides editable custom diagram elements and serializes the network as JSON. A Spring Boot service exposes separate endpoints for the critical path, PERT and Monte Carlo simulation. The critical-path calculation traverses every path with depth-first search; the simulation repeatedly samples beta-distributed durations and reuses that calculation.',
+    de: 'JointJS stellt bearbeitbare, eigene Diagrammelemente bereit und serialisiert das Netzwerk als JSON. Ein Spring-Boot-Service bietet getrennte Endpunkte für kritischen Pfad, PERT und Monte-Carlo-Simulation. Die Berechnung des kritischen Pfads durchläuft alle Pfade per Tiefensuche; die Simulation zieht wiederholt beta-verteilte Dauern und verwendet diese Berechnung erneut.',
   },
   outcome: {
-    en: 'The team delivered a SharePoint-based quality-management intranet and the accompanying diploma thesis. The project ran from August 2014 to February 2015; my separate internship at Carini ran from July to September 2014.',
-    de: 'Das Team erarbeitete ein SharePoint-Intranet für das Qualitätsmanagement und die zugehörige Diplomarbeit. Das Projekt lief von August 2014 bis Februar 2015; mein separates Praktikum bei Carini dauerte von Juli bis September 2014.',
+    en: 'The finished application models PDM networks, validates invalid graphs such as cycles, highlights critical activities, and displays early and late start and finish times. It also calculates PERT durations and, through Monte Carlo simulation, duration variance and each activity’s probability of lying on the critical path.',
+    de: 'Die fertige Anwendung modelliert PDM-Netzwerke, erkennt ungültige Graphen wie Zyklen, hebt kritische Aktivitäten hervor und zeigt früheste sowie späteste Start- und Endzeitpunkte. Zusätzlich berechnet sie PERT-Dauern und über die Monte-Carlo-Simulation die Varianz sowie die Wahrscheinlichkeit, dass eine Aktivität auf dem kritischen Pfad liegt.',
   },
+  images: [
+    {
+      image: bachelorMonteCarlo,
+      alt: {
+        en: 'Flowchart of the Monte Carlo simulation from the bachelor thesis.',
+        de: 'Flussdiagramm der Monte-Carlo-Simulation aus der Bachelorarbeit.',
+      },
+      caption: {
+        en: 'The original thesis flowchart: sample durations, calculate the critical path, then aggregate variance and probabilities.',
+        de: 'Das Flussdiagramm aus der Bachelorarbeit: Dauern simulieren, den kritischen Pfad berechnen und anschließend Varianz und Wahrscheinlichkeiten zusammenfassen.',
+      },
+    },
+  ],
+};
+
+export const CARINI_STORY: ProjectStoryContent = {
+  problem: {
+    en: 'Carini’s quality-management documents were distributed across many SharePoint libraries, some containing thousands of files. Employees often had to know the library structure or rely on full-text search to find material for a particular business process.',
+    de: 'Carinis Qualitätsmanagement-Dokumente waren auf viele SharePoint-Bibliotheken verteilt, von denen einige tausende Dateien enthielten. Mitarbeiter mussten die Bibliotheksstruktur kennen oder sich auf die Volltextsuche verlassen, um Unterlagen für einen bestimmten Geschäftsprozess zu finden.',
+  },
+  contribution: {
+    en: 'The diploma project was a team effort. My work concentrated on the technical solution: navigation and document views, implementation, technical design, documentation, and nearly all technical sections of the thesis.',
+    de: 'Die Diplomarbeit war eine Teamleistung. Mein Schwerpunkt lag auf der technischen Lösung: Navigation und Dokumentenansichten, Umsetzung, technischer Entwurf, Dokumentation sowie nahezu alle technischen Kapitel der Diplomarbeit.',
+  },
+  decisions: {
+    en: 'A three-level interface leads from a process map through sub-processes to a cross-library document view. Custom SharePoint Display Templates reproduce the familiar library view while filtering by process metadata and document type. JavaScript and jQuery add navigation, sorting, date-range search, contextual search help and document callouts.',
+    de: 'Eine dreistufige Oberfläche führt von der Prozesslandkarte über Unterprozesse zu einer bibliotheksübergreifenden Dokumentenansicht. Angepasste SharePoint Display Templates bilden die vertraute Bibliotheksansicht nach und filtern nach Prozess-Metadaten und Dokumenttyp. JavaScript und jQuery ergänzen Navigation, Sortierung, Datumsbereichssuche, kontextbezogene Suchhilfe und Dokument-Callouts.',
+  },
+  outcome: {
+    en: 'Carini put the system into production. The thesis records that every project goal was met, additional search-help and date features were delivered, and the project finished about six weeks early using 75% of the planned budget. The project ran from August 2014 to February 2015; my separate internship at Carini ran from July to September 2014.',
+    de: 'Carini nahm das System produktiv in Betrieb. Laut Diplomarbeit wurden alle Projektziele erreicht, zusätzliche Suchhilfe- und Datumsfunktionen umgesetzt und das Projekt rund sechs Wochen früher mit 75 Prozent des geplanten Budgets abgeschlossen. Das Projekt lief von August 2014 bis Februar 2015; mein separates Praktikum bei Carini dauerte von Juli bis September 2014.',
+  },
+  images: [
+    {
+      image: cariniProcessMap,
+      alt: {
+        en: 'SharePoint page showing a Carini business-process map.',
+        de: 'SharePoint-Seite mit einer Carini-Geschäftsprozesslandkarte.',
+      },
+      caption: {
+        en: 'The process map formed the first two navigation levels; selecting a sub-process opened its filtered document view.',
+        de: 'Die Prozesslandkarte bildete die ersten beiden Navigationsebenen; die Auswahl eines Unterprozesses öffnete die gefilterte Dokumentenansicht.',
+      },
+    },
+  ],
 };

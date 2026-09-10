@@ -19,7 +19,10 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
 ];
 ---
 
-<BaseLayout title={t(locale, 'homelab.title')}>
+<BaseLayout
+  title={t(locale, 'homelab.title')}
+  description={t(locale, 'homelab.intro')}
+>
   <section class="py-10">
     <header class="mb-10">
       <PathHeading path="homelab" />

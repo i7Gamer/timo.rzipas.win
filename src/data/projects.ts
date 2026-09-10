@@ -5,6 +5,7 @@ import {
   MYSPEED_STORY,
   TUTTO_STORY,
   WEBSITE_STORY,
+  BACHELOR_STORY,
   CARINI_STORY,
 } from './project-stories';
 
@@ -93,10 +94,11 @@ export const PROJECTS: readonly Project[] = [
       de: 'Web-App mit Java-REST-Backend (FH Vorarlberg, 2018).',
     },
     description: {
-      en: 'The practical part of my bachelor thesis: a JavaScript frontend talking to a Java REST service.',
-      de: 'Der praktische Teil meiner Bachelorarbeit: ein JavaScript-Frontend, das mit einem Java-REST-Service spricht.',
+      en: 'A visual PDM editor backed by Java services for critical-path, PERT and Monte Carlo schedule analysis.',
+      de: 'Ein visueller PDM-Editor mit Java-Services für Terminanalysen mittels kritischem Pfad, PERT und Monte-Carlo-Simulation.',
     },
-    tech: ['Java', 'JavaScript', 'REST'],
+    tech: ['Java', 'Spring Boot', 'JavaScript', 'JointJS', 'REST'],
+    story: BACHELOR_STORY,
     sources: [
       {
         href: 'https://github.com/i7Gamer/BachelorThesisWEB',
@@ -105,6 +107,10 @@ export const PROJECTS: readonly Project[] = [
       {
         href: 'https://github.com/i7Gamer/BachelorThesisREST',
         label: { en: 'REST backend', de: 'REST-Backend' },
+      },
+      {
+        href: '/downloads/timo-rzipa-bachelor-thesis.pdf',
+        label: { en: 'Bachelor thesis · PDF', de: 'Bachelorarbeit · PDF' },
       },
     ],
     status: 'archived',
@@ -122,7 +128,13 @@ export const PROJECTS: readonly Project[] = [
       en: 'A team diploma project in which I carried out most of the technical design and implementation, and wrote nearly all technical thesis sections.',
       de: 'Eine gemeinsame Diplomarbeit, bei der ich den Großteil des technischen Entwurfs und der Umsetzung sowie nahezu alle technischen Kapitel übernommen habe.',
     },
-    tech: ['SharePoint'],
+    tech: ['SharePoint 2013', 'JavaScript', 'jQuery', 'HTML & CSS'],
+    sources: [
+      {
+        href: '/downloads/carini-diploma-thesis.pdf',
+        label: { en: 'Diploma thesis · PDF', de: 'Diplomarbeit · PDF' },
+      },
+    ],
     status: 'archived',
     featured: false,
     order: 6,

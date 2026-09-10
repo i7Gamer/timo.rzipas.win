@@ -110,6 +110,22 @@ describe('vertical rhythm', () => {
   });
 });
 
+describe('page metadata', () => {
+  const DESCRIBED_PAGES = [
+    ['pages/about.astro', 'about.intro'],
+    ['pages/homelab.astro', 'homelab.intro'],
+    ['pages/projects.astro', 'projects.intro'],
+  ] as const;
+
+  it('gives each main interior page its own localized description', () => {
+    for (const [page, descriptionKey] of DESCRIBED_PAGES) {
+      expect(read(page), page).toContain(
+        `description={t(locale, '${descriptionKey}')}`,
+      );
+    }
+  });
+});
+
 describe('hero', () => {
   it('splits into equal columns so the terminal gets a full-width line', () => {
     expect(read('pages/index.astro')).toMatch(/\blg:grid-cols-2\b/);

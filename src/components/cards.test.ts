@@ -30,7 +30,7 @@ const service: Service = {
 
 describe('ProjectCard', () => {
   it.each(['en', 'de'] as const)(
-    'links both bachelor thesis repositories in %s',
+    'links the bachelor thesis and both repositories in %s',
     async (locale) => {
       const container = await AstroContainer.create();
       const thesis = PROJECTS.find(
@@ -45,9 +45,15 @@ describe('ProjectCard', () => {
       expect(html).toContain(
         'href="https://github.com/i7Gamer/BachelorThesisREST"',
       );
+      expect(html).toContain(
+        'href="/downloads/timo-rzipa-bachelor-thesis.pdf"',
+      );
       expect(html).toContain(locale === 'en' ? 'Web frontend' : 'Web-Frontend');
       expect(html).toContain(locale === 'en' ? 'REST backend' : 'REST-Backend');
-      expect(html.match(/target="_blank"/g)).toHaveLength(2);
+      expect(html).toContain(
+        locale === 'en' ? 'Bachelor thesis · PDF' : 'Bachelorarbeit · PDF',
+      );
+      expect(html.match(/target="_blank"/g)).toHaveLength(3);
       expect(html).not.toContain('↗');
     },
   );

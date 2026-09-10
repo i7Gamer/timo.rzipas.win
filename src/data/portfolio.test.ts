@@ -16,7 +16,7 @@ describe('portfolio content contracts', () => {
     );
     expect(QUALIFICATIONS.find((q) => q.id === 'pma')?.date).toBe('2014-06-04');
   });
-  it('has unique safe project slugs and complete stories for the five selected projects', () => {
+  it('has unique safe project slugs and complete stories for the selected projects', () => {
     expect(new Set(PROJECTS.map((p) => p.slug)).size).toBe(PROJECTS.length);
     expect(
       storyProjects(PROJECTS)
@@ -28,6 +28,7 @@ describe('portfolio content contracts', () => {
         'myspeed',
         'tutto',
         'this-website',
+        'bachelor-thesis',
         'carini-management-system',
       ].sort(),
     );
@@ -89,6 +90,33 @@ describe('portfolio content contracts', () => {
       const bytes = readFileSync(
         resolve('public', CV_DOWNLOADS[locale].slice(1)),
       );
+      expect(bytes.subarray(0, '%PDF-'.length).toString()).toBe('%PDF-');
+    }
+  });
+
+  it('publishes both academic papers with project-specific detail', () => {
+    const papers = [
+      {
+        slug: 'bachelor-thesis',
+        path: '/downloads/timo-rzipa-bachelor-thesis.pdf',
+        detail: 'Monte Carlo',
+      },
+      {
+        slug: 'carini-management-system',
+        path: '/downloads/carini-diploma-thesis.pdf',
+        detail: 'Display Templates',
+      },
+    ] as const;
+
+    for (const paper of papers) {
+      const project = PROJECTS.find((entry) => entry.slug === paper.slug)!;
+      expect(
+        project.sources?.some((source) => source.href === paper.path),
+      ).toBe(true);
+      expect(Object.values(project.story?.decisions ?? {}).join(' ')).toContain(
+        paper.detail,
+      );
+      const bytes = readFileSync(resolve('public', paper.path.slice(1)));
       expect(bytes.subarray(0, '%PDF-'.length).toString()).toBe('%PDF-');
     }
   });

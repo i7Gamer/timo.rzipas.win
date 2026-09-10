@@ -15,7 +15,10 @@ const locale = getLocale();
 const presentLabel = t(locale, 'about.present');
 ---
 
-<BaseLayout title={t(locale, 'about.title')}>
+<BaseLayout
+  title={t(locale, 'about.title')}
+  description={t(locale, 'about.intro')}
+>
   <section class="py-10">
     <header class="mb-10">
       <PathHeading path="about" />

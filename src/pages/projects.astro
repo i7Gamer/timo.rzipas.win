@@ -10,7 +10,10 @@ const locale = getLocale();
 const projects = sortProjects(PROJECTS);
 ---
 
-<BaseLayout title={t(locale, 'projects.title')}>
+<BaseLayout
+  title={t(locale, 'projects.title')}
+  description={t(locale, 'projects.intro')}
+>
   <section class="py-10">
     <header class="mb-10">
       <PathHeading path="projects" />
