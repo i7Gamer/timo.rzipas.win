@@ -106,7 +106,6 @@ const en = {
   'about.skills.title': 'Skills',
   'about.languages.title': 'Languages',
   'about.present': 'present',
-  'about.carini': 'My technical contribution to the Carini diploma project',
   'about.qualifications.title': 'Certificates & courses',
   'contact.title': 'Get in touch',
   'contact.intro':
@@ -224,7 +223,6 @@ const de: Partial<Record<UIKey, string>> = {
   'about.education.title': 'Ausbildung',
   'about.languages.title': 'Sprachen',
   'about.present': 'heute',
-  'about.carini': 'Mein technischer Beitrag zur Diplomarbeit bei Carini',
   'about.qualifications.title': 'Zertifikate & Kurse',
   'contact.title': 'Kontakt',
   'contact.intro':

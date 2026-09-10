@@ -191,6 +191,21 @@ describe('TimelineItem', () => {
     expect(html).toContain('ACME AG');
     expect(html).not.toContain('target="_blank"');
   });
+
+  it('renders an internal project detail link without opening a new tab', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(TimelineItem, {
+      props: {
+        ...props,
+        detailHref: '/projects/carini-management-system/',
+        detailLabel: 'View diploma project',
+      },
+    });
+
+    expect(html).toContain('href="/projects/carini-management-system/"');
+    expect(html).toContain('View diploma project');
+    expect(html).not.toContain('target="_blank"');
+  });
 });
 
 describe('ServiceCard', () => {

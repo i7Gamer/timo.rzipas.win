@@ -219,8 +219,8 @@ export const CARINI_STORY: ProjectStoryContent = {
     de: 'Eine dreistufige Oberfläche führt von der Prozesslandkarte über Unterprozesse zu einer bibliotheksübergreifenden Dokumentenansicht. Angepasste SharePoint-Anzeigevorlagen (Display Templates) bilden die vertraute Bibliotheksansicht nach und filtern nach Prozess-Metadaten und Dokumenttyp. JavaScript und jQuery ergänzen Navigation, Sortierung, die Suche nach Datumsbereichen, kontextbezogene Suchhilfe und Informationsfenster zu Dokumenten.',
   },
   outcome: {
-    en: 'Carini put the system into production. The thesis records that every project goal was met, additional search-help and date features were delivered, and the project finished about six weeks early using 75% of the planned budget. The project ran from August 2014 to February 2015; my separate internship at Carini ran from July to September 2014.',
-    de: 'Carini nahm das System produktiv in Betrieb. Laut Diplomarbeit wurden alle Projektziele erreicht, zusätzliche Suchhilfe- und Datumsfunktionen umgesetzt und das Projekt rund sechs Wochen vor dem geplanten Termin mit 75 Prozent des vorgesehenen Budgets abgeschlossen. Das Projekt lief von August 2014 bis Februar 2015; mein separates Praktikum bei Carini dauerte von Juli bis September 2014.',
+    en: 'Carini put the system into production. The thesis records that every project goal was met, additional search-help and date features were delivered, and the project finished about six weeks early using 75% of the planned budget. The diploma project ran from July 2014 to February 2015 and included the internship at Carini from July to September.',
+    de: 'Carini nahm das System produktiv in Betrieb. Laut Diplomarbeit wurden alle Projektziele erreicht, zusätzliche Suchhilfe- und Datumsfunktionen umgesetzt und das Projekt rund sechs Wochen vor dem geplanten Termin mit 75 Prozent des vorgesehenen Budgets abgeschlossen. Die Diplomarbeit einschließlich des Praktikums bei Carini lief von Juli 2014 bis Februar 2015.',
   },
   images: [
     {

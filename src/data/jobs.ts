@@ -12,6 +12,10 @@ export interface Job {
   from: YearMonth;
   to?: YearMonth;
   summary: Localized<string>;
+  project?: {
+    href: string;
+    label: Localized<string>;
+  };
   tech: string[];
 }
 
@@ -132,8 +136,15 @@ export const JOBS: readonly Job[] = [
     from: { year: 2014, month: 7 },
     to: { year: 2014, month: 9 },
     summary: {
-      en: 'Internship at Carini. A separate team diploma project on a SharePoint intranet for quality management ran from August 2014 to February 2015.',
-      de: 'Praktikum bei Carini. Unabhängig davon arbeitete ich von August 2014 bis Februar 2015 im Team an einer Diplomarbeit über ein SharePoint-Intranet für das Qualitätsmanagement.',
+      en: 'The internship was part of our team diploma project, in which we developed a SharePoint intranet for quality management. The practical placement ran from July to September 2014; the diploma work continued until February 2015.',
+      de: 'Das Praktikum war Teil unserer Diplomarbeit im Team, in der wir ein SharePoint-Intranet für das Qualitätsmanagement entwickelten. Der praktische Einsatz dauerte von Juli bis September 2014; die Arbeit an der Diplomarbeit lief bis Februar 2015 weiter.',
+    },
+    project: {
+      href: '/projects/carini-management-system/',
+      label: {
+        en: 'View the Carini diploma project',
+        de: 'Diplomarbeit bei Carini ansehen',
+      },
     },
     tech: ['SharePoint'],
   },

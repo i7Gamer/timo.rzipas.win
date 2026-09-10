@@ -46,16 +46,15 @@ const presentLabel = t(locale, 'about.present');
                 orgUrl={job.url}
                 location={pick(locale, job.location)}
                 summary={pick(locale, job.summary)}
+                detailHref={job.project?.href}
+                detailLabel={
+                  job.project ? pick(locale, job.project.label) : undefined
+                }
                 tags={job.tech}
               />
             ))
           }
         </ol>
-        <a
-          href="/projects/carini-management-system/"
-          class="link-accent mt-5 inline-block text-sm"
-          >{t(locale, 'about.carini')} →</a
-        >
       </div>
 
       <div>

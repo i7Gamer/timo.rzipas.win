@@ -30,6 +30,18 @@ describe('JOBS', () => {
       expect(job.url, `${job.company} url`).toMatch(/^https:\/\//);
     }
   });
+
+  it('presents the Carini internship as part of the diploma project', () => {
+    const carini = JOBS.find((job) => job.id === 'carini')!;
+
+    expect(carini.summary.en).toContain('was part of');
+    expect(carini.summary.de).toContain('war Teil');
+    expect(carini.summary.en).not.toContain('separate');
+    expect(carini.summary.de).not.toContain('Unabhängig davon');
+    expect(carini.project?.href).toBe('/projects/carini-management-system/');
+    expect(carini.project?.label.en).toBeTruthy();
+    expect(carini.project?.label.de).toBeTruthy();
+  });
 });
 
 describe('EDUCATION', () => {

@@ -14,6 +14,7 @@ import { QUALIFICATIONS } from './qualifications';
 import { CV_DOWNLOADS } from './cv';
 import { SKILL_GROUPS } from './skills';
 import { SERVICES } from './services';
+import { CARINI_STORY } from './project-stories';
 
 describe('portfolio content contracts', () => {
   it('keeps the documented qualification award dates', () => {
@@ -125,6 +126,13 @@ describe('portfolio content contracts', () => {
       const bytes = readFileSync(resolve('public', paper.path.slice(1)));
       expect(bytes.subarray(0, '%PDF-'.length).toString()).toBe('%PDF-');
     }
+  });
+
+  it('describes the Carini internship as part of the diploma project', () => {
+    expect(CARINI_STORY.outcome.en).toContain('included the internship');
+    expect(CARINI_STORY.outcome.de).toContain('einschließlich des Praktikums');
+    expect(CARINI_STORY.outcome.en).not.toContain('separate internship');
+    expect(CARINI_STORY.outcome.de).not.toContain('separates Praktikum');
   });
 
   it('provides natural German labels for localized names and project media', () => {
