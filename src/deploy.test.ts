@@ -219,6 +219,12 @@ describe('CI', () => {
     expect(CI).toContain('bash deploy/smoke-test.sh');
   });
 
+  it('smoke-tests the same build-SHA variant that is published', () => {
+    const buildSha = 'PUBLIC_BUILD_SHA=${{ github.sha }}';
+    expect(jobBlock('smoke')).toContain(buildSha);
+    expect(jobBlock('docker')).toContain(buildSha);
+  });
+
   it('publishes the image only after test and smoke passed', () => {
     expect(jobBlock('docker')).toContain('needs: [test, smoke]');
   });

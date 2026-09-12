@@ -49,6 +49,8 @@ jobs:
           context: .
           load: true
           tags: timo.rzipas.win:smoke
+          build-args: |
+            PUBLIC_BUILD_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       # A short health interval so the healthy state arrives within seconds.

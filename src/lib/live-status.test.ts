@@ -138,6 +138,46 @@ describe('markStaleData', () => {
     expect(element.textContent).not.toContain('{time}');
   });
 
+  it.each([
+    ['en-GB', '24/08/2026', '23/08/2026', '24/08/2025'],
+    ['de-DE', '24.08.2026', '23.08.2026', '24.08.2025'],
+  ])(
+    'distinguishes old readings at the same clock time in %s',
+    (locale, ...dates) => {
+      const timestamps = [
+        '2026-08-24T15:00:00',
+        '2026-08-23T15:00:00',
+        '2025-08-24T15:00:00',
+      ];
+      for (const [index, timestamp] of timestamps.entries()) {
+        const element = asOf();
+        expect(
+          markStaleData(
+            element,
+            { generatedAt: new Date(timestamp).toISOString() },
+            new Date('2026-08-24T16:00:00'),
+            locale,
+          ),
+        ).toBe(true);
+        expect(element.textContent).toContain(dates[index]);
+        expect(element.textContent).toContain('15:00');
+      }
+    },
+  );
+
+  it('shows the date and time without a configured label', () => {
+    const element = asOf();
+    delete element.dataset.label;
+    markStaleData(
+      element,
+      { generatedAt: new Date('2026-08-24T15:00:00').toISOString() },
+      new Date('2026-08-25T16:00:00'),
+      'en-GB',
+    );
+    expect(element.textContent).toContain('24/08/2026');
+    expect(element.textContent).toContain('15:00');
+  });
+
   it('stays hidden when the payload has no usable timestamp', () => {
     const element = asOf();
     expect(markStaleData(element, {}, new Date(), 'en')).toBe(false);

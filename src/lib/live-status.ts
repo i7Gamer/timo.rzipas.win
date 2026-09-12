@@ -48,7 +48,10 @@ export function applyStatuses(
   return updated;
 }
 
-const TIME_FORMAT: Intl.DateTimeFormatOptions = {
+const DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
   hour: '2-digit',
   minute: '2-digit',
 };
@@ -73,7 +76,7 @@ export function markStaleData(
   ) {
     return false;
   }
-  const time = generatedAt.toLocaleTimeString(lang, TIME_FORMAT);
+  const time = generatedAt.toLocaleString(lang, DATE_TIME_FORMAT);
   asOf.textContent = (asOf.dataset.label ?? TIME_PLACEHOLDER).replace(
     TIME_PLACEHOLDER,
     time,
@@ -128,7 +131,7 @@ export async function loadLiveStatus(
     unknown: grid.dataset.labelUnknown,
   });
   if (asOf !== null) {
-    // An empty lang attribute would make toLocaleTimeString throw.
+    // An empty lang attribute would make toLocaleString throw.
     markStaleData(
       asOf,
       payload,
