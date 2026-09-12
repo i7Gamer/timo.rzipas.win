@@ -78,6 +78,26 @@ describe('shared idioms', () => {
 });
 
 describe('header', () => {
+  it('keeps the navigation on the same row as the logo and controls on mobile', () => {
+    const header = read('components/Header.astro');
+    const rowTag = /<div\b[^>]*>/.exec(header)?.[0];
+    const navTag = /<nav\b[^>]*>/.exec(header)?.[0];
+
+    // These three utilities previously forced a second row below sm,
+    // increasing the sticky header height even when the links fit.
+    expect(rowTag).not.toMatch(/\bflex-wrap\b/);
+    expect(navTag).not.toMatch(/\border-last\b/);
+    expect(navTag).not.toMatch(/\bw-full\b/);
+  });
+
+  it('keeps the beginning of overflowing navigation reachable', () => {
+    const navTag = /<nav\b[^>]*>/.exec(read('components/Header.astro'))?.[0];
+    // Centering an overflowing flex row puts its first links before the
+    // scroll origin, where swiping cannot reveal them.
+    expect(navTag).toMatch(/\bjustify-start\b/);
+    expect(navTag).not.toMatch(/\bjustify-center\b/);
+  });
+
   it('lets the nav shrink instead of pushing the page wider than the screen', () => {
     const navTag = /<nav\b[^>]*>/.exec(read('components/Header.astro'))?.[0];
     expect(navTag).toMatch(/\bmin-w-0\b/);
