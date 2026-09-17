@@ -29,52 +29,43 @@ const presentLabel = t(locale, 'about.present');
       <div>
         <SectionHeading>{t(locale, 'about.experience.title')}</SectionHeading>
         <ol class="mt-7">
-          {
-            JOBS.map((job) => (
-              <TimelineItem
-                id={job.id}
-                period={
-                  job.periodLabel
-                    ? pick(locale, job.periodLabel)
-                    : formatPeriod(locale, job.from, job.to, presentLabel)
-                }
-                highlights={job.highlights?.map((highlight) =>
-                  pick(locale, highlight),
-                )}
-                title={pick(locale, job.role)}
-                org={job.company}
-                orgUrl={job.url}
-                location={pick(locale, job.location)}
-                summary={pick(locale, job.summary)}
-                detailHref={job.project?.href}
-                detailLabel={
-                  job.project ? pick(locale, job.project.label) : undefined
-                }
-                tags={job.tech}
-              />
-            ))
-          }
+          {JOBS.map((job) => (
+            <TimelineItem
+              id={job.id}
+              period={
+                job.periodLabel
+                  ? pick(locale, job.periodLabel)
+                  : formatPeriod(locale, job.from, job.to, presentLabel)
+              }
+              highlights={job.highlights?.map((highlight) =>
+                pick(locale, highlight),
+              )}
+              title={pick(locale, job.role)}
+              org={job.company}
+              orgUrl={job.url}
+              location={pick(locale, job.location)}
+              summary={pick(locale, job.summary)}
+              detailHref={job.project?.href}
+              detailLabel={
+                job.project ? pick(locale, job.project.label) : undefined
+              }
+              tags={job.tech}
+            />
+          ))}
         </ol>
       </div>
 
       <div>
         <SectionHeading>{t(locale, 'about.education.title')}</SectionHeading>
         <ol class="mt-7">
-          {
-            EDUCATION.map((entry) => (
-              <TimelineItem
-                period={formatPeriod(
-                  locale,
-                  entry.from,
-                  entry.to,
-                  presentLabel,
-                )}
-                title={pick(locale, entry.degree)}
-                org={entry.school}
-                orgUrl={entry.url}
-              />
-            ))
-          }
+          {EDUCATION.map((entry) => (
+            <TimelineItem
+              period={formatPeriod(locale, entry.from, entry.to, presentLabel)}
+              title={pick(locale, entry.degree)}
+              org={entry.school}
+              orgUrl={entry.url}
+            />
+          ))}
         </ol>
       </div>
 
@@ -82,78 +73,72 @@ const presentLabel = t(locale, 'about.present');
         <div>
           <SectionHeading>{t(locale, 'about.skills.title')}</SectionHeading>
           <div class="mt-6 space-y-5">
-            {
-              SKILL_GROUPS.map((group) => (
-                <div>
-                  <h3 class="text-muted font-mono text-sm">
-                    {pick(locale, group.title)}
-                  </h3>
-                  <ul class="mt-2 flex flex-wrap gap-1.5">
-                    {group.items.map((item) => (
-                      <li class="chip bg-panel text-ink">{item}</li>
+            {SKILL_GROUPS.map((group) => (
+              <div>
+                <h3 class="text-muted font-mono text-sm">
+                  {pick(locale, group.title)}
+                </h3>
+                <ul class="mt-2 flex flex-wrap gap-1.5">
+                  {group.items.map((item) => (
+                    <li class="chip bg-panel text-ink">{item}</li>
+                  ))}
+                </ul>
+                {group.evidence && (
+                  <ul class="mt-3 space-y-2 text-sm">
+                    {group.evidence.map((evidence) => (
+                      <li>
+                        <a href={evidence.href} class="link-accent">
+                          {pick(locale, evidence.text)} →
+                        </a>
+                      </li>
                     ))}
                   </ul>
-                  {group.evidence && (
-                    <ul class="mt-3 space-y-2 text-sm">
-                      {group.evidence.map((evidence) => (
-                        <li>
-                          <a href={evidence.href} class="link-accent">
-                            {pick(locale, evidence.text)} →
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))
-            }
+                )}
+              </div>
+            ))}
           </div>
         </div>
         <div>
           <SectionHeading>{t(locale, 'about.languages.title')}</SectionHeading>
           <ul class="mt-6 max-w-xs space-y-3">
-            {
-              SPOKEN_LANGUAGES.map((language) => (
-                <li class="border-line flex justify-between gap-4 border-b pb-2 text-sm">
-                  <span class="text-ink">{pick(locale, language.name)}</span>
-                  <span class="text-muted font-mono">
-                    {pick(locale, language.level)}
-                  </span>
-                </li>
-              ))
-            }
+            {SPOKEN_LANGUAGES.map((language) => (
+              <li class="border-line flex justify-between gap-4 border-b pb-2 text-sm">
+                <span class="text-ink">{pick(locale, language.name)}</span>
+                <span class="text-muted font-mono">
+                  {pick(locale, language.level)}
+                </span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
       <section>
-        <SectionHeading
-          >{t(locale, 'about.qualifications.title')}</SectionHeading
-        >
+        <SectionHeading>
+          {t(locale, 'about.qualifications.title')}
+        </SectionHeading>
         <ul class="mt-6 space-y-4">
-          {
-            QUALIFICATIONS.map((qualification) => (
-              <li>
-                <>
-                  <h3 class="text-ink font-medium">
-                    {pick(locale, qualification.title)}
-                  </h3>
-                  <p class="text-muted mt-1 text-sm">
-                    {qualification.issuer} ·{' '}
-                    <time datetime={qualification.date}>
-                      {new Date(
-                        `${qualification.date}T00:00:00Z`,
-                      ).toLocaleDateString(locale, {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        timeZone: 'UTC',
-                      })}
-                    </time>
-                  </p>
-                </>
-              </li>
-            ))
-          }
+          {QUALIFICATIONS.map((qualification) => (
+            <li>
+              <>
+                <h3 class="text-ink font-medium">
+                  {pick(locale, qualification.title)}
+                </h3>
+                <p class="text-muted mt-1 text-sm">
+                  {qualification.issuer} ·{' '}
+                  <time datetime={qualification.date}>
+                    {new Date(
+                      `${qualification.date}T00:00:00Z`,
+                    ).toLocaleDateString(locale, {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                      timeZone: 'UTC',
+                    })}
+                  </time>
+                </p>
+              </>
+            </li>
+          ))}
         </ul>
       </section>
       <ContactSection locale={locale} />

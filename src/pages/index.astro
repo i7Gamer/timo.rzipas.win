@@ -53,8 +53,9 @@ const TERMINAL_STRINGS = {
           <a
             href="/about/#contact"
             class="link-accent inline-flex items-center px-2 text-sm"
-            >{t(locale, 'hero.cta.contact')} →</a
           >
+            {t(locale, 'hero.cta.contact')} →
+          </a>
         </div>
       </div>
       <div
@@ -93,35 +94,29 @@ const TERMINAL_STRINGS = {
         </a>
       </div>
       <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {
-          featured.map((project) => (
-            <ProjectCard project={project} locale={locale} />
-          ))
-        }
+        {featured.map((project) => (
+          <ProjectCard project={project} locale={locale} />
+        ))}
       </div>
     </section>
 
     <section>
       <div class="panel-lg">
-        <SectionHeading
-          >{t(locale, 'section.homelabTeaser.title')}</SectionHeading
-        >
-        <p class="text-muted mt-4">
-          {t(locale, 'section.homelabTeaser.text')}
-        </p>
+        <SectionHeading>
+          {t(locale, 'section.homelabTeaser.title')}
+        </SectionHeading>
+        <p class="text-muted mt-4">{t(locale, 'section.homelabTeaser.text')}</p>
         <dl class="mt-6 grid max-w-xl grid-cols-2 gap-4 sm:grid-cols-4">
-          {
-            STATS.map((stat) => (
-              <div class="flex flex-col-reverse">
-                <dt class="text-muted font-mono text-xs">
-                  {t(locale, stat.labelKey)}
-                </dt>
-                <dd class="text-accent font-mono text-xl font-semibold">
-                  {stat.value}
-                </dd>
-              </div>
-            ))
-          }
+          {STATS.map((stat) => (
+            <div class="flex flex-col-reverse">
+              <dt class="text-muted font-mono text-xs">
+                {t(locale, stat.labelKey)}
+              </dt>
+              <dd class="text-accent font-mono text-xl font-semibold">
+                {stat.value}
+              </dd>
+            </div>
+          ))}
         </dl>
         <a href={pageHref('homelab')} class="btn-accent mt-6 inline-block">
           {t(locale, 'section.homelabTeaser.cta')} →
