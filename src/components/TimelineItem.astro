@@ -37,54 +37,47 @@ const {
     class="border-surface bg-accent absolute top-1 -left-[5.5px] size-2.5 rounded-full border-2"
   ></span>
   <p class="text-accent font-mono text-xs">
-    {period}{location && <span class="text-muted"> · {location}</span>}
+    {period}
+    {location && <span class="text-muted"> · {location}</span>}
   </p>
   <h3 class="text-ink mt-1 font-semibold">
     {title}
-    {
-      org && (
-        <span class="text-muted font-normal">
-          {' · '}
-          {orgUrl ? (
-            <a
-              href={orgUrl}
-              target="_blank"
-              rel="noopener"
-              class="link-underline"
-            >
-              {org}
-            </a>
-          ) : (
-            org
-          )}
-        </span>
-      )
-    }
+    {org && (
+      <span class="text-muted font-normal">
+        {' · '}
+        {orgUrl ? (
+          <a
+            href={orgUrl}
+            target="_blank"
+            rel="noopener"
+            class="link-underline"
+          >
+            {org}
+          </a>
+        ) : (
+          org
+        )}
+      </span>
+    )}
   </h3>
   {summary && <p class="text-muted mt-1 text-sm">{summary}</p>}
-  {
-    detailHref && detailLabel && (
-      <a href={detailHref} class="link-accent mt-2 inline-block text-sm">
-        {detailLabel} →
-      </a>
-    )
-  }
-  {
-    highlights.length > 0 && (
-      <ul class="text-muted mt-3 list-disc space-y-1 pl-4 text-sm">
-        {highlights.map((highlight) => (
-          <li>{highlight}</li>
-        ))}
-      </ul>
-    )
-  }
-  {
-    tags.length > 0 && (
-      <ul class="mt-2 flex flex-wrap gap-1.5">
-        {tags.map((tag) => (
-          <li class="chip bg-panel text-muted">{tag}</li>
-        ))}
-      </ul>
-    )
-  }
+  {detailHref && detailLabel && (
+    <a href={detailHref} class="link-accent mt-2 inline-block text-sm">
+      {detailLabel} →
+    </a>
+  )}
+  {highlights.length > 0 && (
+    <ul class="text-muted mt-3 list-disc space-y-1 pl-4 text-sm">
+      {highlights.map((highlight) => (
+        <li>{highlight}</li>
+      ))}
+    </ul>
+  )}
+  {tags.length > 0 && (
+    <ul class="mt-2 flex flex-wrap gap-1.5">
+      {tags.map((tag) => (
+        <li class="chip bg-panel text-muted">{tag}</li>
+      ))}
+    </ul>
+  )}
 </li>

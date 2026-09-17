@@ -103,25 +103,21 @@ Astro.csp?.insertScriptHash(cspHash(themeBootstrap));
     <meta property="og:image:height" content={String(OG_IMAGE.height)} />
     <meta property="og:image:alt" content={t(locale, 'og.imageAlt')} />
     <meta property="og:locale" content={OG_LOCALE[locale]} />
-    {
-      alternateLocales.map((other) => (
-        <meta property="og:locale:alternate" content={OG_LOCALE[other]} />
-      ))
-    }
+    {alternateLocales.map((other) => (
+      <meta property="og:locale:alternate" content={OG_LOCALE[other]} />
+    ))}
     <meta name="twitter:card" content="summary_large_image" />
     <script
       is:inline
       type="application/ld+json"
       set:html={JSON.stringify(personSchema)}
-    />
+    ></script>
   </head>
-  <body
-    class="bg-surface text-ink flex min-h-dvh flex-col font-sans antialiased"
-  >
+  <body class="bg-surface text-ink flex min-h-dvh flex-col font-sans antialiased">
     <!-- Astro appends the CSP <meta> to the end of <head>, so the one inline
          script of our own sits here, right after it: still before any content
          is parsed, but inside the policy that lists its hash. -->
-    <script is:inline set:html={themeBootstrap} />
+    <script is:inline set:html={themeBootstrap}></script>
     <a
       href="#content"
       class="focus:bg-accent focus:text-surface sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-20 focus:rounded-md focus:px-3 focus:py-2"
