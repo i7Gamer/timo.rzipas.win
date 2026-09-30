@@ -239,7 +239,7 @@ export const SERVICES: readonly Service[] = [
     status: 'online',
   },
   {
-    name: 'SpotifyStatsTracker',
+    name: 'SpotifyTracker',
     group: 'everyday',
     category: { en: 'Analytics', de: 'Statistik' },
     description: {

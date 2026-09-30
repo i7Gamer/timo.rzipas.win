@@ -1,0 +1,37 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+
+interface Props {
+  logo: ImageMetadata;
+  size: 'card' | 'story';
+}
+
+// Rendered at twice the displayed size (44px card, 84px story) for sharp
+// icons on high-density screens.
+const PIXEL_DENSITY = 2;
+const DISPLAY_PX = { card: 44, story: 84 } as const;
+const TILE_CLASS = {
+  card: 'size-11 rounded-lg p-1',
+  story: 'size-21 rounded-2xl p-2',
+} as const;
+
+const { logo, size } = Astro.props;
+---
+
+<span
+  class:list={[
+    'border-line bg-surface grid shrink-0 place-items-center border',
+    TILE_CLASS[size],
+  ]}
+>
+  <Image
+    src={logo}
+    alt=""
+    width={DISPLAY_PX[size] * PIXEL_DENSITY}
+    height={DISPLAY_PX[size] * PIXEL_DENSITY}
+    loading={size === 'story' ? 'eager' : 'lazy'}
+    data-project-logo
+    class="size-full object-contain"
+  />
+</span>

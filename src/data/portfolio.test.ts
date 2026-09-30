@@ -62,6 +62,34 @@ describe('portfolio content contracts', () => {
     }
   });
 
+  it('uses the SpotifyTracker name and keeps the old name only for the upstream fork', () => {
+    const spotify = PROJECTS.find((p) => p.slug === 'spotify-stats-tracker')!;
+    expect(spotify.name).toBe('SpotifyTracker');
+    expect(spotify.repo).toBe('https://github.com/i7Gamer/SpotifyTracker');
+    expect(SERVICES.map((s) => s.name)).toContain('SpotifyTracker');
+    const { provenance, upstream, ...ownCopy } = spotify.story!;
+    expect(upstream).toBe('https://github.com/TzurSoffer/SpotifyStatsTracker');
+    expect(provenance?.en).toContain('TzurSoffer/SpotifyStatsTracker');
+    const text = JSON.stringify([
+      ownCopy,
+      spotify.tagline,
+      spotify.description,
+    ]);
+    expect(text).not.toMatch(/Spotify ?Stats ?Tracker/);
+  });
+
+  it('gives only my own featured apps a logo', () => {
+    expect(
+      PROJECTS.filter((p) => p.logo)
+        .map((p) => p.slug)
+        .sort(),
+    ).toEqual(['myspeed', 'spotify-stats-tracker', 'tutto']);
+    for (const project of PROJECTS.filter((p) => p.logo)) {
+      expect(project.logo!.width).toBeGreaterThan(0);
+      expect(project.logo!.width).toBe(project.logo!.height);
+    }
+  });
+
   it('retains the substantial MySpeed fork among featured work', () => {
     expect(featuredProjects(PROJECTS).map((p) => p.slug)).toEqual([
       'spotify-stats-tracker',

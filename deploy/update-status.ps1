@@ -39,7 +39,7 @@ $Checks = [ordered]@{
   'FlareSolverr'        = 'http://127.0.0.1:8191/'
   'qBittorrent'         = 'http://127.0.0.1:8080/'
   'Tutto'               = 'http://127.0.0.1:3001/'
-  'SpotifyStatsTracker' = 'http://127.0.0.1:5000/'
+  'SpotifyTracker'      = 'http://127.0.0.1:5000/'
 }
 
 

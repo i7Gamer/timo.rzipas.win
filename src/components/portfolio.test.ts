@@ -86,6 +86,42 @@ describe('portfolio components', () => {
     },
   );
 
+  it.each(LOCALES)(
+    'shows a decorative logo on cards and story headers that have one in %s',
+    async (locale) => {
+      const container = await AstroContainer.create();
+      const withLogo = PROJECTS.find((p) => p.slug === 'tutto')!;
+      for (const [component, props] of [
+        [ProjectCard, { project: withLogo, locale }],
+        [ProjectStory, { project: withLogo, locale }],
+      ] as const) {
+        const document = new Window().document;
+        document.body.innerHTML = await container.renderToString(component, {
+          props,
+        });
+        const logos = document.querySelectorAll('img[data-project-logo]');
+        expect(logos).toHaveLength(1);
+        expect(logos[0].getAttribute('alt')).toBe('');
+        expect(Number(logos[0].getAttribute('width'))).toBeGreaterThan(0);
+      }
+      const story = new Window().document;
+      story.body.innerHTML = await container.renderToString(ProjectStory, {
+        props: { project: withLogo, locale },
+      });
+      expect(story.querySelector('header [data-project-logo]')).not.toBeNull();
+    },
+  );
+
+  it('renders no logo for projects without one', async () => {
+    const container = await AstroContainer.create();
+    for (const component of [ProjectCard, ProjectStory]) {
+      const html = await container.renderToString(component, {
+        props: { project, locale: 'en' },
+      });
+      expect(html).not.toContain('data-project-logo');
+    }
+  });
+
   it('renders a link-free project without an empty actions row', async () => {
     const container = await AstroContainer.create();
     const html = await container.renderToString(ProjectCard, {

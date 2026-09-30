@@ -6,6 +6,7 @@ import {
   type Project,
   type ProjectStoryContent,
 } from '../lib/projects';
+import ProjectLogo from './ProjectLogo.astro';
 
 interface Props {
   project: Project & { story: ProjectStoryContent };
@@ -30,13 +31,18 @@ const SCREENSHOT_WIDTHS = [480, 800, 1200];
     ← {t(locale, 'project.back')}
   </a>
   <header class="mt-7 max-w-3xl">
-    <p class="text-accent font-mono text-xs">
-      {t(locale, `project.status.${project.status}`)}
-      {project.fork && ` · ${t(locale, 'project.status.fork')}`}
-    </p>
-    <h1 class="text-ink mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-      {projectName(project, locale)}
-    </h1>
+    <div class="flex items-center gap-5">
+      {project.logo && <ProjectLogo logo={project.logo} size="story" />}
+      <div class="min-w-0">
+        <p class="text-accent font-mono text-xs">
+          {t(locale, `project.status.${project.status}`)}
+          {project.fork && ` · ${t(locale, 'project.status.fork')}`}
+        </p>
+        <h1 class="text-ink mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+          {projectName(project, locale)}
+        </h1>
+      </div>
+    </div>
     <p class="text-muted mt-4 text-lg">{pick(locale, project.tagline)}</p>
     <ul class="mt-5 flex flex-wrap gap-2">
       {project.tech.map((tech) => (
