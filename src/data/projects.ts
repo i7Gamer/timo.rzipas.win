@@ -8,11 +8,14 @@ import {
   BACHELOR_STORY,
   CARINI_STORY,
 } from './project-stories';
+import myspeedLogo from '../assets/projects/logos/myspeed.png';
+import spotifyTrackerLogo from '../assets/projects/logos/spotifytracker.png';
+import tuttoLogo from '../assets/projects/logos/tutto.png';
 
 export const PROJECTS: readonly Project[] = [
   {
     slug: 'spotify-stats-tracker',
-    name: 'SpotifyStatsTracker',
+    name: 'SpotifyTracker',
     tagline: {
       en: 'Self-hosted Spotify history for multiple users.',
       de: 'Spotify-Hörstatistiken für mehrere Nutzer, selbst gehostet.',
@@ -23,7 +26,8 @@ export const PROJECTS: readonly Project[] = [
     },
     tech: ['Python', 'Flask', 'SQLite', 'JavaScript'],
     story: SPOTIFY_STORY,
-    repo: 'https://github.com/i7Gamer/SpotifyStatsTracker',
+    logo: spotifyTrackerLogo,
+    repo: 'https://github.com/i7Gamer/SpotifyTracker',
     link: 'https://music.rzipas.win/',
     status: 'active',
     featured: true,
@@ -42,6 +46,7 @@ export const PROJECTS: readonly Project[] = [
     },
     tech: ['TypeScript', 'React', 'Socket.IO', 'SQLite'],
     story: TUTTO_STORY,
+    logo: tuttoLogo,
     repo: 'https://github.com/i7Gamer/Tutto',
     link: 'https://tutto.rzipas.win/',
     status: 'active',
@@ -79,6 +84,7 @@ export const PROJECTS: readonly Project[] = [
     },
     tech: ['JavaScript', 'React', 'Bun', 'SQLite'],
     story: MYSPEED_STORY,
+    logo: myspeedLogo,
     repo: 'https://github.com/i7Gamer/MySpeed',
     link: 'https://myspeed.rzipas.win/',
     status: 'active',

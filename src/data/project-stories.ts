@@ -32,8 +32,8 @@ export const SPOTIFY_STORY: ProjectStoryContent = {
     {
       image: spotifyGenres,
       alt: {
-        en: 'Spotify Stats Tracker genre distribution and listening trends.',
-        de: 'Genre-Verteilung und Hörverlauf in Spotify Stats Tracker.',
+        en: 'SpotifyTracker genre distribution and listening trends.',
+        de: 'Genre-Verteilung und Hörverlauf in SpotifyTracker.',
       },
       caption: {
         en: 'Genre insights enriched with Last.fm data.',

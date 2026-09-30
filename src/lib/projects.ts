@@ -34,6 +34,8 @@ export interface Project {
   featured: boolean;
   order: number;
   story?: ProjectStoryContent;
+  /** Square app icon, shown on cards and the story header. */
+  logo?: ImageMetadata;
 }
 
 export function projectName(project: Project, locale: Locale): string {
