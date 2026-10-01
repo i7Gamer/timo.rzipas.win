@@ -1,4 +1,5 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
+import { Window } from 'happy-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { Service } from '../data/services';
@@ -219,7 +220,11 @@ describe('ServiceCard', () => {
       const html = await container.renderToString(ServiceCard, {
         props: { service: { ...service, status: 'online' }, locale },
       });
-      expect(html).toContain(`data-status-label>${label}</span>`);
+      const document = new Window().document;
+      document.body.innerHTML = html;
+      expect(document.querySelector('[data-status-label]')?.textContent).toBe(
+        label,
+      );
       expect(html).not.toContain('bg-emerald-400');
     },
   );
