@@ -15,9 +15,9 @@ const en = {
   'nav.about': 'About',
 
   'hero.greeting': "Hi, I'm Timo.",
-  'hero.tagline': 'Software engineer by day, self-hoster after hours.',
+  'hero.tagline': 'I develop business software with Java.',
   'hero.intro':
-    'I build business software in Java at Abacus Research — and run a small data center in my living room. This site is served straight from it.',
+    'At Abacus Research I work on automated document processing in the ERP system. After hours I build personal projects and run my homelab — a small data center in my living room that serves this very site.',
   'hero.role': 'Software Engineer',
   'hero.location': 'Lake Constance region (AT/CH)',
   'hero.cta.projects': 'View projects',
@@ -145,9 +145,9 @@ const de: Partial<Record<UIKey, string>> = {
   'nav.about': 'Über mich',
 
   'hero.greeting': 'Hi, ich bin Timo.',
-  'hero.tagline': 'Software Engineer von Beruf, Self-Hoster nach Feierabend.',
+  'hero.tagline': 'Ich entwickle Business-Software mit Java.',
   'hero.intro':
-    'Beruflich entwickle ich Business-Software in Java bei Abacus Research — privat betreibe ich ein kleines Rechenzentrum im Wohnzimmer. Auch diese Website läuft auf meinem Server zu Hause.',
+    'Bei Abacus Research arbeite ich an der automatisierten Belegverarbeitung im ERP-System. Nach Feierabend entwickle ich eigene Projekte und betreibe mein Homelab — ein kleines Rechenzentrum im Wohnzimmer, auf dem auch diese Website läuft.',
   'hero.location': 'Bodenseeregion (AT/CH)',
   'hero.cta.projects': 'Projekte ansehen',
   'hero.cta.homelab': 'Homelab erkunden',

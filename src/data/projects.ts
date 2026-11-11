@@ -28,7 +28,7 @@ export const PROJECTS: readonly Project[] = [
     story: SPOTIFY_STORY,
     logo: spotifyTrackerLogo,
     repo: 'https://github.com/i7Gamer/SpotifyTracker',
-    link: 'https://music.rzipas.win/',
+    link: 'https://music.rzipas.win/overview',
     status: 'active',
     featured: true,
     order: 1,

@@ -1,4 +1,5 @@
 ---
+import ContactSection from '../components/ContactSection.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TerminalLine from '../components/TerminalLine.astro';
@@ -51,7 +52,7 @@ const TERMINAL_STRINGS = {
             {t(locale, 'hero.cta.homelab')}
           </a>
           <a
-            href="/about/#contact"
+            href="#contact"
             class="link-accent inline-flex items-center px-2 text-sm"
           >
             {t(locale, 'hero.cta.contact')} →
@@ -123,6 +124,8 @@ const TERMINAL_STRINGS = {
         </a>
       </div>
     </section>
+
+    <ContactSection locale={locale} />
   </div>
 </BaseLayout>
 
