@@ -66,6 +66,8 @@ describe('portfolio content contracts', () => {
     const spotify = PROJECTS.find((p) => p.slug === 'spotify-stats-tracker')!;
     expect(spotify.name).toBe('SpotifyTracker');
     expect(spotify.repo).toBe('https://github.com/i7Gamer/SpotifyTracker');
+    // The overview is the public page; the root requires a login.
+    expect(spotify.link).toBe('https://music.rzipas.win/overview');
     expect(SERVICES.map((s) => s.name)).toContain('SpotifyTracker');
     const { provenance, upstream, ...ownCopy } = spotify.story!;
     expect(upstream).toBe('https://github.com/TzurSoffer/SpotifyStatsTracker');
