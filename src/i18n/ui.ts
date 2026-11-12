@@ -73,7 +73,7 @@ const en = {
   'homelab.hw.network': 'Network',
   'homelab.hw.storage': 'Storage',
   'homelab.hw.storage.value': `${STORAGE_TOTAL} across 10 drives`,
-  'homelab.hw.storage.workstation': '3.2 TB SSD',
+  'homelab.hw.storage.workstation': '3 TB SSD',
   'homelab.hw.os': 'Operating system',
   'homelab.hw.os.workstation': 'Windows 11 Pro + CachyOS',
   'homelab.services.title': 'Running services',
