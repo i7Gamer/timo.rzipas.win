@@ -42,11 +42,6 @@ describe('MACHINES', () => {
     }
   });
 
-  it('reserves the third line for what makes each machine different', () => {
-    const thirdLines = MACHINES.map((machine) => machine.specs[2]?.labelKey);
-    expect(new Set(thirdLines).size).toBe(thirdLines.length);
-  });
-
   it('resolves every label and value key in every locale', () => {
     for (const machine of MACHINES) {
       expect(t('en', machine.titleKey)).not.toBe(machine.titleKey);

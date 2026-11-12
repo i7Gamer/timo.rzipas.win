@@ -68,15 +68,18 @@ export const MACHINES: readonly Machine[] = [
       },
     ],
   },
-    {
+  {
     id: 'dev-server',
-    titleKey: 'homelab.machine.devpv',
+    titleKey: 'homelab.machine.devserver',
     terminalTitle: 'timo@devlab:~',
     specs: [
-      { labelKey: 'homelab.hw.cpu', value: 'AMD Ryzen 9 5950X · 16C / 24T' },
+      { labelKey: 'homelab.hw.cpu', value: 'AMD Ryzen 9 5950X · 16C / 32T' },
       { labelKey: 'homelab.hw.ram', value: '128 GB DDR4' },
       { labelKey: 'homelab.hw.gpu', value: 'AMD Radeon RX 5700 XT · 8 GB' },
-      { labelKey: 'homelab.hw.storage', value: '1.25TB SSD · 6TB HDD' },
+      {
+        labelKey: 'homelab.hw.storage',
+        valueKey: 'homelab.hw.storage.devserver',
+      },
       { labelKey: 'homelab.hw.network', value: '2.5 GbE' },
       { labelKey: 'homelab.hw.os', value: 'Windows 11 Pro' },
     ],
