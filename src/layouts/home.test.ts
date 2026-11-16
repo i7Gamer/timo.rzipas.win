@@ -50,6 +50,11 @@ describe('home page contact', () => {
     expect(HOME_PAGE).not.toContain('/about/#contact');
   });
 
+  it('wires the hero contact link to hide while the panel is fully visible', () => {
+    expect(HOME_PAGE).toContain('data-contact-cta');
+    expect(HOME_PAGE).toContain('setUpContactCta(contactCta, contact)');
+  });
+
   it('keeps the homelab button', () => {
     expect(HOME_PAGE).toContain("t(locale, 'hero.cta.homelab')");
   });

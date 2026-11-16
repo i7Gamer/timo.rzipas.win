@@ -53,6 +53,7 @@ const TERMINAL_STRINGS = {
           </a>
           <a
             href="#contact"
+            data-contact-cta
             class="link-accent inline-flex items-center px-2 text-sm"
           >
             {t(locale, 'hero.cta.contact')} →
@@ -130,10 +131,17 @@ const TERMINAL_STRINGS = {
 </BaseLayout>
 
 <script>
+  import { setUpContactCta } from '../lib/contact-cta';
   import { setUpTerminal } from '../lib/terminal-ui';
 
   const host = document.querySelector('[data-hero-terminal]');
   if (host instanceof HTMLElement) {
     setUpTerminal(host);
+  }
+
+  const contactCta = document.querySelector('[data-contact-cta]');
+  const contact = document.getElementById('contact');
+  if (contactCta instanceof HTMLElement && contact) {
+    setUpContactCta(contactCta, contact);
   }
 </script>
