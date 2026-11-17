@@ -24,6 +24,18 @@ function filesQuoting(figure: string): string[] {
 }
 
 describe('MACHINES', () => {
+  it.each(LOCALES)(
+    'gives every machine a translated role line in %s',
+    (locale) => {
+      for (const machine of MACHINES) {
+        expect(ui.en[machine.roleKey], machine.id).toBeTruthy();
+        expect(t(locale, machine.roleKey), machine.id).not.toBe(
+          machine.roleKey,
+        );
+      }
+    },
+  );
+
   it('describes at least the server and the workstation', () => {
     expect(MACHINES.length).toBeGreaterThanOrEqual(2);
   });

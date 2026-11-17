@@ -1,7 +1,9 @@
 ---
-import ContactSection from '../components/ContactSection.astro';
+import { Image } from 'astro:assets';
+import portrait from '../assets/portrait.jpg';
 import ProjectCard from '../components/ProjectCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
+import SocialLinks from '../components/SocialLinks.astro';
 import TerminalLine from '../components/TerminalLine.astro';
 import TerminalWindow from '../components/TerminalWindow.astro';
 import { RAM_TOTAL, STORAGE_TOTAL } from '../data/hardware';
@@ -13,6 +15,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { featuredProjects } from '../lib/projects';
 
 const locale = getLocale();
+// Rendered at 72px; densities cover 2x and 3x screens.
+const PORTRAIT_SIZE = 72;
+const PORTRAIT_DENSITIES = [1, 2, 3];
 const featured = featuredProjects(PROJECTS);
 
 const STATS: ReadonlyArray<{ value: string; labelKey: UIKey }> = [
@@ -39,24 +44,26 @@ const TERMINAL_STRINGS = {
         <p class="text-accent font-mono text-sm">
           {t(locale, 'hero.role')} · {t(locale, 'hero.location')}
         </p>
-        <h1 class="text-ink text-4xl font-bold tracking-tight sm:text-5xl">
-          {t(locale, 'hero.greeting')}
-        </h1>
+        <div class="flex items-center gap-4">
+          <Image
+            src={portrait}
+            alt={t(locale, 'hero.portraitAlt')}
+            width={PORTRAIT_SIZE}
+            height={PORTRAIT_SIZE}
+            densities={PORTRAIT_DENSITIES}
+            loading="eager"
+            class="ring-accent/40 size-16 shrink-0 rounded-full object-cover ring-2 sm:size-[72px]"
+          />
+          <h1 class="text-ink text-4xl font-bold tracking-tight sm:text-5xl">
+            {t(locale, 'hero.greeting')}
+          </h1>
+        </div>
         <p class="text-ink text-lg font-medium">{t(locale, 'hero.tagline')}</p>
         <p class="text-muted">{t(locale, 'hero.intro')}</p>
-        <div class="flex flex-wrap gap-3 pt-2">
-          <a href={pageHref('projects')} class="btn-primary">
-            {t(locale, 'hero.cta.projects')}
-          </a>
-          <a href={pageHref('homelab')} class="btn-muted">
-            {t(locale, 'hero.cta.homelab')}
-          </a>
-          <a
-            href="#contact"
-            data-contact-cta
-            class="link-accent inline-flex items-center px-2 text-sm"
-          >
-            {t(locale, 'hero.cta.contact')} →
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2">
+          <SocialLinks locale={locale} size="lg" />
+          <a href={pageHref('about')} class="link-accent font-medium">
+            {t(locale, 'hero.cta.about')} →
           </a>
         </div>
       </div>
@@ -87,7 +94,7 @@ const TERMINAL_STRINGS = {
     </div>
   </section>
 
-  <div class="space-y-10 py-10">
+  <div class="space-y-16 py-10">
     <section>
       <div class="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading>{t(locale, 'section.featured.title')}</SectionHeading>
@@ -125,23 +132,14 @@ const TERMINAL_STRINGS = {
         </a>
       </div>
     </section>
-
-    <ContactSection locale={locale} />
   </div>
 </BaseLayout>
 
 <script>
-  import { setUpContactCta } from '../lib/contact-cta';
   import { setUpTerminal } from '../lib/terminal-ui';
 
   const host = document.querySelector('[data-hero-terminal]');
   if (host instanceof HTMLElement) {
     setUpTerminal(host);
-  }
-
-  const contactCta = document.querySelector('[data-contact-cta]');
-  const contact = document.getElementById('contact');
-  if (contactCta instanceof HTMLElement && contact) {
-    setUpContactCta(contactCta, contact);
   }
 </script>

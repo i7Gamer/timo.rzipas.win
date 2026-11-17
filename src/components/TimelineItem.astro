@@ -11,6 +11,8 @@ interface Props {
   detailHref?: string;
   detailLabel?: string;
   tags?: string[];
+  /** Fold everything below the heading into a <details> until clicked. */
+  collapsed?: boolean;
 }
 
 const {
@@ -25,59 +27,109 @@ const {
   detailHref,
   detailLabel,
   tags = [],
+  collapsed = false,
 } = Astro.props;
 ---
 
 <li
   id={id}
-  class="border-line relative scroll-mt-24 border-l pb-8 pl-6 last:pb-0"
+  class="border-line relative scroll-mt-24 border-l pb-12 pl-6 last:pb-0"
 >
   <span
     aria-hidden="true"
     class="border-surface bg-accent absolute top-1 -left-[5.5px] size-2.5 rounded-full border-2"
   ></span>
-  <p class="text-accent font-mono text-xs">
-    {period}
-    {location && <span class="text-muted"> · {location}</span>}
-  </p>
-  <h3 class="text-ink mt-1 font-semibold">
-    {title}
-    {org && (
-      <span class="text-muted font-normal">
-        {' · '}
-        {orgUrl ? (
-          <a
-            href={orgUrl}
-            target="_blank"
-            rel="noopener"
-            class="link-underline"
+  {collapsed ? (
+    <details data-print-open class="group">
+      <summary class="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+        <p class="text-accent font-mono text-xs">
+          {period}
+          {location && <span class="text-muted"> · {location}</span>}
+        </p>
+        <h3 class="text-ink mt-1 font-semibold">
+          <span
+            aria-hidden="true"
+            class="text-muted mr-1 inline-block font-mono transition-transform group-open:rotate-90"
           >
-            {org}
-          </a>
-        ) : (
-          org
+            ▸
+          </span>
+          {title}
+          {org && <span class="text-muted font-normal"> · {org}</span>}
+        </h3>
+      </summary>
+      {summary && <p class="text-muted mt-1 text-base">{summary}</p>}
+      {detailHref && detailLabel && (
+        <a href={detailHref} class="link-accent mt-2 inline-block text-base">
+          {detailLabel} →
+        </a>
+      )}
+      {highlights.length > 0 && (
+        <ul class="text-muted mt-3 list-disc text-base space-y-2 pl-4">
+          {highlights.map((highlight) => (
+            <li>{highlight}</li>
+          ))}
+        </ul>
+      )}
+      {tags.length > 0 && (
+        <ul class="mt-2 flex flex-wrap gap-1.5">
+          {tags.map((tag) => (
+            <li class="chip bg-panel text-muted">{tag}</li>
+          ))}
+        </ul>
+      )}
+    </details>
+  ) : (
+    <>
+      <p class="text-accent font-mono text-xs">
+        {period}
+        {location && <span class="text-muted"> · {location}</span>}
+      </p>
+      <h3 class="text-ink mt-1 font-semibold">
+        {title}
+        {org && (
+          <span class="text-muted font-normal">
+            {' · '}
+            {orgUrl ? (
+              <a
+                href={orgUrl}
+                target="_blank"
+                rel="noopener"
+                class="link-underline"
+              >
+                {org}
+              </a>
+            ) : (
+              org
+            )}
+          </span>
         )}
-      </span>
-    )}
-  </h3>
-  {summary && <p class="text-muted mt-1 text-sm">{summary}</p>}
-  {detailHref && detailLabel && (
-    <a href={detailHref} class="link-accent mt-2 inline-block text-sm">
-      {detailLabel} →
-    </a>
-  )}
-  {highlights.length > 0 && (
-    <ul class="text-muted mt-3 list-disc space-y-1 pl-4 text-sm">
-      {highlights.map((highlight) => (
-        <li>{highlight}</li>
-      ))}
-    </ul>
-  )}
-  {tags.length > 0 && (
-    <ul class="mt-2 flex flex-wrap gap-1.5">
-      {tags.map((tag) => (
-        <li class="chip bg-panel text-muted">{tag}</li>
-      ))}
-    </ul>
+      </h3>
+      {summary && <p class="text-muted mt-1 text-base">{summary}</p>}
+      {detailHref && detailLabel && (
+        <a href={detailHref} class="link-accent mt-2 inline-block text-base">
+          {detailLabel} →
+        </a>
+      )}
+      {highlights.length > 0 && (
+        <ul class="text-muted mt-3 list-disc text-base space-y-2 pl-4">
+          {highlights.map((highlight) => (
+            <li>{highlight}</li>
+          ))}
+        </ul>
+      )}
+      {tags.length > 0 && (
+        <ul class="mt-2 flex flex-wrap gap-1.5">
+          {tags.map((tag) => (
+            <li class="chip bg-panel text-muted">{tag}</li>
+          ))}
+        </ul>
+      )}
+    </>
   )}
 </li>
+
+<script>
+  import { openDetailsForPrint } from '../lib/print';
+
+  openDetailsForPrint(window);
+</script>

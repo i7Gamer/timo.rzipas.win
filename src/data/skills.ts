@@ -1,27 +1,28 @@
 import type { Localized } from '../i18n';
 
+export interface Skill {
+  name: string;
+  /** Iconify id ("set:name"); see src/lib/icons.ts for the bundled sets. */
+  icon: string;
+}
+
 export interface SkillGroup {
   title: Localized<string>;
-  items: string[];
+  items: Skill[];
   evidence?: Array<{ href: string; text: Localized<string> }>;
 }
 
 export const SKILL_GROUPS: readonly SkillGroup[] = [
   {
-    title: { en: 'Programming', de: 'Programmierung' },
+    title: { en: 'Languages', de: 'Sprachen' },
     items: [
-      'Java',
-      'C#',
-      'TypeScript',
-      'JavaScript',
-      'Python',
-      'SQL',
-      'HTML & CSS',
-      'Angular',
-      'Vue',
-      'React',
-      'Vaadin',
-      'Flask',
+      { name: 'Java', icon: 'simple-icons:openjdk' },
+      { name: 'C#', icon: 'simple-icons:csharp' },
+      { name: 'TypeScript', icon: 'simple-icons:typescript' },
+      { name: 'JavaScript', icon: 'simple-icons:javascript' },
+      { name: 'Python', icon: 'simple-icons:python' },
+      { name: 'SQL', icon: 'lucide:database' },
+      { name: 'HTML & CSS', icon: 'simple-icons:html5' },
     ],
     evidence: [
       {
@@ -31,6 +32,25 @@ export const SKILL_GROUPS: readonly SkillGroup[] = [
           de: 'Java im Berufsalltag bei Abacus',
         },
       },
+      {
+        href: '/projects/carini-management-system/',
+        text: {
+          en: 'Technical design and documentation at Carini',
+          de: 'Technischer Entwurf und Dokumentation bei Carini',
+        },
+      },
+    ],
+  },
+  {
+    title: { en: 'Frameworks', de: 'Frameworks' },
+    items: [
+      { name: 'Angular', icon: 'simple-icons:angular' },
+      { name: 'React', icon: 'simple-icons:react' },
+      { name: 'Vue', icon: 'simple-icons:vuedotjs' },
+      { name: 'Vaadin', icon: 'simple-icons:vaadin' },
+      { name: 'Flask', icon: 'simple-icons:flask' },
+    ],
+    evidence: [
       {
         href: '/projects/tutto/',
         text: {
@@ -45,18 +65,17 @@ export const SKILL_GROUPS: readonly SkillGroup[] = [
           de: 'Funktionsentwicklung und Übersetzungen in MySpeed',
         },
       },
-      {
-        href: '/projects/carini-management-system/',
-        text: {
-          en: 'Technical design and documentation at Carini',
-          de: 'Technischer Entwurf und Dokumentation bei Carini',
-        },
-      },
     ],
   },
   {
-    title: { en: 'Databases', de: 'Datenbanken' },
-    items: ['SQLite', 'MySQL', 'MS-SQL', 'Oracle', 'MongoDB', 'NoSQL'],
+    title: { en: 'Data', de: 'Daten' },
+    items: [
+      { name: 'MySQL', icon: 'simple-icons:mysql' },
+      { name: 'MS-SQL', icon: 'simple-icons:microsoftsqlserver' },
+      { name: 'Oracle', icon: 'simple-icons:oracle' },
+      { name: 'SQLite', icon: 'simple-icons:sqlite' },
+      { name: 'MongoDB', icon: 'simple-icons:mongodb' },
+    ],
     evidence: [
       {
         href: '/projects/spotify-stats-tracker/',
@@ -75,17 +94,17 @@ export const SKILL_GROUPS: readonly SkillGroup[] = [
     ],
   },
   {
-    title: { en: 'Ops & homelab', de: 'Ops & Homelab' },
+    title: { en: 'Ops & tooling', de: 'Ops & Tooling' },
     items: [
-      'Docker',
-      'Linux',
-      'Windows Server',
-      'nginx',
-      'Reverse proxy & TLS',
-      'Networking',
-      'Git',
-      'GitHub Actions',
-      'Monitoring & Grafana',
+      { name: 'Docker', icon: 'simple-icons:docker' },
+      { name: 'Linux', icon: 'simple-icons:linux' },
+      { name: 'Windows Server', icon: 'simple-icons:windows' },
+      { name: 'nginx', icon: 'simple-icons:nginx' },
+      { name: 'Git', icon: 'simple-icons:git' },
+      { name: 'GitHub Actions', icon: 'simple-icons:githubactions' },
+      { name: 'Grafana', icon: 'simple-icons:grafana' },
+      { name: 'Networking', icon: 'lucide:network' },
+      { name: 'Reverse proxy & TLS', icon: 'lucide:shield-check' },
     ],
     evidence: [
       {

@@ -1,0 +1,41 @@
+---
+import { CV_DOWNLOADS } from '../data/cv';
+import { t, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+// The CV in the page language comes first.
+const languages: Locale[] = [locale, locale === 'en' ? 'de' : 'en'];
+---
+
+<ul class="flex flex-wrap gap-3">
+  {languages.map((language) => (
+    <li>
+      <a
+        href={CV_DOWNLOADS[language]}
+        download
+        hreflang={language}
+        type="application/pdf"
+        class="btn-muted inline-flex items-center gap-2"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          class="size-4"
+        >
+          <path d="M12 15V3"></path>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <path d="m7 10 5 5 5-5"></path>
+        </svg>
+        {t(locale, language === 'en' ? 'contact.cv.en' : 'contact.cv.de')}
+      </a>
+    </li>
+  ))}
+</ul>

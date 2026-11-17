@@ -73,11 +73,10 @@ describe('SKILL_GROUPS', () => {
   it('lists unique, non-empty items in every group', () => {
     for (const group of SKILL_GROUPS) {
       expect(group.items.length, group.title.en).toBeGreaterThan(0);
-      expect(new Set(group.items).size, group.title.en).toBe(
-        group.items.length,
-      );
-      for (const item of group.items) {
-        expect(item.trim()).toBeTruthy();
+      const names = group.items.map((item) => item.name);
+      expect(new Set(names).size, group.title.en).toBe(names.length);
+      for (const name of names) {
+        expect(name.trim()).toBeTruthy();
       }
     }
   });

@@ -34,28 +34,42 @@ describe('home page hero', () => {
   );
 });
 
-describe('home page contact', () => {
-  it('renders the shared contact panel after the homelab teaser', () => {
+describe('home page hero links', () => {
+  it('shows the social icons and an About me link instead of buttons', () => {
+    expect(HOME_PAGE).toContain('<SocialLinks locale={locale} size="lg" />');
+    expect(HOME_PAGE).toContain("href={pageHref('about')}");
+    expect(HOME_PAGE).toContain("t(locale, 'hero.cta.about')");
+    expect(HOME_PAGE).not.toContain('hero.cta.projects');
+    expect(HOME_PAGE).not.toContain('hero.cta.homelab');
+  });
+
+  it.each([
+    ['en', 'About me'],
+    ['de', 'Über mich'],
+  ] as const)('labels the About me link in %s', (locale, label) => {
+    expect(t(locale, 'hero.cta.about')).toBe(label);
+  });
+
+  it('no longer renders the contact panel or its scroll link', () => {
+    expect(HOME_PAGE).not.toContain('ContactSection');
+    expect(HOME_PAGE).not.toContain('#contact');
+    expect(HOME_PAGE).not.toContain('data-contact-cta');
+  });
+});
+
+describe('home page portrait', () => {
+  it('shows the portrait next to the greeting', () => {
     expect(HOME_PAGE).toContain(
-      "import ContactSection from '../components/ContactSection.astro';",
+      "import portrait from '../assets/portrait.jpg';",
     );
-    expect(HOME_PAGE).toContain('<ContactSection locale={locale} />');
-    expect(HOME_PAGE.indexOf('<ContactSection')).toBeGreaterThan(
-      HOME_PAGE.indexOf('section.homelabTeaser.cta'),
+    expect(HOME_PAGE).toContain('src={portrait}');
+    expect(HOME_PAGE).toContain("alt={t(locale, 'hero.portraitAlt')}");
+    expect(HOME_PAGE.indexOf('src={portrait}')).toBeLessThan(
+      HOME_PAGE.indexOf("t(locale, 'hero.greeting')"),
     );
   });
 
-  it('scrolls the hero contact link to the panel on the same page', () => {
-    expect(HOME_PAGE).toContain('href="#contact"');
-    expect(HOME_PAGE).not.toContain('/about/#contact');
-  });
-
-  it('wires the hero contact link to hide while the panel is fully visible', () => {
-    expect(HOME_PAGE).toContain('data-contact-cta');
-    expect(HOME_PAGE).toContain('setUpContactCta(contactCta, contact)');
-  });
-
-  it('keeps the homelab button', () => {
-    expect(HOME_PAGE).toContain("t(locale, 'hero.cta.homelab')");
+  it.each(['en', 'de'] as const)('describes the portrait in %s', (locale) => {
+    expect(t(locale, 'hero.portraitAlt')).toMatch(/Timo Rzipa/);
   });
 });

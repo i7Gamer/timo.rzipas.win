@@ -121,7 +121,8 @@ describe('vertical rhythm', () => {
 
   it('separates stacked sections with the same gap everywhere', () => {
     for (const page of CONTENT_PAGES.filter((p) => !p.includes('projects'))) {
-      expect(read(page), page).toContain('space-y-10');
+      expect(read(page), page).toContain('space-y-16');
+      expect(read(page), page).not.toContain('space-y-10');
     }
   });
 

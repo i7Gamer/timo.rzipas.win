@@ -17,6 +17,8 @@ export interface Job {
     label: Localized<string>;
   };
   tech: string[];
+  /** Show only the heading until the visitor opens the entry. */
+  collapsed?: boolean;
 }
 
 export const JOBS: readonly Job[] = [
@@ -30,11 +32,6 @@ export const JOBS: readonly Job[] = [
       de: 'Wittenbach SG, Schweiz',
     },
     from: { year: 2019, month: 9 },
-    // Still my current job (no `to`), but it ends in February 2027.
-    periodLabel: {
-      en: 'Sep 2019 – Feb 2027',
-      de: 'Sept. 2019 – Feb. 2027',
-    },
     summary: {
       en: 'Software development in the Debitoren/Kreditoren Belege Prozess team, working on document workflows for accounts receivable and payable.',
       de: 'Softwareentwicklung im Team Debitoren/Kreditoren Belege Prozess, mit Fokus auf die automatische Verarbeitung von Belegen.',
@@ -155,6 +152,7 @@ export const JOBS: readonly Job[] = [
   },
   {
     id: 'early-stadler',
+    collapsed: true,
     company: 'Stadler Altenrhein AG',
     url: 'https://www.stadlerrail.com',
     role: { en: 'Technical Intern', de: 'Technischer Praktikant' },

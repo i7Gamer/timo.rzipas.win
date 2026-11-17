@@ -27,6 +27,9 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
+    "@iconify-json/lucide": "^1.2.155",
+    "@iconify-json/simple-icons": "^1.2.102",
+    "@iconify/utils": "^3.1.7",
     "eslint": "^10.14.0",
     "eslint-plugin-astro": "^3.2.1",
     "eslint-plugin-jsx-a11y": "^6.10.2",

@@ -4,6 +4,15 @@ import sharp from 'sharp';
 
 const WIDTH = 1200;
 const HEIGHT = 630;
+// Round portrait on the right of the terminal card, clear of the subtitle.
+const PORTRAIT_PATH = fileURLToPath(
+  new URL('../src/assets/portrait.jpg', import.meta.url),
+);
+const PORTRAIT_SIZE = 190;
+const PORTRAIT_RADIUS = PORTRAIT_SIZE / 2;
+const PORTRAIT_CENTER_X = 1005;
+const PORTRAIT_CENTER_Y = 357;
+const PORTRAIT_RING_WIDTH = 4;
 
 const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
@@ -25,9 +34,28 @@ const svg = `
   <text x="128" y="286" font-family="Consolas, 'Courier New', monospace" font-size="34" fill="#4ade80">~ $ whoami</text>
   <text x="128" y="360" font-family="Consolas, 'Courier New', monospace" font-size="58" font-weight="bold" fill="#e7e7ea">Timo Rzipa</text>
   <text x="128" y="420" font-family="Consolas, 'Courier New', monospace" font-size="30" fill="#9d9da6">Software Engineer · Self-Hosting · Homelab</text>
+  <circle cx="${PORTRAIT_CENTER_X}" cy="${PORTRAIT_CENTER_Y}" r="${PORTRAIT_RADIUS + PORTRAIT_RING_WIDTH}" fill="#4ade80" fill-opacity="0.5"/>
   <text x="128" y="478" font-family="Consolas, 'Courier New', monospace" font-size="26" fill="#4ade80">timo.rzipas.win</text>
 </svg>`;
 
 const outputPath = fileURLToPath(new URL('../public/og.png', import.meta.url));
-await sharp(Buffer.from(svg)).png().toFile(outputPath);
+const circleMask = Buffer.from(
+  `<svg width="${PORTRAIT_SIZE}" height="${PORTRAIT_SIZE}"><circle cx="${PORTRAIT_RADIUS}" cy="${PORTRAIT_RADIUS}" r="${PORTRAIT_RADIUS}"/></svg>`,
+);
+const portrait = await sharp(PORTRAIT_PATH)
+  .resize(PORTRAIT_SIZE, PORTRAIT_SIZE)
+  .composite([{ input: circleMask, blend: 'dest-in' }])
+  .png()
+  .toBuffer();
+
+await sharp(Buffer.from(svg))
+  .composite([
+    {
+      input: portrait,
+      left: PORTRAIT_CENTER_X - PORTRAIT_RADIUS,
+      top: PORTRAIT_CENTER_Y - PORTRAIT_RADIUS,
+    },
+  ])
+  .png()
+  .toFile(outputPath);
 console.log(`wrote ${outputPath}`);

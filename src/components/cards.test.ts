@@ -24,7 +24,6 @@ const project: Project = {
 const service: Service = {
   name: 'DemoService',
   group: 'infrastructure',
-  category: { en: 'Web', de: 'Web' },
   description: { en: 'English service text', de: 'Deutscher Diensttext' },
   status: 'planned',
 };
@@ -207,9 +206,84 @@ describe('TimelineItem', () => {
     expect(html).toContain('View diploma project');
     expect(html).not.toContain('target="_blank"');
   });
+
+  const full = {
+    ...props,
+    summary: 'Did things',
+    highlights: ['Highlight one'],
+    tags: ['Java'],
+  };
+
+  it('shows everything openly by default, in larger text', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(TimelineItem, {
+      props: full,
+    });
+    expect(html).not.toContain('<details');
+    expect(html).toMatch(/class="[^"]*text-base[^"]*">Did things/);
+    expect(html).toMatch(/<ul class="[^"]*text-base[^"]*space-y-2/);
+    expect(html).toContain('pb-12');
+  });
+
+  it('folds the details behind the heading when collapsed', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(TimelineItem, {
+      props: { ...full, collapsed: true },
+    });
+    const details = html.slice(html.indexOf('<details'));
+    const summary = details.slice(
+      details.indexOf('<summary'),
+      details.indexOf('</summary>'),
+    );
+    expect(html).toContain('<details data-print-open');
+    expect(details).not.toMatch(/<details[^>]* open/);
+    expect(summary).toContain('Sep 2019 – today');
+    expect(summary).toContain('Software Engineer');
+    expect(summary).not.toContain('Did things');
+    expect(details).toContain('Did things');
+    expect(details).toContain('Highlight one');
+    expect(details).toContain('Java');
+  });
 });
 
 describe('ServiceCard', () => {
+  it('shows no category chip', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ServiceCard, {
+      props: { service, locale: 'en' },
+    });
+    expect(html).not.toContain('chip');
+  });
+
+  it.each([
+    ['own', 'en', 'my project'],
+    ['contributor', 'en', 'contributor'],
+    ['own', 'de', 'mein Projekt'],
+    ['contributor', 'de', 'mitentwickelt'],
+  ] as const)(
+    'links a %s project with its badge in %s',
+    async (role, locale, label) => {
+      const container = await AstroContainer.create();
+      const html = await container.renderToString(ServiceCard, {
+        props: {
+          service: { ...service, project: { slug: 'tutto', role } },
+          locale,
+        },
+      });
+      expect(html).toContain('href="/projects/tutto/"');
+      expect(html).toContain(label);
+      expect(html).not.toContain('target="_blank"');
+    },
+  );
+
+  it('shows no badge without a project', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ServiceCard, {
+      props: { service, locale: 'en' },
+    });
+    expect(html).not.toContain('/projects/');
+  });
+
   it.each([
     ['en', 'unknown'],
     ['de', 'unbekannt'],
@@ -262,5 +336,61 @@ describe('ServiceCard', () => {
 
     expect(html).toContain('data-service="Bulk Storage"');
     expect(html).toContain('>Datenspeicher</');
+  });
+});
+
+describe('ProjectCard layout', () => {
+  const withStory: Project = {
+    ...project,
+    story: {
+      problem: { en: 'p' },
+      contribution: { en: 'c' },
+      decisions: { en: 'd' },
+      outcome: { en: 'o' },
+    } as Project['story'],
+  };
+
+  async function render(p: Project) {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ProjectCard, {
+      props: { project: p, locale: 'en' },
+    });
+    const document = new Window().document;
+    document.body.innerHTML = html;
+    return { html, document };
+  }
+
+  it('has no hover border effect', async () => {
+    const { html } = await render(project);
+    expect(html).not.toContain('hover:border-accent');
+    expect(html).not.toContain('transition-colors');
+  });
+
+  it('links the project name to the story only when there is one', async () => {
+    const withLink = (await render(withStory)).document;
+    expect(withLink.querySelector('h3 a')?.getAttribute('href')).toBe(
+      '/projects/demo/',
+    );
+    const plain = (await render(project)).document;
+    expect(plain.querySelector('h3 a')).toBeNull();
+    expect(plain.querySelector('h3')?.textContent?.trim()).toBe('DemoTool');
+  });
+
+  it('spaces the action links widely with text-sm links', async () => {
+    const { document } = await render({
+      ...withStory,
+      link: 'https://x.test/',
+    });
+    const actions = document.querySelector('[data-project-actions]')!;
+    expect(actions.className).toContain('gap-x-6');
+    expect(actions.className).toContain('gap-y-2');
+    for (const a of actions.querySelectorAll('a')) {
+      expect(a.className).toContain('text-sm');
+    }
+  });
+
+  it('enlarges the description but not the tagline', async () => {
+    const { html } = await render(project);
+    expect(html).toContain('text-[15px]');
   });
 });

@@ -29,6 +29,8 @@ export interface Machine {
   titleKey: UIKey;
   /** Prompt shown in the terminal window's title bar. */
   terminalTitle: string;
+  /** One line on what the machine is for, shown under its title. */
+  roleKey: UIKey;
   specs: readonly HardwareSpec[];
 }
 
@@ -36,6 +38,7 @@ export const MACHINES: readonly Machine[] = [
   {
     id: 'server',
     titleKey: 'homelab.machine.server',
+    roleKey: 'homelab.machine.server.role',
     terminalTitle: 'timo@homelab:~',
     specs: [
       { labelKey: 'homelab.hw.cpu', value: 'Intel Core i5-13500 · 14C / 20T' },
@@ -52,6 +55,7 @@ export const MACHINES: readonly Machine[] = [
   {
     id: 'workstation',
     titleKey: 'homelab.machine.workstation',
+    roleKey: 'homelab.machine.workstation.role',
     terminalTitle: 'timo@desktop:~',
     specs: [
       { labelKey: 'homelab.hw.cpu', value: 'Intel Core i7-13700K · 16C / 24T' },
@@ -71,6 +75,7 @@ export const MACHINES: readonly Machine[] = [
   {
     id: 'dev-server',
     titleKey: 'homelab.machine.devserver',
+    roleKey: 'homelab.machine.devserver.role',
     terminalTitle: 'timo@devlab:~',
     specs: [
       { labelKey: 'homelab.hw.cpu', value: 'AMD Ryzen 9 5950X · 16C / 32T' },

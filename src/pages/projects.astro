@@ -17,7 +17,9 @@ const projects = sortProjects(PROJECTS);
   <section class="py-10">
     <header class="mb-10">
       <PathHeading path="projects" />
-      <p class="text-muted mt-4">{t(locale, 'projects.intro')}</p>
+      <p class="text-muted mt-4 max-w-3xl text-lg">
+        {t(locale, 'projects.intro')}
+      </p>
     </header>
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {projects.map((project) => (

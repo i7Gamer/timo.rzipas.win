@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   featuredProjects,
   projectName,
+  projectSources,
   sortProjects,
   type Project,
 } from './projects';
@@ -75,5 +76,58 @@ describe('projectName', () => {
 
   it('falls back to the canonical project name', () => {
     expect(projectName(makeProject({ name: 'Tutto' }), 'de')).toBe('Tutto');
+  });
+});
+
+describe('projectSources', () => {
+  const sources = [
+    {
+      href: 'https://example.com/web',
+      label: { en: 'Web', de: 'Web-Frontend' },
+    },
+    {
+      href: 'https://example.com/api',
+      label: { en: 'API', de: 'API-Backend' },
+    },
+  ];
+
+  it.each([
+    ['en', ['Web', 'API']],
+    ['de', ['Web-Frontend', 'API-Backend']],
+  ] as const)(
+    'maps explicit sources to localized labels in %s',
+    (locale, labels) => {
+      const result = projectSources(makeProject({ sources }), locale);
+      expect(result.map((s) => s.label)).toEqual(labels);
+      expect(result.map((s) => s.href)).toEqual([
+        'https://example.com/web',
+        'https://example.com/api',
+      ]);
+    },
+  );
+
+  it.each([
+    ['en', 'Source'],
+    ['de', 'Quellcode'],
+  ] as const)(
+    'falls back to the repo with a generic label in %s',
+    (locale, label) => {
+      const repo = 'https://github.com/i7Gamer/demo';
+      expect(projectSources(makeProject({ repo }), locale)).toEqual([
+        { href: repo, label },
+      ]);
+    },
+  );
+
+  it('returns an empty list without sources or repo', () => {
+    expect(projectSources(makeProject({}), 'en')).toEqual([]);
+  });
+
+  it('prefers explicit sources over the repo', () => {
+    const result = projectSources(
+      makeProject({ sources, repo: 'https://github.com/i7Gamer/demo' }),
+      'en',
+    );
+    expect(result).toHaveLength(sources.length);
   });
 });

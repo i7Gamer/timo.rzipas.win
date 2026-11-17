@@ -67,3 +67,63 @@ describe('grouped homelab services', () => {
     },
   );
 });
+
+describe('collapsible service groups', () => {
+  async function render(locale: (typeof LOCALES)[number]) {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ServiceGroups, {
+      props: { locale },
+    });
+    const document = new Window().document;
+    document.body.innerHTML = html;
+    return document;
+  }
+
+  it.each(LOCALES)(
+    'renders each group as details, only the first open, in %s',
+    async (locale) => {
+      const document = await render(locale);
+      const groups = [...document.querySelectorAll('[data-service-group]')];
+      expect(groups.map((group) => group.tagName)).toEqual(
+        SERVICE_GROUPS.map(() => 'DETAILS'),
+      );
+      expect(groups.filter((group) => group.hasAttribute('open')).length).toBe(
+        1,
+      );
+      expect(groups[0].hasAttribute('open')).toBe(true);
+      for (const group of groups) {
+        expect(group.hasAttribute('data-print-open')).toBe(true);
+        expect(group.querySelector('summary h3')).not.toBeNull();
+      }
+    },
+  );
+
+  it.each(LOCALES)(
+    'shows a static count per group and in the summary in %s',
+    async (locale) => {
+      const document = await render(locale);
+      const summary = document.querySelector('[data-status-summary]')!;
+      const total = SERVICES.filter((s) => s.status !== 'planned').length;
+      expect(summary.textContent?.trim()).toBe(
+        t(locale, 'services.count').replace('{total}', String(total)),
+      );
+      expect(summary.getAttribute('data-template')).toBe(
+        t(locale, 'services.summaryLive'),
+      );
+      for (const group of SERVICE_GROUPS) {
+        const count = document.querySelector(
+          `[data-service-group="${group.id}"] summary [data-group-count]`,
+        )!;
+        const members = SERVICES.filter(
+          (s) => s.group === group.id && s.status !== 'planned',
+        ).length;
+        expect(count.textContent?.trim()).toBe(
+          t(locale, 'services.count').replace('{total}', String(members)),
+        );
+        expect(count.getAttribute('data-template')).toBe(
+          t(locale, 'services.groupOnline'),
+        );
+      }
+    },
+  );
+});

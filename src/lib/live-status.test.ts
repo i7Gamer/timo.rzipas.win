@@ -6,6 +6,7 @@ import {
   loadLiveStatus,
   markStaleData,
   startLiveStatus,
+  updateCounts,
   STATUS_REFRESH_MS,
   STATUS_REQUEST_TIMEOUT_MS,
 } from './live-status';
@@ -417,5 +418,89 @@ describe('startLiveStatus', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(fetchMock).toHaveBeenCalledTimes(calls + 2);
     stop();
+  });
+});
+
+describe('updateCounts', () => {
+  function counted(): HTMLElement {
+    return grid(`
+      <p data-status-summary data-static="3 services" data-template="{total} services · {online} online · checked {time}">3 services</p>
+      <section data-service-group="a">
+        <span data-group-count data-static="2 services" data-template="{online}/{total} online">2 services</span>
+        ${card('Plex')}${card('Sonarr')}
+      </section>
+      <section data-service-group="b">
+        <span data-group-count data-static="2 services" data-template="{online}/{total} online">2 services</span>
+        ${card('Tutto')}${card('Later', 'planned')}
+      </section>`);
+  }
+  const summary = () =>
+    document.querySelector('[data-status-summary]')!.textContent;
+  const groupCount = (id: string) =>
+    document.querySelector(`[data-service-group="${id}"] [data-group-count]`)!
+      .textContent;
+
+  it('counts online services overall and per group, ignoring planned ones', () => {
+    const root = counted();
+    applyStatuses(
+      root,
+      { services: { Plex: 'online', Sonarr: 'offline', Tutto: 'online' } },
+      LABELS,
+    );
+    updateCounts(root, '12:04');
+    expect(summary()).toBe('3 services · 2 online · checked 12:04');
+    expect(groupCount('a')).toBe('1/2 online');
+    expect(groupCount('b')).toBe('1/1 online');
+  });
+
+  it('falls back to the static texts without a fresh check', () => {
+    const root = counted();
+    applyStatuses(root, { services: { Plex: 'online' } }, LABELS);
+    updateCounts(root, '12:04');
+    updateCounts(root, null);
+    expect(summary()).toBe('3 services');
+    expect(groupCount('a')).toBe('2 services');
+  });
+
+  it('ignores count elements without templates', () => {
+    const root = grid(`<p data-status-summary>x</p>${card('Plex')}`);
+    updateCounts(root, '12:04');
+    expect(summary()).toBe('x');
+  });
+});
+
+describe('loadLiveStatus counts', () => {
+  it('fills the summary after a fresh check', async () => {
+    const root = grid(
+      `<p data-status-summary data-static="1 service" data-template="{online}/{total} at {time}">1 service</p>${card('Plex')}`,
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          generatedAt: '2026-09-07T09:00:00Z',
+          services: { Plex: 'online' },
+        }),
+      })),
+    );
+    await loadLiveStatus(root, null, new Date('2026-09-07T09:01:00Z'));
+    expect(
+      document.querySelector('[data-status-summary]')!.textContent,
+    ).toMatch(/^1\/1 at \d{2}:\d{2}$/);
+  });
+
+  it('keeps the static summary when the check fails', async () => {
+    const root = grid(
+      `<p data-status-summary data-static="1 service" data-template="{online}/{total}">1 service</p>${card('Plex')}`,
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, json: async () => null })),
+    );
+    await loadLiveStatus(root, null, new Date());
+    expect(document.querySelector('[data-status-summary]')!.textContent).toBe(
+      '1 service',
+    );
   });
 });

@@ -1,6 +1,7 @@
 ---
 import type { Service } from '../data/services';
 import { pick, t, type Locale } from '../i18n';
+import { projectHref } from '../lib/projects';
 import { STATUS_DOT_CLASS } from '../lib/status';
 
 interface Props {
@@ -14,6 +15,9 @@ const Heading = Astro.props.headingLevel ?? 'h3';
 
 const initialStatus = service.status === 'planned' ? 'planned' : 'unknown';
 const statusKey = `status.${initialStatus}` as const;
+const badgeKey = service.project
+  ? (`service.badge.${service.project.role}` as const)
+  : undefined;
 ---
 
 <article
@@ -34,8 +38,13 @@ const statusKey = `status.${initialStatus}` as const;
       <span data-status-label>{t(locale, statusKey)}</span>
     </span>
   </div>
-  <span class="chip bg-surface text-muted w-fit">
-    {pick(locale, service.category)}
-  </span>
-  <p class="text-muted text-sm">{pick(locale, service.description)}</p>
+  <p class="text-muted flex-1 text-sm">{pick(locale, service.description)}</p>
+  {service.project && badgeKey && (
+    <a
+      href={projectHref(service.project.slug)}
+      class="border-accent/40 bg-accent-soft text-accent w-fit rounded-full border px-2 py-0.5 font-mono text-[11px]"
+    >
+      {t(locale, badgeKey)} →
+    </a>
+  )}
 </article>

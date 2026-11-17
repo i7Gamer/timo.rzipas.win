@@ -26,22 +26,32 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
   <section class="py-10">
     <header class="mb-10">
       <PathHeading path="homelab" />
-      <p class="text-muted mt-4">{t(locale, 'homelab.intro')}</p>
+      <p class="text-muted mt-4 max-w-3xl text-lg">
+        {t(locale, 'homelab.intro')}
+      </p>
     </header>
 
-    <div class="space-y-10">
+    <div class="space-y-16">
       <div>
         <SectionHeading>{t(locale, 'homelab.hardware.title')}</SectionHeading>
-        <div class="mt-6 grid items-start gap-6 lg:grid-cols-2">
+        <div
+          data-hardware-row
+          role="region"
+          aria-label={t(locale, 'homelab.hardware.title')}
+          class="-mx-4 mt-6 flex snap-x snap-mandatory items-start gap-6 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0"
+        >
           {MACHINES.map((machine) => (
-            <div>
-              <h3 class="text-muted mb-2 font-mono text-sm">
+            <div class="w-[85%] snap-start shrink-0 sm:w-[60%] lg:w-auto">
+              <h3 class="text-ink font-mono text-sm font-semibold">
                 {t(locale, machine.titleKey)}
               </h3>
+              <p class="text-muted mb-3 text-sm">
+                {t(locale, machine.roleKey)}
+              </p>
               <TerminalWindow title={machine.terminalTitle}>
                 <TerminalLine cmd="fastfetch" />
                 {machine.specs.map((spec) => (
-                  <p class="grid gap-x-2 sm:grid-cols-[9rem_minmax(0,1fr)]">
+                  <p class="grid gap-x-2 grid-cols-[6rem_minmax(0,1fr)]">
                     <span class="text-accent">{t(locale, spec.labelKey)}</span>
                     <span class="text-ink min-w-0 break-words">
                       {spec.valueKey ? t(locale, spec.valueKey) : spec.value}
@@ -54,27 +64,29 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
         </div>
       </div>
 
-      <div>
-        <SectionHeading>{t(locale, 'homelab.diagram.title')}</SectionHeading>
-        <ol class="mx-auto mt-6 flex max-w-xs flex-col items-center">
-          {DIAGRAM_STEPS.map((step, index) => (
-            <li class="flex w-full flex-col items-center">
-              {index > 0 && (
-                <span aria-hidden="true" class="text-accent py-1 font-mono">
-                  ↓
+      <div class="grid items-start gap-10 lg:grid-cols-2">
+        <div>
+          <SectionHeading>{t(locale, 'homelab.diagram.title')}</SectionHeading>
+          <ol class="mx-auto mt-6 flex max-w-xs flex-col items-center">
+            {DIAGRAM_STEPS.map((step, index) => (
+              <li class="flex w-full flex-col items-center">
+                {index > 0 && (
+                  <span aria-hidden="true" class="text-accent py-1 font-mono">
+                    ↓
+                  </span>
+                )}
+                <span class="panel-sm text-ink w-full px-3 py-2 text-center font-mono text-xs">
+                  {t(locale, step)}
                 </span>
-              )}
-              <span class="panel-sm text-ink w-full px-3 py-2 text-center font-mono text-xs">
-                {t(locale, step)}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </div>
+              </li>
+            ))}
+          </ol>
+        </div>
 
-      <div class="panel-lg">
-        <SectionHeading>{t(locale, 'homelab.why.title')}</SectionHeading>
-        <p class="text-muted mt-4">{t(locale, 'homelab.why.text')}</p>
+        <div class="panel-lg self-start">
+          <SectionHeading>{t(locale, 'homelab.why.title')}</SectionHeading>
+          <p class="text-muted mt-4">{t(locale, 'homelab.why.text')}</p>
+        </div>
       </div>
 
       <div>

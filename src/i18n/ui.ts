@@ -12,7 +12,7 @@ const en = {
   'nav.home': 'Home',
   'nav.projects': 'Projects',
   'nav.homelab': 'Homelab',
-  'nav.about': 'About',
+  'nav.about': 'About me',
 
   'hero.greeting': "Hi, I'm Timo.",
   'hero.tagline': 'I develop business software with Java.',
@@ -20,9 +20,8 @@ const en = {
     'At Abacus Research I work on automated document processing in the ERP system. After hours I build personal projects and run my homelab — a small data center in my living room that serves this very site.',
   'hero.role': 'Software Engineer',
   'hero.location': 'Lake Constance region (AT/CH)',
-  'hero.cta.projects': 'View projects',
-  'hero.cta.homelab': 'Tour the homelab',
-  'hero.cta.contact': 'Get in touch',
+  'hero.cta.about': 'About me',
+  'hero.portraitAlt': 'Portrait of Timo Rzipa',
 
   'terminal.title': 'timo@homelab:~',
   'terminal.whoami.cmd': 'whoami',
@@ -67,16 +66,20 @@ const en = {
   'homelab.machine.server': 'Server',
   'homelab.machine.workstation': 'Workstation',
   'homelab.machine.devserver': 'Dev server',
+  'homelab.machine.server.role': 'Always on: hosts this site and every service',
+  'homelab.machine.workstation.role': 'Daily driver: coding, gaming, local AI',
+  'homelab.machine.devserver.role':
+    'Playground: experiments, builds, test setups',
   'homelab.hw.cpu': 'CPU',
   'homelab.hw.ram': 'Memory',
   'homelab.hw.board': 'Mainboard',
-  'homelab.hw.gpu': 'Graphics',
+  'homelab.hw.gpu': 'GPU',
   'homelab.hw.network': 'Network',
   'homelab.hw.storage': 'Storage',
   'homelab.hw.storage.value': `${STORAGE_TOTAL} across 10 drives`,
   'homelab.hw.storage.workstation': '3 TB SSD',
   'homelab.hw.storage.devserver': '1.25 TB SSD · 6 TB HDD',
-  'homelab.hw.os': 'Operating system',
+  'homelab.hw.os': 'OS',
   'homelab.hw.os.workstation': 'Windows 11 Pro + CachyOS',
   'homelab.services.title': 'Running services',
   'homelab.services.note':
@@ -99,20 +102,21 @@ const en = {
   'status.offline': 'offline',
   'status.unknown': 'unknown',
   'status.asOf': '(as of {time})',
+  'services.count': '{total} services',
+  'services.summaryLive': '{total} services · {online} online · checked {time}',
+  'services.groupOnline': '{online}/{total} online',
+  'service.badge.own': 'my project',
+  'service.badge.contributor': 'contributor',
 
-  'about.title': 'About',
+  'about.title': 'About me',
   'about.intro':
-    "I'm a software engineer from Austria's Lake Constance region. Since 2019 I've been building business software in Java at Abacus Research in Switzerland; before that I worked on rail data services at Stadler. Away from the keyboard — who am I kidding, still at the keyboard — I run a homelab and turn \"I could self-host that\" into weekend projects.",
+    "I'm a software engineer from the Lake Constance region who likes software that quietly removes work from people's desks — from automated document processing in a large ERP system to the C# plug-ins I built as an intern. I enjoy the whole path from understanding a messy process to shipping something maintainable, and I keep learning by building: personal projects, open-source contributions like MySpeed, and a homelab that serves this very site.",
   'about.experience.title': 'Experience',
   'about.education.title': 'Education',
   'about.skills.title': 'Skills',
   'about.languages.title': 'Languages',
   'about.present': 'present',
   'about.qualifications.title': 'Certificates & courses',
-  'contact.title': 'Get in touch',
-  'contact.intro':
-    'Want to talk about software, self-hosting or one of these projects? Send me an email or find me on LinkedIn.',
-  'contact.cv': 'Download my CV',
   'contact.cv.en': 'English CV · PDF',
   'contact.cv.de': 'German CV · PDF',
 
@@ -151,9 +155,8 @@ const de: Partial<Record<UIKey, string>> = {
   'hero.intro':
     'Bei Abacus Research arbeite ich an der automatisierten Belegverarbeitung im ERP-System. Nach Feierabend entwickle ich eigene Projekte und betreibe mein Homelab — ein kleines Rechenzentrum im Wohnzimmer, auf dem auch diese Website läuft.',
   'hero.location': 'Bodenseeregion (AT/CH)',
-  'hero.cta.projects': 'Projekte ansehen',
-  'hero.cta.homelab': 'Homelab erkunden',
-  'hero.cta.contact': 'Kontakt aufnehmen',
+  'hero.cta.about': 'Über mich',
+  'hero.portraitAlt': 'Porträt von Timo Rzipa',
 
   'terminal.health.out': 'ok — ausgeliefert aus dem Wohnzimmer',
   'terminal.help.out':
@@ -190,15 +193,19 @@ const de: Partial<Record<UIKey, string>> = {
   'homelab.machine.server': 'Server',
   'homelab.machine.workstation': 'Workstation',
   'homelab.machine.devserver': 'Dev-Server',
-  'homelab.hw.ram': 'Arbeitsspeicher',
+  'homelab.machine.server.role':
+    'Läuft rund um die Uhr: hostet diese Seite und alle Dienste',
+  'homelab.machine.workstation.role':
+    'Alltagsrechner: Entwickeln, Gaming, lokale KI',
+  'homelab.machine.devserver.role':
+    'Spielwiese: Experimente, Builds, Testumgebungen',
+  'homelab.hw.ram': 'RAM',
   'homelab.hw.board': 'Mainboard',
-  'homelab.hw.gpu': 'Grafik',
   'homelab.hw.network': 'Netzwerk',
   'homelab.hw.storage': 'Speicher',
   'homelab.hw.storage.value': `${STORAGE_TOTAL} auf 10 Platten`,
   'homelab.hw.storage.workstation': '3 TB SSD',
   'homelab.hw.storage.devserver': '1,25 TB SSD · 6 TB HDD',
-  'homelab.hw.os': 'Betriebssystem',
   'homelab.services.title': 'Laufende Dienste',
   'homelab.services.note':
     'Die Dienste werden alle paar Minuten direkt aus dem Homelab geprüft. Liegen keine aktuellen Messdaten vor, wird der Status als unbekannt angezeigt.',
@@ -219,19 +226,20 @@ const de: Partial<Record<UIKey, string>> = {
   'status.offline': 'offline',
   'status.unknown': 'unbekannt',
   'status.asOf': 'Stand: {time}',
+  'services.count': '{total} Dienste',
+  'services.summaryLive':
+    '{total} Dienste · {online} online · geprüft um {time}',
+  'service.badge.own': 'mein Projekt',
+  'service.badge.contributor': 'mitentwickelt',
 
   'about.title': 'Über mich',
   'about.intro':
-    'Ich bin Software Engineer aus der Bodenseeregion. Seit 2019 entwickle ich bei Abacus Research in der Schweiz Business-Software in Java; davor habe ich bei Stadler an Rail Data Services gearbeitet. Abseits der Tastatur — machen wir uns nichts vor: immer noch an der Tastatur — betreibe ich ein Homelab und mache aus „das könnte ich selbst hosten“ Wochenendprojekte.',
+    'Ich bin Softwareentwickler aus der Bodenseeregion und baue am liebsten Software, die anderen Arbeit abnimmt — von der automatischen Belegverarbeitung in einem großen ERP-System bis zu den C#-Plug-ins aus meinen Praktika. Mich reizt der ganze Weg: einen verworrenen Ablauf verstehen, ihn sauber abbilden und daraus etwas machen, das sich gut warten lässt. Am meisten lerne ich in der Praxis: in eigenen Projekten, mit Open-Source-Beiträgen wie zu MySpeed und in meinem Homelab, auf dem auch diese Seite läuft.',
   'about.experience.title': 'Berufserfahrung',
   'about.education.title': 'Ausbildung',
   'about.languages.title': 'Sprachen',
   'about.present': 'heute',
   'about.qualifications.title': 'Zertifikate & Kurse',
-  'contact.title': 'Kontakt',
-  'contact.intro':
-    'Du möchtest dich über Software, Self-Hosting oder eines dieser Projekte austauschen? Schreib mir eine E-Mail oder melde dich auf LinkedIn.',
-  'contact.cv': 'Lebenslauf herunterladen',
   'contact.cv.en': 'Lebenslauf auf Englisch · PDF',
   'contact.cv.de': 'Lebenslauf auf Deutsch · PDF',
 
@@ -275,7 +283,10 @@ export const SHARED_KEYS: readonly UIKey[] = [
   'homelab.title',
   'homelab.hardware.title',
   'homelab.hw.cpu',
+  'homelab.hw.gpu',
+  'homelab.hw.os',
   'status.online',
+  'services.groupOnline',
   'about.skills.title',
 ];
 

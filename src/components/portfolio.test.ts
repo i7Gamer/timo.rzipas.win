@@ -1,16 +1,15 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, expect, it } from 'vitest';
 
-import { EMAIL, LINKEDIN_URL } from '../data/site';
-import { CV_DOWNLOADS } from '../data/cv';
 import { PROJECTS } from '../data/projects';
 import { Window } from 'happy-dom';
 import { LOCALES } from '../i18n';
 import type { Project } from '../lib/projects';
-import ContactSection from './ContactSection.astro';
 import ProjectCard from './ProjectCard.astro';
 import ProjectStory from './ProjectStory.astro';
 import TimelineItem from './TimelineItem.astro';
+
+const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
 
 const project: Project = {
   slug: 'example',
@@ -185,6 +184,15 @@ describe('portfolio components', () => {
     expect(html).toContain('Draw');
     expect(html).toContain('Roll');
     expect(html).toContain('data-project-external');
+    const document = new Window().document;
+    document.body.innerHTML = html;
+    const external = document.querySelector('[data-project-external]')!;
+    expect(external.closest('header')).not.toBeNull();
+    expect(external.className).not.toContain('border-t');
+    const firstSection = document.querySelector('section')!;
+    expect(
+      external.compareDocumentPosition(firstSection) & FOLLOWING,
+    ).toBeTruthy();
   });
 
   it.each([undefined, []])(
@@ -212,23 +220,4 @@ describe('portfolio components', () => {
     expect(html).toContain('Automatic document processing');
     expect(html).toContain('Maintenance');
   });
-
-  it.each(LOCALES)(
-    'shows direct contact and puts the matching CV first in %s',
-    async (locale) => {
-      const container = await AstroContainer.create();
-      const html = await container.renderToString(ContactSection, {
-        props: { locale },
-      });
-      const other = locale === 'en' ? 'de' : 'en';
-      expect(html).toContain('id="contact"');
-      expect(html).toContain(`mailto:${EMAIL}`);
-      expect(html).toContain(LINKEDIN_URL);
-      expect(html.indexOf(CV_DOWNLOADS[locale])).toBeLessThan(
-        html.indexOf(CV_DOWNLOADS[other]),
-      );
-      for (const href of Object.values(CV_DOWNLOADS))
-        expect(html).toContain(`href="${href}"`);
-    },
-  );
 });

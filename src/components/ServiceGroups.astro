@@ -1,5 +1,5 @@
 ---
-import { SERVICE_GROUPS, SERVICES } from '../data/services';
+import { SERVICE_GROUPS, SERVICES, type Service } from '../data/services';
 import { pick, t, type Locale } from '../i18n';
 import ServiceCard from './ServiceCard.astro';
 
@@ -7,33 +7,76 @@ interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
+
+/** Planned services have nothing to check, so they are never counted. */
+const countable = (services: readonly Service[]) =>
+  services.filter((service) => service.status !== 'planned').length;
+const countText = (total: number) =>
+  t(locale, 'services.count').replace('{total}', String(total));
+const summaryText = countText(countable(SERVICES));
 ---
 
 <div
-  class="mt-6 space-y-8"
+  class="mt-6 space-y-4"
   data-status-grid
   data-label-online={t(locale, 'status.online')}
   data-label-offline={t(locale, 'status.offline')}
   data-label-unknown={t(locale, 'status.unknown')}
 >
-  {SERVICE_GROUPS.map((group) => (
-    <section
-      data-service-group={group.id}
-      aria-labelledby={`services-${group.id}`}
-    >
-      <h3
-        id={`services-${group.id}`}
-        class="text-ink border-line mb-4 border-b pb-2 font-mono text-base font-semibold"
+  <p
+    data-status-summary
+    data-static={summaryText}
+    data-template={t(locale, 'services.summaryLive')}
+    class="text-muted font-mono text-xs"
+  >
+    {summaryText}
+  </p>
+  {SERVICE_GROUPS.map((group) => {
+    const members = SERVICES.filter((service) => service.group === group.id);
+    const groupText = countText(countable(members));
+    return (
+      <details
+        data-service-group={group.id}
+        data-print-open
+        open={'open' in group && group.open}
+        class="group border-line border-b pb-4"
       >
-        {pick(locale, group.title)}
-      </h3>
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SERVICES.filter((service) => service.group === group.id).map(
-          (service) => (
+        <summary class="flex cursor-pointer list-none items-baseline justify-between gap-4 py-2 [&::-webkit-details-marker]:hidden">
+          <span class="flex items-baseline gap-2">
+            <span
+              aria-hidden="true"
+              class="text-accent inline-block font-mono transition-transform group-open:rotate-90"
+            >
+              ▸
+            </span>
+            <h3
+              id={`services-${group.id}`}
+              class="text-ink font-mono text-base font-semibold"
+            >
+              {pick(locale, group.title)}
+            </h3>
+          </span>
+          <span
+            data-group-count
+            data-static={groupText}
+            data-template={t(locale, 'services.groupOnline')}
+            class="text-muted font-mono text-xs"
+          >
+            {groupText}
+          </span>
+        </summary>
+        <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {members.map((service) => (
             <ServiceCard service={service} locale={locale} headingLevel="h4" />
-          ),
-        )}
-      </div>
-    </section>
-  ))}
+          ))}
+        </div>
+      </details>
+    );
+  })}
 </div>
+
+<script>
+  import { openDetailsForPrint } from '../lib/print';
+
+  openDetailsForPrint(window);
+</script>

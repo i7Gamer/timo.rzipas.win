@@ -43,10 +43,63 @@ export function applyStatuses(
     dot.classList.remove(...ALL_DOT_CLASSES);
     dot.classList.add(STATUS_DOT_CLASS[status]);
     label.textContent = labels[status] ?? status;
+    card.dataset.status = status;
     updated += 1;
   }
   return updated;
 }
+
+/** Fills a {placeholder} template; unknown placeholders stay as they are. */
+function fill(template: string, values: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? values[key] : match,
+  );
+}
+
+/** Checked services under `scope` and how many of them were seen online. */
+function countServices(scope: ParentNode): { total: number; online: number } {
+  const cards = [
+    ...scope.querySelectorAll<HTMLElement>('[data-service]'),
+  ].filter((card) => card.dataset.planned !== 'true');
+  return {
+    total: cards.length,
+    online: cards.filter((card) => card.dataset.status === 'online').length,
+  };
+}
+
+/**
+ * Writes the online counts into the summary line and each group header
+ * (elements carrying data-template). Without a fresh check (`time` null) the
+ * build-time texts in data-static come back, so a failed check never shows
+ * "0 online".
+ */
+export function updateCounts(root: ParentNode, time: string | null): void {
+  const targets = root.querySelectorAll<HTMLElement>(
+    '[data-status-summary], [data-group-count]',
+  );
+  for (const target of targets) {
+    const { template, static: staticText } = target.dataset;
+    if (template === undefined || staticText === undefined) {
+      continue;
+    }
+    if (time === null) {
+      target.textContent = staticText;
+      continue;
+    }
+    const scope = target.closest<HTMLElement>('[data-service-group]') ?? root;
+    const { total, online } = countServices(scope);
+    target.textContent = fill(template, {
+      total: String(total),
+      online: String(online),
+      time,
+    });
+  }
+}
+
+const CHECK_TIME_FORMAT: Intl.DateTimeFormatOptions = {
+  hour: '2-digit',
+  minute: '2-digit',
+};
 
 const DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = {
   year: 'numeric',
@@ -130,14 +183,14 @@ export async function loadLiveStatus(
     offline: grid.dataset.labelOffline,
     unknown: grid.dataset.labelUnknown,
   });
+  // An empty lang attribute would make toLocaleString throw.
+  const lang = document.documentElement.lang || undefined;
+  updateCounts(
+    grid,
+    fresh ? checkedAt.toLocaleTimeString(lang, CHECK_TIME_FORMAT) : null,
+  );
   if (asOf !== null) {
-    // An empty lang attribute would make toLocaleString throw.
-    markStaleData(
-      asOf,
-      payload,
-      checkedAt,
-      document.documentElement.lang || undefined,
-    );
+    markStaleData(asOf, payload, checkedAt, lang);
   }
 }
 

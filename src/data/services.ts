@@ -5,6 +5,12 @@ export type ServiceStatus = 'online' | 'planned';
 
 export const SERVICE_GROUPS = [
   {
+    id: 'mine',
+    title: { en: 'Built by me', de: 'Selbst entwickelt' },
+    // The only group open by default — the part most worth seeing.
+    open: true,
+  },
+  {
     id: 'infrastructure',
     title: { en: 'Infrastructure', de: 'Infrastruktur' },
   },
@@ -22,7 +28,11 @@ export const SERVICE_GROUPS = [
     id: 'everyday',
     title: { en: 'Everyday apps & games', de: 'Alltagsanwendungen & Spiele' },
   },
-] as const satisfies ReadonlyArray<{ id: string; title: Localized<string> }>;
+] as const satisfies ReadonlyArray<{
+  id: string;
+  title: Localized<string>;
+  open?: boolean;
+}>;
 
 export type ServiceGroup = (typeof SERVICE_GROUPS)[number]['id'];
 
@@ -30,7 +40,8 @@ export interface Service {
   name: string;
   displayName?: Localized<string>;
   group: ServiceGroup;
-  category: Localized<string>;
+  /** Links the service to its project story; only for things I built. */
+  project?: { slug: string; role: 'own' | 'contributor' };
   description: Localized<string>;
   status: ServiceStatus;
 }
@@ -38,8 +49,8 @@ export interface Service {
 export const SERVICES: readonly Service[] = [
   {
     name: 'timo.rzipas.win',
-    group: 'infrastructure',
-    category: { en: 'Web', de: 'Web' },
+    group: 'mine',
+    project: { slug: 'this-website', role: 'own' },
     description: {
       en: 'This website — nginx serving static Astro builds, one per language.',
       de: 'Diese Website — nginx liefert statische Astro-Builds aus, einen pro Sprache.',
@@ -49,7 +60,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Cloudflare Tunnel',
     group: 'infrastructure',
-    category: { en: 'Network', de: 'Netzwerk' },
     description: {
       en: 'Publishes everything behind rzipas.win without opening a single port.',
       de: 'Veröffentlicht alles hinter rzipas.win, ohne einen einzigen Port zu öffnen.',
@@ -60,7 +70,6 @@ export const SERVICES: readonly Service[] = [
     name: 'Bulk Storage',
     displayName: { en: 'Bulk Storage', de: 'Datenspeicher' },
     group: 'infrastructure',
-    category: { en: 'Data', de: 'Daten' },
     description: {
       en: `${STORAGE_TOTAL} of spinning disks for media, backups and experiments.`,
       de: `${STORAGE_TOTAL} Festplattenspeicher für Medien, Backups und Experimente.`,
@@ -70,7 +79,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Grafana',
     group: 'monitoring',
-    category: { en: 'Monitoring', de: 'Monitoring' },
     description: {
       en: 'Dashboards for everything the homelab measures — load, temperatures, traffic.',
       de: 'Dashboards für alles, was das Homelab misst — Last, Temperaturen, Traffic.',
@@ -79,8 +87,8 @@ export const SERVICES: readonly Service[] = [
   },
   {
     name: 'MySpeed',
-    group: 'monitoring',
-    category: { en: 'Monitoring', de: 'Monitoring' },
+    group: 'mine',
+    project: { slug: 'myspeed', role: 'contributor' },
     description: {
       en: 'Around-the-clock internet speed history of my connection.',
       de: 'Regelmäßige Messungen zeigen, wie sich die Geschwindigkeit meiner Internetverbindung im Laufe der Zeit verändert.',
@@ -90,7 +98,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: "What's up Docker",
     group: 'monitoring',
-    category: { en: 'Ops', de: 'Ops' },
     description: {
       en: 'Watches every container image and tells me when an update is out.',
       de: 'Überwacht alle Container-Images und meldet, sobald ein Update da ist.',
@@ -101,7 +108,6 @@ export const SERVICES: readonly Service[] = [
     name: 'Local LLM',
     displayName: { en: 'Local LLM', de: 'Lokales Sprachmodell' },
     group: 'ai',
-    category: { en: 'AI', de: 'KI' },
     description: {
       en: 'Local language model inference — prompts never leave the house.',
       de: 'Lokale Sprachmodell-Inferenz — Prompts verlassen das Haus nicht.',
@@ -111,7 +117,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Open WebUI',
     group: 'ai',
-    category: { en: 'AI', de: 'KI' },
     description: {
       en: 'Chat interface in front of the local models, reachable from every device.',
       de: 'Chat-Oberfläche für die lokalen Sprachmodelle, von jedem Gerät erreichbar.',
@@ -121,7 +126,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Plex',
     group: 'media',
-    category: { en: 'Media', de: 'Medien' },
     description: {
       en: 'Media server for the household — films, series and music off the bulk storage.',
       de: 'Medienserver für den Haushalt — Filme, Serien und Musik vom eigenen Speicher.',
@@ -131,7 +135,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Seerr',
     group: 'media',
-    category: { en: 'Media', de: 'Medien' },
     description: {
       en: 'Request and discovery frontend for the media library — the successor to Overseerr.',
       de: 'Filme und Serien entdecken und ihre Aufnahme in die Medienbibliothek anfragen — der Nachfolger von Overseerr.',
@@ -141,7 +144,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Tautulli',
     group: 'media',
-    category: { en: 'Monitoring', de: 'Monitoring' },
     description: {
       en: 'Playback statistics and history for the Plex server.',
       de: 'Wiedergabestatistiken und Verlauf für den Plex-Server.',
@@ -151,7 +153,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Agregarr',
     group: 'media',
-    category: { en: 'Media', de: 'Medien' },
     description: {
       en: 'Keeps the Plex home screen fresh by rebuilding collections from Trakt, IMDb and friends.',
       de: 'Hält die Plex-Startseite frisch und baut Sammlungen aus Trakt, IMDb & Co. immer wieder neu auf.',
@@ -161,7 +162,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Sonarr',
     group: 'automation',
-    category: { en: 'Automation', de: 'Automatisierung' },
     description: {
       en: 'Keeps track of my series and files new episodes where they belong.',
       de: 'Behält meine Serien im Blick und legt neue Folgen dort ab, wo sie hingehören.',
@@ -171,7 +171,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Radarr',
     group: 'automation',
-    category: { en: 'Automation', de: 'Automatisierung' },
     description: {
       en: 'The same idea as Sonarr, applied to the film library.',
       de: 'Dasselbe Prinzip wie Sonarr, angewandt auf die Filmsammlung.',
@@ -181,7 +180,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Bazarr',
     group: 'automation',
-    category: { en: 'Automation', de: 'Automatisierung' },
     description: {
       en: 'Fetches subtitles for everything Sonarr and Radarr bring in.',
       de: 'Holt Untertitel für alles, was Sonarr und Radarr einsammeln.',
@@ -191,7 +189,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Jackett',
     group: 'automation',
-    category: { en: 'Automation', de: 'Automatisierung' },
     description: {
       en: 'Turns dozens of indexers into one API the *arr services can query.',
       de: 'Macht aus dutzenden Indexern eine API, die die *arr-Dienste abfragen können.',
@@ -201,7 +198,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'FlareSolverr',
     group: 'automation',
-    category: { en: 'Automation', de: 'Automatisierung' },
     description: {
       en: 'Clears the bot checks that would otherwise block the indexer searches.',
       de: 'Löst die Bot-Prüfungen, die sonst die Indexer-Suchen blockieren würden.',
@@ -211,7 +207,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'qBittorrent',
     group: 'automation',
-    category: { en: 'Downloads', de: 'Downloads' },
     description: {
       en: 'The download client the automation stack hands its jobs to.',
       de: 'Der Download-Client, an den die Automatisierung ihre Aufträge übergibt.',
@@ -221,7 +216,6 @@ export const SERVICES: readonly Service[] = [
   {
     name: 'Mealie',
     group: 'everyday',
-    category: { en: 'Home', de: 'Haushalt' },
     description: {
       en: 'Recipe collection and weekly meal planning, self-hosted for the kitchen.',
       de: 'Rezeptsammlung und Wochenplanung — selbst gehostet für die Küche.',
@@ -230,8 +224,8 @@ export const SERVICES: readonly Service[] = [
   },
   {
     name: 'Tutto',
-    group: 'everyday',
-    category: { en: 'Games', de: 'Spiele' },
+    group: 'mine',
+    project: { slug: 'tutto', role: 'own' },
     description: {
       en: 'My Tutto card game, hosted at home for game nights with friends.',
       de: 'Mein Kartenspiel Tutto, zu Hause gehostet für Spieleabende mit Freunden.',
@@ -240,8 +234,8 @@ export const SERVICES: readonly Service[] = [
   },
   {
     name: 'SpotifyTracker',
-    group: 'everyday',
-    category: { en: 'Analytics', de: 'Statistik' },
+    group: 'mine',
+    project: { slug: 'spotify-stats-tracker', role: 'own' },
     description: {
       en: 'My own listening statistics, tracked without Spotify Premium.',
       de: 'Meine Hörstatistiken, erfasst ganz ohne Spotify Premium.',
