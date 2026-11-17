@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { SITE_URL } from '../data/site';
 
@@ -154,7 +154,12 @@ describe('hero', () => {
 });
 
 describe('BaseLayout render', () => {
-  async function render(): Promise<string> {
+  // Loading Astro's container and compiling the layout can take longer than a
+  // single test's 5s budget when the machine is busy, so both load once, up
+  // front, with a budget of their own.
+  const SETUP_TIMEOUT_MS = 30_000;
+  let render: () => Promise<string>;
+  beforeAll(async () => {
     const { experimental_AstroContainer: AstroContainer } =
       await import('astro/container');
     const { default: BaseLayout } = await import('./BaseLayout.astro');
@@ -162,11 +167,12 @@ describe('BaseLayout render', () => {
     const container = await AstroContainer.create({
       astroConfig: { site: SITE_URL },
     });
-    return container.renderToString(BaseLayout, {
-      request: new Request('https://timo.rzipas.win/about/'),
-      slots: { default: '<p>body copy</p>' },
-    });
-  }
+    render = () =>
+      container.renderToString(BaseLayout, {
+        request: new Request('https://timo.rzipas.win/about/'),
+        slots: { default: '<p>body copy</p>' },
+      });
+  }, SETUP_TIMEOUT_MS);
 
   it('starts in the default theme with the canonical URL of the page', async () => {
     const html = await render();

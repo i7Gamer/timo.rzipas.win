@@ -7,6 +7,7 @@ import TerminalWindow from '../components/TerminalWindow.astro';
 import { MACHINES } from '../data/hardware';
 import { getLocale, t, type UIKey } from '../i18n';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { specLines } from '../lib/spec';
 
 const locale = getLocale();
 
@@ -38,7 +39,7 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
           data-hardware-row
           role="region"
           aria-label={t(locale, 'homelab.hardware.title')}
-          class="-mx-4 mt-6 flex snap-x snap-mandatory items-start gap-6 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0"
+          class="-mx-4 mt-6 flex snap-x snap-mandatory items-start gap-6 overflow-x-auto scroll-px-4 px-4 pb-3 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0"
         >
           {MACHINES.map((machine) => (
             <div class="w-[85%] snap-start shrink-0 sm:w-[60%] lg:w-auto">
@@ -54,7 +55,13 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
                   <p class="grid gap-x-2 grid-cols-[6rem_minmax(0,1fr)]">
                     <span class="text-accent">{t(locale, spec.labelKey)}</span>
                     <span class="text-ink min-w-0 break-words">
-                      {spec.valueKey ? t(locale, spec.valueKey) : spec.value}
+                      {specLines(
+                        spec.valueKey
+                          ? t(locale, spec.valueKey)
+                          : (spec.value ?? ''),
+                      ).map((line) => (
+                        <span class="block">{line}</span>
+                      ))}
                     </span>
                   </p>
                 ))}

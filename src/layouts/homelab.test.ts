@@ -34,6 +34,20 @@ describe('homelab hardware row', () => {
     expect(HOMELAB_PAGE).toMatch(/class="[^"]*\bsnap-start\b/);
   });
 
+  it('snaps cards to the page gutter instead of the screen edge', () => {
+    const row = HOMELAB_PAGE.match(
+      /data-hardware-row[^>]*class="([^"]*)"/,
+    )![1].split(' ');
+    expect(row).toContain('scroll-px-4');
+    expect(row).toContain('sm:scroll-px-6');
+  });
+
+  it('puts each part of a spec value on its own line', () => {
+    const call = HOMELAB_PAGE.slice(HOMELAB_PAGE.indexOf('{specLines('));
+    expect(call).toMatch(/^\{specLines\([\s\S]*?\)\.map\(\(line\) => \(/);
+    expect(call).toContain('<span class="block">{line}</span>');
+  });
+
   it('labels the scrollable row as a region for screen-reader users', () => {
     expect(HOMELAB_PAGE).toMatch(/data-hardware-row[^>]*role="region"/);
     expect(HOMELAB_PAGE).toMatch(
