@@ -96,7 +96,7 @@ export function updateCounts(root: ParentNode, time: string | null): void {
   }
 }
 
-const CHECK_TIME_FORMAT: Intl.DateTimeFormatOptions = {
+export const CHECK_TIME_FORMAT: Intl.DateTimeFormatOptions = {
   hour: '2-digit',
   minute: '2-digit',
 };

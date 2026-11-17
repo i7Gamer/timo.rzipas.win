@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   applyStatuses,
+  CHECK_TIME_FORMAT,
   loadLiveStatus,
   markStaleData,
   startLiveStatus,
@@ -484,10 +485,18 @@ describe('loadLiveStatus counts', () => {
         }),
       })),
     );
-    await loadLiveStatus(root, null, new Date('2026-09-07T09:01:00Z'));
-    expect(
-      document.querySelector('[data-status-summary]')!.textContent,
-    ).toMatch(/^1\/1 at \d{2}:\d{2}$/);
+    const checkedAt = new Date('2026-09-07T09:01:00Z');
+    // The time follows the page language, not the machine running the test
+    // (CI runs en-US, which would print "09:01 AM").
+    document.documentElement.lang = 'de';
+    try {
+      await loadLiveStatus(root, null, checkedAt);
+    } finally {
+      document.documentElement.lang = '';
+    }
+    expect(document.querySelector('[data-status-summary]')!.textContent).toBe(
+      `1/1 at ${checkedAt.toLocaleTimeString('de', CHECK_TIME_FORMAT)}`,
+    );
   });
 
   it('keeps the static summary when the check fails', async () => {
