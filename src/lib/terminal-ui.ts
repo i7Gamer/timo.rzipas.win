@@ -33,6 +33,9 @@ export function setUpTerminal(
     return;
   }
   const strings = JSON.parse(root.dataset.strings) as TerminalStrings;
+  const announcement = root.querySelector<HTMLElement>(
+    '[data-terminal-announcement]',
+  );
 
   root.querySelector(IDLE_SELECTOR)?.remove();
   content.classList.add('max-h-72', 'overflow-y-auto');
@@ -52,7 +55,7 @@ export function setUpTerminal(
     'animate-cursor bg-accent inline-block h-[1.05em] w-[0.55em] group-focus-within:hidden';
   idleCursor.setAttribute('aria-hidden', 'true');
   const input = document.createElement('input');
-  input.className = 'text-ink min-w-0 flex-1 bg-transparent outline-none';
+  input.className = 'text-ink min-w-0 flex-1 rounded-sm bg-transparent';
   input.setAttribute(
     'aria-label',
     root.dataset.inputLabel ?? FALLBACK_INPUT_LABEL,
@@ -94,6 +97,7 @@ export function setUpTerminal(
       for (const outputLine of action.lines) {
         insertLine('text-muted', outputLine);
       }
+      announcement?.replaceChildren(action.lines.join(' '));
     } else if (action.type === 'navigate') {
       navigate(action.href);
     } else if (action.type === 'clear') {
@@ -101,6 +105,9 @@ export function setUpTerminal(
         if (line !== row) {
           line.remove();
         }
+      }
+      if (announcement) {
+        announcement.replaceChildren(announcement.dataset.cleared ?? '');
       }
     }
     row.scrollIntoView({ block: 'nearest' });

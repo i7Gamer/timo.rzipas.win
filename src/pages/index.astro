@@ -101,6 +101,13 @@ const TERMINAL_STRINGS = {
             <TerminalLine cmd="" cursor />
           </div>
         </TerminalWindow>
+        <div
+          class="sr-only"
+          aria-live="polite"
+          aria-atomic="true"
+          data-terminal-announcement
+          data-cleared={t(locale, 'terminal.clear.out')}
+        ></div>
       </div>
     </div>
   </section>

@@ -36,6 +36,8 @@ describe('JOBS', () => {
 
     expect(carini.summary.en).toContain('was part of');
     expect(carini.summary.de).toContain('war Teil');
+    expect(carini.summary.en).toContain('2014/15 school year');
+    expect(carini.summary.de).toContain('Schuljahr 2014/15');
     expect(carini.summary.en).not.toContain('separate');
     expect(carini.summary.de).not.toContain('Unabhängig davon');
     expect(carini.project?.href).toBe('/projects/carini-management-system/');

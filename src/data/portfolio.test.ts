@@ -165,11 +165,17 @@ describe('portfolio content contracts', () => {
     }
   });
 
-  it('describes the Carini internship as part of the diploma project', () => {
-    expect(CARINI_STORY.outcome.en).toContain('included the internship');
-    expect(CARINI_STORY.outcome.de).toContain('einschließlich des Praktikums');
-    expect(CARINI_STORY.outcome.en).not.toContain('separate internship');
-    expect(CARINI_STORY.outcome.de).not.toContain('separates Praktikum');
+  it('distinguishes the Carini internship dates from the diploma school year', () => {
+    expect(CARINI_STORY.outcome.en).toContain(
+      'Internship: July–September 2014',
+    );
+    expect(CARINI_STORY.outcome.en).toContain(
+      'Diploma project: 2014/15 school year',
+    );
+    expect(CARINI_STORY.outcome.de).toContain('Praktikum: Juli–September 2014');
+    expect(CARINI_STORY.outcome.de).toContain(
+      'Diplomarbeit: Schuljahr 2014/15',
+    );
   });
 
   it('provides natural German labels for localized names and project media', () => {

@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import { getImage, Image } from 'astro:assets';
 import { pick, t, type Locale } from '../i18n';
 import {
   projectName,
@@ -18,6 +18,7 @@ const sources = projectSources(project, locale);
 const { story } = project;
 const sections = ['problem', 'contribution', 'decisions', 'outcome'] as const;
 const SCREENSHOT_WIDTHS = [480, 800, 1200];
+const linkScreenshots = project.slug !== 'spotify-stats-tracker';
 ---
 
 <article class="py-10">
@@ -123,21 +124,43 @@ const SCREENSHOT_WIDTHS = [480, 800, 1200];
           {t(locale, 'project.screenshots')}
         </h2>
         <div class="grid items-start gap-6 md:grid-cols-2">
-          {story.images.map((figure) => (
-            <figure class="panel overflow-hidden">
-              <Image
-                src={figure.image}
-                alt={pick(locale, figure.alt)}
-                widths={SCREENSHOT_WIDTHS}
-                sizes="(min-width: 768px) 45vw, 92vw"
-                loading="lazy"
-                class="h-auto w-full"
-              />
-              <figcaption class="text-muted p-4 text-sm">
-                {pick(locale, figure.caption)}
-              </figcaption>
-            </figure>
-          ))}
+          {story.images.map(async (figure) => {
+            const thumbnail = {
+              src: figure.image,
+              alt: pick(locale, figure.alt),
+              widths: SCREENSHOT_WIDTHS,
+              sizes: '(min-width: 768px) 45vw, 92vw',
+              loading: 'lazy' as const,
+              class: 'h-auto w-full',
+            };
+            const fullSize = linkScreenshots
+              ? await getImage({
+                  src: figure.image,
+                  width: figure.image.width,
+                  format: 'webp',
+                })
+              : undefined;
+            return (
+              <figure class="panel overflow-hidden">
+                {fullSize ? (
+                  <a
+                    href={fullSize.src}
+                    class="block cursor-zoom-in focus-visible:outline-offset-[-3px]"
+                  >
+                    <Image {...thumbnail} />
+                    <span class="sr-only">
+                      {t(locale, 'project.screenshots.open')}
+                    </span>
+                  </a>
+                ) : (
+                  <Image {...thumbnail} />
+                )}
+                <figcaption class="text-muted p-4 text-sm">
+                  {pick(locale, figure.caption)}
+                </figcaption>
+              </figure>
+            );
+          })}
         </div>
       </>
     </section>

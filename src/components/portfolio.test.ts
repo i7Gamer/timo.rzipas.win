@@ -65,7 +65,18 @@ describe('portfolio components', () => {
         expect(img.getAttribute('loading')).toBe('lazy');
         expect(Number(img.getAttribute('width'))).toBeGreaterThan(0);
         expect(Number(img.getAttribute('height'))).toBeGreaterThan(0);
-        expect(img.closest('a')).toBeNull();
+        const fullSize = img.closest('a');
+        const url = new URL(
+          fullSize!.getAttribute('href')!,
+          'https://example.com',
+        );
+        expect(url.searchParams.get('w')).toBe(String(source.image.width));
+        expect(url.searchParams.get('f')).toBe('webp');
+        expect(fullSize?.textContent).toContain(
+          locale === 'en'
+            ? 'Open full-size image'
+            : 'Bild in voller Größe öffnen',
+        );
         expect(figure.textContent).toContain(source.caption[locale]);
       });
       expect(document.querySelectorAll('h1')).toHaveLength(1);

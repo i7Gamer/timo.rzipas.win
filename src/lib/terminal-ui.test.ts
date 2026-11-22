@@ -29,6 +29,7 @@ function mount(withStrings = true): HTMLElement {
         <div data-terminal-idle><p>~ $ <span class="animate-cursor"></span></p></div>
       </div>
     </div>
+    <div data-terminal-announcement aria-live="polite" data-cleared="Terminal cleared."></div>
   </div>`;
   return document.querySelector('[data-hero-terminal]') as HTMLElement;
 }
@@ -88,12 +89,27 @@ describe('setUpTerminal', () => {
     expect(input().value).toBe('');
   });
 
+  it('announces only the latest result without moving focus', () => {
+    const root = mount();
+    setUpTerminal(root);
+    const announcement = root.querySelector('[data-terminal-announcement]');
+    input().focus();
+    type('whoami');
+    expect(announcement?.textContent).toBe('WHOAMI_OUT');
+    type('cat skills.txt');
+    expect(announcement?.textContent).toBe('SKILLS_OUT');
+    expect(document.activeElement).toBe(input());
+  });
+
   it('clears everything but the input row', () => {
     setUpTerminal(mount());
     type('whoami');
     type('clear');
     expect(lines()).toEqual(['~ $']);
     expect(document.querySelector('input')).not.toBeNull();
+    expect(
+      document.querySelector('[data-terminal-announcement]')?.textContent,
+    ).toBe('Terminal cleared.');
   });
 
   it('navigates through the injected callback', () => {

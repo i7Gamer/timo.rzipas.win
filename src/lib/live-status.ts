@@ -28,6 +28,11 @@ export function applyStatuses(
   labels: StatusLabels,
 ): number {
   const statuses = parseStatusPayload(payload);
+  // Older host installations still publish SpotifyTracker's previous name.
+  const legacySpotifyStatus = statuses.get('SpotifyStatsTracker');
+  if (legacySpotifyStatus !== undefined && !statuses.has('SpotifyTracker')) {
+    statuses.set('SpotifyTracker', legacySpotifyStatus);
+  }
   let updated = 0;
   for (const card of root.querySelectorAll<HTMLElement>('[data-service]')) {
     const reported = statuses.get(card.dataset.service ?? '');
@@ -171,13 +176,14 @@ export async function loadLiveStatus(
   } finally {
     clearTimeout(timeout);
   }
-  const checkedAt = now ?? new Date();
+  const receivedAt = now ?? new Date();
   const generatedAt = parseGeneratedAt(payload);
   const fresh =
     generatedAt !== null &&
-    Number.isFinite(checkedAt.getTime()) &&
-    generatedAt.getTime() - checkedAt.getTime() <= STATUS_FUTURE_TOLERANCE_MS &&
-    !isStale(generatedAt, checkedAt, STATUS_STALE_AFTER_MINUTES);
+    Number.isFinite(receivedAt.getTime()) &&
+    generatedAt.getTime() - receivedAt.getTime() <=
+      STATUS_FUTURE_TOLERANCE_MS &&
+    !isStale(generatedAt, receivedAt, STATUS_STALE_AFTER_MINUTES);
   applyStatuses(grid, fresh ? payload : null, {
     online: grid.dataset.labelOnline,
     offline: grid.dataset.labelOffline,
@@ -187,10 +193,10 @@ export async function loadLiveStatus(
   const lang = document.documentElement.lang || undefined;
   updateCounts(
     grid,
-    fresh ? checkedAt.toLocaleTimeString(lang, CHECK_TIME_FORMAT) : null,
+    fresh ? generatedAt.toLocaleTimeString(lang, CHECK_TIME_FORMAT) : null,
   );
   if (asOf !== null) {
-    markStaleData(asOf, payload, checkedAt, lang);
+    markStaleData(asOf, payload, receivedAt, lang);
   }
 }
 

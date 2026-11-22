@@ -69,6 +69,7 @@ describe('nginx blocks', () => {
   it('are all found by the matcher', () => {
     expect(Object.keys(nginxBlocks()).sort()).toEqual([
       'location /',
+      'location = /404.html',
       'location = /healthz',
       'location = /status.json',
       'server',
@@ -94,6 +95,12 @@ describe('nginx redirects', () => {
   // otherwise build http:// Locations for /projects -> /projects/.
   it('are relative, so the visitor keeps their own scheme', () => {
     expect(nginxBlocks().server).toContain('absolute_redirect off;');
+  });
+
+  it('serves the error template only as an internal 404 response', () => {
+    const blocks = nginxBlocks();
+    expect(blocks.server).toContain('error_page 404 /404.html;');
+    expect(blocks['location = /404.html']).toContain('internal;');
   });
 });
 

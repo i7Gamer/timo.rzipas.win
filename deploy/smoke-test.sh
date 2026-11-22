@@ -143,7 +143,14 @@ check_directory_redirect_is_relative() {
 
 check_missing_page_is_a_localized_404() {
   request /nope -H 'Accept-Language: de'
-  expect_status 404 && expect_body '<html lang="de"' && expect_shared_headers
+  expect_status 404 && expect_body '<html lang="de"' &&
+    expect_body '<meta name="robots" content="noindex"' && expect_shared_headers
+}
+
+check_direct_error_template_is_a_404() {
+  request /404.html
+  expect_status 404 && expect_body '<meta name="robots" content="noindex"' &&
+    expect_shared_headers
 }
 
 check_status_json_is_404_without_the_mount() {
@@ -269,6 +276,7 @@ run 'unknown lang cookie falls back to Accept-Language' check_unknown_cookie_fal
 run '/healthz speaks both languages with the shared headers' check_healthz_speaks_both_languages
 run 'directory redirect is relative' check_directory_redirect_is_relative
 run 'missing page is a localized 404 with the shared headers' check_missing_page_is_a_localized_404
+run 'direct error template returns 404 and noindex' check_direct_error_template_is_a_404
 run '/status.json is a 404 without the mount' check_status_json_is_404_without_the_mount
 run 'hashed assets are immutable and carry no Vary' check_hashed_assets_are_immutable
 run 'Server header hides the nginx version' check_server_header_hides_the_version

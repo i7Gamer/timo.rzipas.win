@@ -13,6 +13,7 @@ const en = {
   'nav.projects': 'Projects',
   'nav.homelab': 'Homelab',
   'nav.about': 'About me',
+  'nav.menu': 'Menu',
 
   'hero.greeting': "Hi, I'm Timo.",
   'hero.intro':
@@ -36,6 +37,7 @@ const en = {
     'commands: help · ls · cd <page> · cat skills.txt · whoami · sudo · curl healthz · clear',
   'terminal.sudo.out': 'Nice try — this homelab already has an owner.',
   'terminal.input.label': 'Terminal input',
+  'terminal.clear.out': 'Terminal cleared.',
 
   'section.featured.title': 'Featured projects',
   'section.featured.all': 'All projects',
@@ -56,6 +58,7 @@ const en = {
   'project.story.outcome': 'The result',
   'project.upstream': 'Original project',
   'project.screenshots': 'A look inside',
+  'project.screenshots.open': 'Open full-size image',
   'project.visit': 'Visit',
   'project.status.active': 'active',
   'project.status.archived': 'archived',
@@ -151,6 +154,7 @@ const de: Partial<Record<UIKey, string>> = {
   'nav.projects': 'Projekte',
   'nav.homelab': 'Homelab',
   'nav.about': 'Über mich',
+  'nav.menu': 'Menü',
 
   'hero.greeting': 'Hi, ich bin Timo.',
   'hero.intro':
@@ -168,6 +172,7 @@ const de: Partial<Record<UIKey, string>> = {
   'terminal.sudo.out':
     'Netter Versuch — dieses Homelab hat schon einen Besitzer.',
   'terminal.input.label': 'Terminal-Eingabe',
+  'terminal.clear.out': 'Terminal geleert.',
 
   'section.featured.title': 'Ausgewählte Projekte',
   'section.featured.all': 'Alle Projekte',
@@ -188,6 +193,7 @@ const de: Partial<Record<UIKey, string>> = {
   'project.story.outcome': 'Das Ergebnis',
   'project.upstream': 'Ursprüngliches Projekt',
   'project.screenshots': 'Einblicke ins Projekt',
+  'project.screenshots.open': 'Bild in voller Größe öffnen',
   'project.visit': 'Ansehen',
   'project.status.active': 'aktiv',
   'project.status.archived': 'archiviert',

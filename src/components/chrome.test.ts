@@ -28,8 +28,12 @@ describe('Header', () => {
 
   it('marks the page being viewed, and only that one', async () => {
     const html = await renderHeader('/projects/');
-    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/href="\/projects\/"[^>]*aria-current="page"/);
+    const navigations = html.match(/<nav\b[^>]*>[\s\S]*?<\/nav>/g) ?? [];
+    expect(navigations).toHaveLength(2);
+    for (const nav of navigations) {
+      expect(nav.match(/aria-current="page"/g)).toHaveLength(1);
+      expect(nav).toMatch(/href="\/projects\/"[^>]*aria-current="page"/);
+    }
   });
 
   it('moves the marker with the page', async () => {
@@ -49,10 +53,14 @@ describe('Header', () => {
     );
   });
 
-  it('lets the nav shrink rather than widening the page', async () => {
+  it('places every interior page in a native mobile menu', async () => {
     const html = await renderHeader('/');
-    expect(html).toMatch(/<nav[^>]*min-w-0/);
-    expect(html).toMatch(/<nav[^>]*overflow-x-auto/);
+    const menu = html.match(/<details\b[^>]*>[\s\S]*?<\/details>/)?.[0] ?? '';
+    expect(menu).toMatch(/<summary[^>]*>\s*Menu\b/);
+    for (const href of ['/projects/', '/homelab/', '/about/']) {
+      expect(menu, href).toContain(`href="${href}"`);
+    }
+    expect(menu).not.toContain('href="/"');
   });
 });
 

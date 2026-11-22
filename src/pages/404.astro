@@ -8,7 +8,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 const locale = getLocale();
 ---
 
-<BaseLayout title={t(locale, 'notFound.title')}>
+<BaseLayout title={t(locale, 'notFound.title')} noindex>
   <section class="mx-auto flex w-full max-w-xl flex-col gap-8 py-20">
     <TerminalWindow title={t(locale, 'terminal.title')}>
       <TerminalLine

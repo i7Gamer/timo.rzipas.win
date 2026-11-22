@@ -90,18 +90,12 @@ describe('header', () => {
     expect(navTag).not.toMatch(/\bw-full\b/);
   });
 
-  it('keeps the beginning of overflowing navigation reachable', () => {
-    const navTag = /<nav\b[^>]*>/.exec(read('components/Header.astro'))?.[0];
-    // Centering an overflowing flex row puts its first links before the
-    // scroll origin, where swiping cannot reveal them.
-    expect(navTag).toMatch(/\bjustify-start\b/);
-    expect(navTag).not.toMatch(/\bjustify-center\b/);
-  });
-
-  it('lets the nav shrink instead of pushing the page wider than the screen', () => {
-    const navTag = /<nav\b[^>]*>/.exec(read('components/Header.astro'))?.[0];
-    expect(navTag).toMatch(/\bmin-w-0\b/);
-    expect(navTag).toMatch(/\boverflow-x-auto\b/);
+  it('switches between the menu and the inline links at the same width', () => {
+    const header = read('components/Header.astro');
+    const navTag = /<nav\b[^>]*>/.exec(header)?.[0];
+    const menuTag = /<details\b[^>]*>/.exec(header)?.[0];
+    expect(navTag).toContain('min-[400px]:flex');
+    expect(menuTag).toContain('min-[400px]:hidden');
   });
 });
 

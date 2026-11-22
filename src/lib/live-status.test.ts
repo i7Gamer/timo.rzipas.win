@@ -74,6 +74,24 @@ describe('applyStatuses', () => {
     expect(labelOf("What's up Docker")).toBe('offline');
   });
 
+  it('accepts the old SpotifyTracker key and prefers the current one', () => {
+    const root = grid(card('SpotifyTracker'));
+    applyStatuses(
+      root,
+      { services: { SpotifyStatsTracker: 'online' } },
+      LABELS,
+    );
+    expect(labelOf('SpotifyTracker')).toBe('online');
+    applyStatuses(
+      root,
+      {
+        services: { SpotifyTracker: 'offline', SpotifyStatsTracker: 'online' },
+      },
+      LABELS,
+    );
+    expect(labelOf('SpotifyTracker')).toBe('offline');
+  });
+
   it('preserves planned services when the payload does not mention them', () => {
     const root = grid(card('Plex') + card('Grafana', 'planned'));
     applyStatuses(root, { services: { Plex: 'online' } }, LABELS);
@@ -471,31 +489,32 @@ describe('updateCounts', () => {
 });
 
 describe('loadLiveStatus counts', () => {
-  it('fills the summary after a fresh check', async () => {
+  it('shows when a fresh check ran on the host', async () => {
     const root = grid(
       `<p data-status-summary data-static="1 service" data-template="{online}/{total} at {time}">1 service</p>${card('Plex')}`,
     );
+    const generatedAt = new Date('2026-09-07T09:00:00Z');
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
         ok: true,
         json: async () => ({
-          generatedAt: '2026-09-07T09:00:00Z',
+          generatedAt: generatedAt.toISOString(),
           services: { Plex: 'online' },
         }),
       })),
     );
-    const checkedAt = new Date('2026-09-07T09:01:00Z');
+    const receivedAt = new Date('2026-09-07T09:01:00Z');
     // The time follows the page language, not the machine running the test
-    // (CI runs en-US, which would print "09:01 AM").
+    // (CI runs en-US, which would include an AM/PM marker).
     document.documentElement.lang = 'de';
     try {
-      await loadLiveStatus(root, null, checkedAt);
+      await loadLiveStatus(root, null, receivedAt);
     } finally {
       document.documentElement.lang = '';
     }
     expect(document.querySelector('[data-status-summary]')!.textContent).toBe(
-      `1/1 at ${checkedAt.toLocaleTimeString('de', CHECK_TIME_FORMAT)}`,
+      `1/1 at ${generatedAt.toLocaleTimeString('de', CHECK_TIME_FORMAT)}`,
     );
   });
 

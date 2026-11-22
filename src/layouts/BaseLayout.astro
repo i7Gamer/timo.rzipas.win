@@ -29,6 +29,7 @@ import {
 interface Props {
   title?: string;
   description?: string;
+  noindex?: boolean;
 }
 
 const locale = getLocale();
@@ -74,7 +75,11 @@ Astro.csp?.insertScriptHash(cspHash(themeBootstrap));
     <meta name="description" content={description} />
     <meta name="author" content={AUTHOR} />
     <meta name="generator" content={Astro.generator} />
-    <link rel="canonical" href={canonicalUrl} />
+    {Astro.props.noindex ? (
+      <meta name="robots" content="noindex" />
+    ) : (
+      <link rel="canonical" href={canonicalUrl} />
+    )}
     <link
       rel="preload"
       as="font"
