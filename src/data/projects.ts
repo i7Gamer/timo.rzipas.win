@@ -106,7 +106,8 @@ export const PROJECTS: readonly Project[] = [
     status: 'active',
     fork: true,
     featured: true,
-    order: 5,
+    featuredOrder: 5,
+    order: 2,
   },
   {
     slug: 'bachelor-thesis',
@@ -142,7 +143,7 @@ export const PROJECTS: readonly Project[] = [
     ],
     status: 'archived',
     featured: false,
-    order: 2,
+    order: 5,
   },
   {
     slug: 'carini-management-system',

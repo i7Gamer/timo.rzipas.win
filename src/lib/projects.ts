@@ -33,6 +33,8 @@ export interface Project {
   /** Set when the project is a fork I contribute to rather than my own. */
   fork?: boolean;
   featured: boolean;
+  /** Homepage order when it differs from the Projects page. */
+  featuredOrder?: number;
   order: number;
   story?: ProjectStoryContent;
   /** Square app icon, shown on cards and the story header. */
@@ -76,5 +78,9 @@ export function sortProjects(projects: readonly Project[]): Project[] {
 }
 
 export function featuredProjects(projects: readonly Project[]): Project[] {
-  return sortProjects(projects.filter((project) => project.featured));
+  return projects
+    .filter((project) => project.featured)
+    .sort(
+      (a, b) => (a.featuredOrder ?? a.order) - (b.featuredOrder ?? b.order),
+    );
 }

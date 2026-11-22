@@ -6,6 +6,7 @@ import {
   featuredProjects,
   projectHref,
   projectName,
+  sortProjects,
   storyProjects,
 } from '../lib/projects';
 import { JOBS } from './jobs';
@@ -102,6 +103,12 @@ describe('portfolio content contracts', () => {
     expect(storyProjects([])).toEqual([]);
     const withoutStory = { ...PROJECTS[0], story: undefined };
     expect(storyProjects([withoutStory])).toEqual([]);
+  });
+
+  it('places MySpeed second and the bachelor project fifth on the Projects page', () => {
+    const projects = sortProjects(PROJECTS);
+    expect(projects[1].slug).toBe('myspeed');
+    expect(projects[4].slug).toBe('bachelor-thesis');
   });
 
   it('uses stable experience anchors, separates early internships and explains tutoring gaps', () => {
