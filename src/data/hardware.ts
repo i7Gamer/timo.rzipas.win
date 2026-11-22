@@ -65,7 +65,7 @@ export const MACHINES: readonly Machine[] = [
         labelKey: 'homelab.hw.storage',
         valueKey: 'homelab.hw.storage.workstation',
       },
-      { labelKey: 'homelab.hw.network', value: '10 GbE' },
+      { labelKey: 'homelab.hw.network', value: '2.5 GbE' },
       {
         labelKey: 'homelab.hw.os',
         valueKey: 'homelab.hw.os.workstation',
