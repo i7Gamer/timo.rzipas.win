@@ -12,6 +12,7 @@ export interface Job {
   from: YearMonth;
   to?: YearMonth;
   summary: Localized<string>;
+  contribution?: Localized<string>;
   project?: {
     href: string;
     label: Localized<string>;
@@ -36,11 +37,11 @@ export const JOBS: readonly Job[] = [
       en: 'Software development in the Debitoren/Kreditoren Belege Prozess team, working on document workflows for accounts receivable and payable.',
       de: 'Softwareentwicklung im Team Debitoren/Kreditoren Belege Prozess, mit Fokus auf die automatische Verarbeitung von Belegen.',
     },
+    contribution: {
+      en: 'I was primarily responsible for the Java/Vaadin workflow in the ERP system that processes automatically recognised documents for accounts receivable and accounts payable. I improved the workflow and wrote automated tests for it.',
+      de: 'Ich war hauptsächlich für den Java/Vaadin-Workflow im ERP-System verantwortlich, der automatisch erkannte Belege für die Debitoren- und Kreditorenbuchhaltung verarbeitet. Ich habe den Ablauf verbessert und automatisierte Tests dafür geschrieben.',
+    },
     highlights: [
-      {
-        en: 'Develop and maintain automatic document processing in the ERP system.',
-        de: 'Automatische Belegverarbeitung im ERP-System weiterentwickeln und warten.',
-      },
       {
         en: 'Investigate and fix bugs, and maintain existing applications.',
         de: 'Fehler analysieren und beheben sowie bestehende Anwendungen pflegen.',
