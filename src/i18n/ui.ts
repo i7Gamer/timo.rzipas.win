@@ -15,17 +15,18 @@ const en = {
   'nav.about': 'About me',
 
   'hero.greeting': "Hi, I'm Timo.",
-  'hero.tagline': 'I develop business software with Java.',
   'hero.intro':
     'At Abacus Research I work on automated document processing in the ERP system. After hours I build personal projects and run my homelab — a small data center in my living room that serves this very site.',
   'hero.role': 'Software Engineer',
   'hero.location': 'Lake Constance region (AT/CH)',
   'hero.cta.about': 'About me',
+  'hero.cta.cv': 'CV (EN)',
   'hero.portraitAlt': 'Portrait of Timo Rzipa',
 
   'terminal.title': 'timo@homelab:~',
   'terminal.whoami.cmd': 'whoami',
-  'terminal.whoami.out': 'Timo Rzipa · Software Engineer @ Abacus Research AG',
+  'terminal.whoami.out':
+    'Timo Rzipa · Java · Automated ERP document processing',
   'terminal.skills.cmd': 'cat skills.txt',
   'terminal.skills.out':
     'Java · C# · TypeScript · Angular · Vue · SQL · Docker · Networking',
@@ -47,6 +48,7 @@ const en = {
     'I build software for things I want to use myself: listening statistics, network monitoring and games with friends. Alongside those projects, you’ll find this website and earlier academic work.',
   'project.source': 'Source',
   'project.details': 'Project details',
+  'project.contribution': 'My contribution',
   'project.back': 'All projects',
   'project.story.problem': 'Starting point',
   'project.story.contribution': 'What I built',
@@ -152,13 +154,15 @@ const de: Partial<Record<UIKey, string>> = {
   'nav.about': 'Über mich',
 
   'hero.greeting': 'Hi, ich bin Timo.',
-  'hero.tagline': 'Ich entwickle Business-Software mit Java.',
   'hero.intro':
     'Bei Abacus Research arbeite ich an der automatisierten Belegverarbeitung im ERP-System. Nach Feierabend entwickle ich eigene Projekte und betreibe mein Homelab — ein kleines Rechenzentrum im Wohnzimmer, auf dem auch diese Website läuft.',
   'hero.location': 'Bodenseeregion (AT/CH)',
   'hero.cta.about': 'Über mich',
+  'hero.cta.cv': 'Lebenslauf (EN)',
   'hero.portraitAlt': 'Porträt von Timo Rzipa',
 
+  'terminal.whoami.out':
+    'Timo Rzipa · Java · Automatisierte Belegverarbeitung im ERP',
   'terminal.health.out': 'ok — ausgeliefert aus dem Wohnzimmer',
   'terminal.help.out':
     'Befehle: help · ls · cd <seite> · cat skills.txt · whoami · sudo · curl healthz · clear',
@@ -177,6 +181,7 @@ const de: Partial<Record<UIKey, string>> = {
     'Ich entwickle Software, die ich selbst nutzen möchte: für Hörstatistiken, Netzwerküberwachung und Spiele mit Freunden. Dazu kommen diese Website und frühere Abschlussarbeiten.',
   'project.source': 'Quellcode',
   'project.details': 'Mehr zum Projekt',
+  'project.contribution': 'Mein Beitrag',
   'project.back': 'Alle Projekte',
   'project.story.problem': 'Ausgangslage',
   'project.story.contribution': 'Meine Umsetzung',
@@ -273,7 +278,6 @@ export const SHARED_KEYS: readonly UIKey[] = [
   // Names and product strings that do not translate.
   'site.name',
   'hero.role',
-  'terminal.whoami.out',
   'homelab.hw.os.workstation',
   // The terminal types real shell commands, whatever the page language.
   'terminal.title',

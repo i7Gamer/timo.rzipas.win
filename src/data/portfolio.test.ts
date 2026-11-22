@@ -169,7 +169,7 @@ describe('portfolio content contracts', () => {
     const bachelor = PROJECTS.find(
       (project) => project.slug === 'bachelor-thesis',
     )!;
-    expect(projectName(bachelor, 'de')).toBe('Bachelorarbeit');
+    expect(projectName(bachelor, 'de')).toBe('Bachelorprojekt');
 
     const serviceLabels = Object.fromEntries(
       SERVICES.map((service) => [

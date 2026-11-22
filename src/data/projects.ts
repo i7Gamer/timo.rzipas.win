@@ -24,6 +24,10 @@ export const PROJECTS: readonly Project[] = [
       en: 'A complete rewrite with push-based listening updates, recovery of missed plays through the Spotify API, and genre and biography data from Last.fm.',
       de: 'Komplett neu entwickelt: Der Tracker kann Wiedergaben per Push erfassen, fehlende Einträge über die Spotify-API ergänzen und Genre-Infos sowie Biografien von Last.fm laden.',
     },
+    contributionSummary: {
+      en: 'I rewrote the tracker, its database layer and its interface for multiple users.',
+      de: 'Ich habe den Tracker samt Datenbankzugriff und Oberfläche für mehrere Nutzer neu entwickelt.',
+    },
     tech: ['Python', 'Flask', 'SQLite', 'JavaScript'],
     story: SPOTIFY_STORY,
     logo: spotifyTrackerLogo,
@@ -44,6 +48,10 @@ export const PROJECTS: readonly Project[] = [
       en: 'A dice-and-card game with synchronized rooms, physical or digital dice, computer opponents and an optional strategy coach.',
       de: 'Das Würfel- und Kartenspiel mit synchronisierten Spielräumen, echten oder digitalen Würfeln, Computergegnern und optionaler Spielhilfe.',
     },
+    contributionSummary: {
+      en: 'I built the browser game with local play, synchronized online rooms and the Ask Otto strategy coach.',
+      de: 'Ich habe das Browserspiel mit lokalem Spiel, synchronisierten Online-Spielräumen und der Spielhilfe „Ask Otto“ entwickelt.',
+    },
     tech: ['TypeScript', 'React', 'Socket.IO', 'SQLite'],
     story: TUTTO_STORY,
     logo: tuttoLogo,
@@ -51,7 +59,7 @@ export const PROJECTS: readonly Project[] = [
     link: 'https://tutto.rzipas.win/',
     status: 'active',
     featured: true,
-    order: 2,
+    order: 3,
   },
   {
     slug: 'this-website',
@@ -64,12 +72,16 @@ export const PROJECTS: readonly Project[] = [
       en: 'Static Astro build per language behind nginx content negotiation, shipped as a Docker image by GitHub Actions and self-hosted on the homelab.',
       de: 'Für jede Sprache ein statischer Astro-Build; nginx liefert die passende Version aus. GitHub Actions erstellt das Docker-Image für den Betrieb im eigenen Homelab.',
     },
+    contributionSummary: {
+      en: 'I built the bilingual Astro site and its interactive terminal.',
+      de: 'Ich habe die zweisprachige Astro-Website samt interaktivem Terminal entwickelt.',
+    },
     tech: ['Astro', 'TypeScript', 'Docker', 'nginx'],
     repo: REPO_URL,
     story: WEBSITE_STORY,
     status: 'active',
     featured: false,
-    order: 3,
+    order: 4,
   },
   {
     slug: 'myspeed',
@@ -82,6 +94,10 @@ export const PROJECTS: readonly Project[] = [
       en: 'My extended MySpeed fork adds iperf3, multi-target testing, a redesigned interface, new color themes and broader language support.',
       de: 'Mein erweiterter MySpeed-Fork bietet iperf3, Geschwindigkeitstests zu mehreren Testzielen, eine neu gestaltete Oberfläche, neue Farbschemata und zusätzliche Sprachen.',
     },
+    contributionSummary: {
+      en: 'I added iperf3 and configurable test targets to my fork and redesigned the statistics pages.',
+      de: 'Ich habe meinen Fork um iperf3 und konfigurierbare Testziele erweitert und die Statistikseiten neu gestaltet.',
+    },
     tech: ['JavaScript', 'React', 'Bun', 'SQLite'],
     story: MYSPEED_STORY,
     logo: myspeedLogo,
@@ -90,12 +106,12 @@ export const PROJECTS: readonly Project[] = [
     status: 'active',
     fork: true,
     featured: true,
-    order: 4,
+    order: 5,
   },
   {
     slug: 'bachelor-thesis',
-    name: 'Bachelor thesis',
-    displayName: { en: 'Bachelor thesis', de: 'Bachelorarbeit' },
+    name: 'Bachelor’s project',
+    displayName: { en: 'Bachelor’s project', de: 'Bachelorprojekt' },
     tagline: {
       en: 'Web app with a Java REST backend (FH Vorarlberg, 2018).',
       de: 'Web-App mit Java-REST-Backend (FH Vorarlberg, 2018).',
@@ -103,6 +119,10 @@ export const PROJECTS: readonly Project[] = [
     description: {
       en: 'A visual PDM editor backed by Java services for critical-path, PERT and Monte Carlo schedule analysis.',
       de: 'Ein visueller PDM-Editor mit Java-Services zur Terminplanung mit der Methode des kritischen Pfads, PERT und Monte-Carlo-Simulation.',
+    },
+    contributionSummary: {
+      en: 'I built the browser-based diagram editor and the Java/Spring Boot REST service for schedule analysis.',
+      de: 'Ich habe den browserbasierten Diagrammeditor und den REST-Service für Terminanalysen mit Java und Spring Boot entwickelt.',
     },
     tech: ['Java', 'Spring Boot', 'JavaScript', 'JointJS', 'REST'],
     story: BACHELOR_STORY,
@@ -122,7 +142,7 @@ export const PROJECTS: readonly Project[] = [
     ],
     status: 'archived',
     featured: false,
-    order: 5,
+    order: 2,
   },
   {
     slug: 'carini-management-system',
@@ -134,6 +154,10 @@ export const PROJECTS: readonly Project[] = [
     description: {
       en: 'A team diploma project in which I carried out most of the technical design and implementation, and wrote nearly all technical thesis sections.',
       de: 'Eine Diplomarbeit im Team: Ich übernahm den Großteil des technischen Entwurfs und der Umsetzung und verfasste nahezu alle technischen Kapitel.',
+    },
+    contributionSummary: {
+      en: 'I handled most of the technical design and implementation, including navigation and document views.',
+      de: 'Ich übernahm den Großteil des technischen Entwurfs und der Umsetzung, darunter die Navigation und die Dokumentenansichten.',
     },
     tech: ['SharePoint 2013', 'JavaScript', 'jQuery', 'HTML & CSS'],
     sources: [

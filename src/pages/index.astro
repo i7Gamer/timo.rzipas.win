@@ -6,6 +6,7 @@ import SectionHeading from '../components/SectionHeading.astro';
 import SocialLinks from '../components/SocialLinks.astro';
 import TerminalLine from '../components/TerminalLine.astro';
 import TerminalWindow from '../components/TerminalWindow.astro';
+import { CV_DOWNLOADS } from '../data/cv';
 import { RAM_TOTAL, STORAGE_TOTAL } from '../data/hardware';
 import { PROJECTS } from '../data/projects';
 import { pageHref } from '../data/routes';
@@ -58,13 +59,23 @@ const TERMINAL_STRINGS = {
             {t(locale, 'hero.greeting')}
           </h1>
         </div>
-        <p class="text-ink text-lg font-medium">{t(locale, 'hero.tagline')}</p>
         <p class="text-muted">{t(locale, 'hero.intro')}</p>
         <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2">
           <SocialLinks locale={locale} size="lg" />
-          <a href={pageHref('about')} class="link-accent font-medium">
-            {t(locale, 'hero.cta.about')} →
-          </a>
+          <div class="flex shrink-0 items-center gap-4">
+            <a href={pageHref('about')} class="link-accent font-medium">
+              {t(locale, 'hero.cta.about')} →
+            </a>
+            <a
+              href={CV_DOWNLOADS.en}
+              download
+              hreflang="en"
+              type="application/pdf"
+              class="btn-accent inline-block"
+            >
+              {t(locale, 'hero.cta.cv')} <span aria-hidden="true">↓</span>
+            </a>
+          </div>
         </div>
       </div>
       <div

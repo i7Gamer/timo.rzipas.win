@@ -54,7 +54,10 @@ describe('ProjectCard', () => {
         locale === 'en' ? 'Bachelor thesis · PDF' : 'Bachelorarbeit · PDF',
       );
       expect(html).toContain(
-        locale === 'en' ? '>Bachelor thesis</' : '>Bachelorarbeit</',
+        locale === 'en' ? '>Bachelor’s project</' : '>Bachelorprojekt</',
+      );
+      expect(html).toContain(
+        locale === 'en' ? 'My contribution' : 'Mein Beitrag',
       );
       expect(html.match(/target="_blank"/g)).toHaveLength(3);
       expect(html).not.toContain('↗');
