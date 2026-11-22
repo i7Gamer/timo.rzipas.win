@@ -155,7 +155,7 @@ const de: Partial<Record<UIKey, string>> = {
 
   'hero.greeting': 'Hi, ich bin Timo.',
   'hero.intro':
-    'Bei Abacus verantworte ich vor allem den Java/Vaadin-ERP-Workflow, der Debitoren- und Kreditorenbelege nach der automatischen Erkennung verarbeitet. In Unity entwickle ich Hearthcoil, ein Indie-Spiel für lokalen Koop.',
+    'Bei Abacus verantworte ich vor allem den Java/Vaadin-ERP-Workflow, der Debitoren- und Kreditorenbelege nach der automatischen Erkennung verarbeitet. In Unity entwickle ich Hearthcoil, ein Indie-Spiel mit lokalem Koop.',
   'hero.location': 'Wohnhaft in der Schweiz',
   'hero.cta.about': 'Über mich',
   'hero.cta.cv': 'Lebenslauf (EN)',

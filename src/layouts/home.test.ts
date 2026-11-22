@@ -32,7 +32,7 @@ describe('home page hero', () => {
       location: 'Wohnhaft in der Schweiz',
       workflow:
         /verantworte ich vor allem.*Debitoren- und Kreditorenbelege nach der automatischen Erkennung verarbeitet/,
-      game: /In Unity entwickle ich Hearthcoil, ein Indie-Spiel für lokalen Koop/,
+      game: /In Unity entwickle ich Hearthcoil, ein Indie-Spiel mit lokalem Koop/,
     },
   ] as const)(
     'shows the current location, Abacus workflow and Hearthcoil in $locale',
