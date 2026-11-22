@@ -16,9 +16,9 @@ const en = {
 
   'hero.greeting': "Hi, I'm Timo.",
   'hero.intro':
-    'At Abacus Research I work on automated document processing in the ERP system. After hours I build personal projects and run my homelab — a small data center in my living room that serves this very site.',
+    "At Abacus, I'm primarily responsible for the Java/Vaadin ERP workflow for receivables and payables documents after automatic recognition. I'm building Hearthcoil, a local co-op indie game in Unity.",
   'hero.role': 'Software Engineer',
-  'hero.location': 'Lake Constance region (AT/CH)',
+  'hero.location': 'Based in Switzerland',
   'hero.cta.about': 'About me',
   'hero.cta.cv': 'CV (EN)',
   'hero.portraitAlt': 'Portrait of Timo Rzipa',
@@ -112,7 +112,7 @@ const en = {
 
   'about.title': 'About me',
   'about.intro':
-    "I'm a software engineer from the Lake Constance region who likes software that quietly removes work from people's desks — from automated document processing in a large ERP system to the C# plug-ins I built as an intern. I enjoy the whole path from understanding a messy process to shipping something maintainable, and I keep learning by building: personal projects, open-source contributions like MySpeed, and a homelab that serves this very site.",
+    "I'm a software engineer based in Switzerland, originally from the Lake Constance region. I like software that quietly removes work from people's desks — from automated document processing in a large ERP system to the C# plug-ins I built as an intern. I enjoy the whole path from understanding a messy process to shipping something maintainable, and I keep learning by building: personal projects, open-source contributions like MySpeed, and a homelab that serves this very site.",
   'about.experience.title': 'Experience',
   'about.experience.contribution': 'My contribution',
   'about.education.title': 'Education',
@@ -155,8 +155,8 @@ const de: Partial<Record<UIKey, string>> = {
 
   'hero.greeting': 'Hi, ich bin Timo.',
   'hero.intro':
-    'Bei Abacus Research arbeite ich an der automatisierten Belegverarbeitung im ERP-System. Nach Feierabend entwickle ich eigene Projekte und betreibe mein Homelab — ein kleines Rechenzentrum im Wohnzimmer, auf dem auch diese Website läuft.',
-  'hero.location': 'Bodenseeregion (AT/CH)',
+    'Bei Abacus verantworte ich vor allem den Java/Vaadin-ERP-Workflow, der Debitoren- und Kreditorenbelege nach der automatischen Erkennung verarbeitet. In Unity entwickle ich Hearthcoil, ein Indie-Spiel für lokalen Koop.',
+  'hero.location': 'Wohnhaft in der Schweiz',
   'hero.cta.about': 'Über mich',
   'hero.cta.cv': 'Lebenslauf (EN)',
   'hero.portraitAlt': 'Porträt von Timo Rzipa',
@@ -240,7 +240,7 @@ const de: Partial<Record<UIKey, string>> = {
 
   'about.title': 'Über mich',
   'about.intro':
-    'Ich bin Softwareentwickler aus der Bodenseeregion und baue am liebsten Software, die anderen Arbeit abnimmt — von der automatischen Belegverarbeitung in einem großen ERP-System bis zu den C#-Plug-ins aus meinen Praktika. Mich reizt der ganze Weg: einen verworrenen Ablauf verstehen, ihn sauber abbilden und daraus etwas machen, das sich gut warten lässt. Am meisten lerne ich in der Praxis: in eigenen Projekten, mit Open-Source-Beiträgen wie zu MySpeed und in meinem Homelab, auf dem auch diese Seite läuft.',
+    'Ich bin Softwareentwickler, wohne in der Schweiz und komme ursprünglich aus der Bodenseeregion. Ich baue am liebsten Software, die anderen Arbeit abnimmt — von der automatischen Belegverarbeitung in einem großen ERP-System bis zu den C#-Plug-ins aus meinen Praktika. Mich reizt der ganze Weg: einen verworrenen Ablauf verstehen, ihn sauber abbilden und daraus etwas machen, das sich gut warten lässt. Am meisten lerne ich in der Praxis: in eigenen Projekten, mit Open-Source-Beiträgen wie zu MySpeed und in meinem Homelab, auf dem auch diese Seite läuft.',
   'about.experience.title': 'Berufserfahrung',
   'about.experience.contribution': 'Mein Beitrag',
   'about.education.title': 'Ausbildung',
