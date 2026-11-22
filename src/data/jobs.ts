@@ -38,8 +38,8 @@ export const JOBS: readonly Job[] = [
       de: 'Softwareentwicklung im Team Debitoren/Kreditoren Belege Prozess, mit Fokus auf die automatische Verarbeitung von Belegen.',
     },
     contribution: {
-      en: 'I was primarily responsible for the Java/Vaadin workflow in the ERP system that processes automatically recognised documents for accounts receivable and accounts payable. I improved the workflow and wrote automated tests for it.',
-      de: 'Ich war hauptsächlich für den Java/Vaadin-Workflow im ERP-System verantwortlich, der automatisch erkannte Belege für die Debitoren- und Kreditorenbuchhaltung verarbeitet. Ich habe den Ablauf verbessert und automatisierte Tests dafür geschrieben.',
+      en: 'Primarily responsible for the Java/Vaadin workflow in the ERP system that processes automatically recognised documents for accounts receivable and accounts payable. Improved the workflow and wrote automated tests for it.',
+      de: 'Hauptsächlich für den Java/Vaadin-Workflow im ERP-System verantwortlich, der automatisch erkannte Belege für die Debitoren- und Kreditorenbuchhaltung verarbeitet. Den Ablauf verbessert und automatisierte Tests dafür geschrieben.',
     },
     highlights: [
       {

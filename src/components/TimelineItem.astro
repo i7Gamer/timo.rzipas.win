@@ -8,7 +8,7 @@ interface Props {
   orgUrl?: string;
   location?: string;
   summary?: string;
-  contribution?: { label: string; text: string };
+  contribution?: string;
   detailHref?: string;
   detailLabel?: string;
   tags?: string[];
@@ -60,12 +60,7 @@ const {
         </h3>
       </summary>
       {summary && <p class="text-muted mt-1 text-base">{summary}</p>}
-      {contribution && (
-        <>
-          <h4 class="text-ink mt-3 font-medium">{contribution.label}</h4>
-          <p class="text-muted mt-1 text-base">{contribution.text}</p>
-        </>
-      )}
+      {contribution && <p class="text-muted mt-3 text-base">{contribution}</p>}
       {detailHref && detailLabel && (
         <a href={detailHref} class="link-accent mt-2 inline-block text-base">
           {detailLabel} →
@@ -113,12 +108,7 @@ const {
         )}
       </h3>
       {summary && <p class="text-muted mt-1 text-base">{summary}</p>}
-      {contribution && (
-        <>
-          <h4 class="text-ink mt-3 font-medium">{contribution.label}</h4>
-          <p class="text-muted mt-1 text-base">{contribution.text}</p>
-        </>
-      )}
+      {contribution && <p class="text-muted mt-3 text-base">{contribution}</p>}
       {detailHref && detailLabel && (
         <a href={detailHref} class="link-accent mt-2 inline-block text-base">
           {detailLabel} →

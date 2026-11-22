@@ -54,10 +54,7 @@ const presentLabel = t(locale, 'about.present');
               location={pick(locale, job.location)}
               summary={pick(locale, job.summary)}
               contribution={
-                job.contribution && {
-                  label: t(locale, 'about.experience.contribution'),
-                  text: pick(locale, job.contribution),
-                }
+                job.contribution ? pick(locale, job.contribution) : undefined
               }
               detailHref={job.project?.href}
               detailLabel={

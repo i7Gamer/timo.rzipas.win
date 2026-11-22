@@ -114,7 +114,6 @@ const en = {
   'about.intro':
     "I'm a software engineer based in Switzerland, originally from the Lake Constance region. I like software that quietly removes work from people's desks — from automated document processing in a large ERP system to the C# plug-ins I built as an intern. I enjoy the whole path from understanding a messy process to shipping something maintainable, and I keep learning by building: personal projects, open-source contributions like MySpeed, and a homelab that serves this very site.",
   'about.experience.title': 'Experience',
-  'about.experience.contribution': 'My contribution',
   'about.education.title': 'Education',
   'about.skills.title': 'Skills',
   'about.languages.title': 'Languages',
@@ -242,7 +241,6 @@ const de: Partial<Record<UIKey, string>> = {
   'about.intro':
     'Ich bin Softwareentwickler, wohne in der Schweiz und komme ursprünglich aus der Bodenseeregion. Ich baue am liebsten Software, die anderen Arbeit abnimmt — von der automatischen Belegverarbeitung in einem großen ERP-System bis zu den C#-Plug-ins aus meinen Praktika. Mich reizt der ganze Weg: einen verworrenen Ablauf verstehen, ihn sauber abbilden und daraus etwas machen, das sich gut warten lässt. Am meisten lerne ich in der Praxis: in eigenen Projekten, mit Open-Source-Beiträgen wie zu MySpeed und in meinem Homelab, auf dem auch diese Seite läuft.',
   'about.experience.title': 'Berufserfahrung',
-  'about.experience.contribution': 'Mein Beitrag',
   'about.education.title': 'Ausbildung',
   'about.languages.title': 'Sprachen',
   'about.present': 'heute',

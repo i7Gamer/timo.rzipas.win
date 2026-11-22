@@ -111,8 +111,8 @@ export const PROJECTS: readonly Project[] = [
   },
   {
     slug: 'bachelor-thesis',
-    name: 'Bachelor’s project',
-    displayName: { en: 'Bachelor’s project', de: 'Bachelorprojekt' },
+    name: 'Bachelor thesis',
+    displayName: { en: 'Bachelor thesis', de: 'Bachelorarbeit' },
     tagline: {
       en: 'Web app with a Java REST backend (FH Vorarlberg, 2018).',
       de: 'Web-App mit Java-REST-Backend (FH Vorarlberg, 2018).',
