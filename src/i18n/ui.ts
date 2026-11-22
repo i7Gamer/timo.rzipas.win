@@ -15,17 +15,18 @@ const en = {
   'nav.about': 'About me',
 
   'hero.greeting': "Hi, I'm Timo.",
-  'hero.tagline': 'I develop business software with Java.',
   'hero.intro':
-    'At Abacus Research I work on automated document processing in the ERP system. After hours I build personal projects and run my homelab — a small data center in my living room that serves this very site.',
+    "At Abacus, I'm primarily responsible for the Java/Vaadin ERP workflow for receivables and payables documents after automatic recognition. I'm building Hearthcoil, a local co-op indie game in Unity.",
   'hero.role': 'Software Engineer',
-  'hero.location': 'Lake Constance region (AT/CH)',
+  'hero.location': 'Based in Switzerland',
   'hero.cta.about': 'About me',
+  'hero.cta.cv': 'CV (EN)',
   'hero.portraitAlt': 'Portrait of Timo Rzipa',
 
   'terminal.title': 'timo@homelab:~',
   'terminal.whoami.cmd': 'whoami',
-  'terminal.whoami.out': 'Timo Rzipa · Software Engineer @ Abacus Research AG',
+  'terminal.whoami.out':
+    'Timo Rzipa · Java · Automated ERP document processing',
   'terminal.skills.cmd': 'cat skills.txt',
   'terminal.skills.out':
     'Java · C# · TypeScript · Angular · Vue · SQL · Docker · Networking',
@@ -47,6 +48,7 @@ const en = {
     'I build software for things I want to use myself: listening statistics, network monitoring and games with friends. Alongside those projects, you’ll find this website and earlier academic work.',
   'project.source': 'Source',
   'project.details': 'Project details',
+  'project.contribution': 'My contribution',
   'project.back': 'All projects',
   'project.story.problem': 'Starting point',
   'project.story.contribution': 'What I built',
@@ -110,8 +112,9 @@ const en = {
 
   'about.title': 'About me',
   'about.intro':
-    "I'm a software engineer from the Lake Constance region who likes software that quietly removes work from people's desks — from automated document processing in a large ERP system to the C# plug-ins I built as an intern. I enjoy the whole path from understanding a messy process to shipping something maintainable, and I keep learning by building: personal projects, open-source contributions like MySpeed, and a homelab that serves this very site.",
+    "I'm a software engineer based in Switzerland, originally from the Lake Constance region. I like software that quietly removes work from people's desks — from automated document processing in a large ERP system to the C# plug-ins I built as an intern. I enjoy the whole path from understanding a messy process to shipping something maintainable, and I keep learning by building: personal projects, open-source contributions like MySpeed, and a homelab that serves this very site.",
   'about.experience.title': 'Experience',
+  'about.experience.contribution': 'My contribution',
   'about.education.title': 'Education',
   'about.skills.title': 'Skills',
   'about.languages.title': 'Languages',
@@ -151,13 +154,15 @@ const de: Partial<Record<UIKey, string>> = {
   'nav.about': 'Über mich',
 
   'hero.greeting': 'Hi, ich bin Timo.',
-  'hero.tagline': 'Ich entwickle Business-Software mit Java.',
   'hero.intro':
-    'Bei Abacus Research arbeite ich an der automatisierten Belegverarbeitung im ERP-System. Nach Feierabend entwickle ich eigene Projekte und betreibe mein Homelab — ein kleines Rechenzentrum im Wohnzimmer, auf dem auch diese Website läuft.',
-  'hero.location': 'Bodenseeregion (AT/CH)',
+    'Bei Abacus verantworte ich vor allem den Java/Vaadin-ERP-Workflow, der Debitoren- und Kreditorenbelege nach der automatischen Erkennung verarbeitet. In Unity entwickle ich Hearthcoil, ein Indie-Spiel mit lokalem Koop.',
+  'hero.location': 'Wohnhaft in der Schweiz',
   'hero.cta.about': 'Über mich',
+  'hero.cta.cv': 'Lebenslauf (EN)',
   'hero.portraitAlt': 'Porträt von Timo Rzipa',
 
+  'terminal.whoami.out':
+    'Timo Rzipa · Java · Automatisierte Belegverarbeitung im ERP',
   'terminal.health.out': 'ok — ausgeliefert aus dem Wohnzimmer',
   'terminal.help.out':
     'Befehle: help · ls · cd <seite> · cat skills.txt · whoami · sudo · curl healthz · clear',
@@ -176,6 +181,7 @@ const de: Partial<Record<UIKey, string>> = {
     'Ich entwickle Software, die ich selbst nutzen möchte: für Hörstatistiken, Netzwerküberwachung und Spiele mit Freunden. Dazu kommen diese Website und frühere Abschlussarbeiten.',
   'project.source': 'Quellcode',
   'project.details': 'Mehr zum Projekt',
+  'project.contribution': 'Mein Beitrag',
   'project.back': 'Alle Projekte',
   'project.story.problem': 'Ausgangslage',
   'project.story.contribution': 'Meine Umsetzung',
@@ -234,8 +240,9 @@ const de: Partial<Record<UIKey, string>> = {
 
   'about.title': 'Über mich',
   'about.intro':
-    'Ich bin Softwareentwickler aus der Bodenseeregion und baue am liebsten Software, die anderen Arbeit abnimmt — von der automatischen Belegverarbeitung in einem großen ERP-System bis zu den C#-Plug-ins aus meinen Praktika. Mich reizt der ganze Weg: einen verworrenen Ablauf verstehen, ihn sauber abbilden und daraus etwas machen, das sich gut warten lässt. Am meisten lerne ich in der Praxis: in eigenen Projekten, mit Open-Source-Beiträgen wie zu MySpeed und in meinem Homelab, auf dem auch diese Seite läuft.',
+    'Ich bin Softwareentwickler, wohne in der Schweiz und komme ursprünglich aus der Bodenseeregion. Ich baue am liebsten Software, die anderen Arbeit abnimmt — von der automatischen Belegverarbeitung in einem großen ERP-System bis zu den C#-Plug-ins aus meinen Praktika. Mich reizt der ganze Weg: einen verworrenen Ablauf verstehen, ihn sauber abbilden und daraus etwas machen, das sich gut warten lässt. Am meisten lerne ich in der Praxis: in eigenen Projekten, mit Open-Source-Beiträgen wie zu MySpeed und in meinem Homelab, auf dem auch diese Seite läuft.',
   'about.experience.title': 'Berufserfahrung',
+  'about.experience.contribution': 'Mein Beitrag',
   'about.education.title': 'Ausbildung',
   'about.languages.title': 'Sprachen',
   'about.present': 'heute',
@@ -271,7 +278,6 @@ export const SHARED_KEYS: readonly UIKey[] = [
   // Names and product strings that do not translate.
   'site.name',
   'hero.role',
-  'terminal.whoami.out',
   'homelab.hw.os.workstation',
   // The terminal types real shell commands, whatever the page language.
   'terminal.title',

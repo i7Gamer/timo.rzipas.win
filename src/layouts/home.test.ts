@@ -10,35 +10,53 @@ const HOME_PAGE = readFileSync(
 );
 
 describe('home page hero', () => {
-  it('states the professional focus in both languages', () => {
-    expect(t('en', 'hero.tagline')).toBe(
-      'I develop business software with Java.',
+  it('states the professional focus in the terminal in both languages', () => {
+    expect(t('en', 'terminal.whoami.out')).toBe(
+      'Timo Rzipa · Java · Automated ERP document processing',
     );
-    expect(t('de', 'hero.tagline')).toBe(
-      'Ich entwickle Business-Software mit Java.',
+    expect(t('de', 'terminal.whoami.out')).toBe(
+      'Timo Rzipa · Java · Automatisierte Belegverarbeitung im ERP',
     );
   });
 
-  it.each(['en', 'de'] as const)(
-    'mentions Abacus document processing before projects and homelab in %s',
-    (locale) => {
+  it.each([
+    {
+      locale: 'en',
+      location: 'Based in Switzerland',
+      workflow:
+        /primarily responsible.*receivables and payables documents after automatic recognition/,
+      game: /Hearthcoil, a local co-op indie game in Unity/,
+    },
+    {
+      locale: 'de',
+      location: 'Wohnhaft in der Schweiz',
+      workflow:
+        /verantworte ich vor allem.*Debitoren- und Kreditorenbelege nach der automatischen Erkennung verarbeitet/,
+      game: /In Unity entwickle ich Hearthcoil, ein Indie-Spiel mit lokalem Koop/,
+    },
+  ] as const)(
+    'shows the current location, Abacus workflow and Hearthcoil in $locale',
+    ({ locale, location, workflow, game }) => {
       const intro = t(locale, 'hero.intro');
-      const abacus = intro.indexOf('Abacus');
-      const projects = intro.search(/projects|Projekte/);
-      const homelab = intro.search(/homelab/i);
-      expect(intro).toMatch(/document processing|Belegverarbeitung/);
-      expect(abacus).toBeGreaterThanOrEqual(0);
-      expect(abacus).toBeLessThan(projects);
-      expect(projects).toBeLessThan(homelab);
+      expect(t(locale, 'hero.location')).toBe(location);
+      expect(intro).toContain('Abacus');
+      expect(intro).toContain('Java/Vaadin');
+      expect(intro).toMatch(workflow);
+      expect(intro).toMatch(game);
+      expect(intro.indexOf('Abacus')).toBeLessThan(intro.indexOf('Hearthcoil'));
+      expect(intro).not.toMatch(/homelab|living room|Wohnzimmer/i);
     },
   );
 });
 
 describe('home page hero links', () => {
-  it('shows the social icons and an About me link instead of buttons', () => {
+  it('shows the social icons, About me link and English CV download', () => {
     expect(HOME_PAGE).toContain('<SocialLinks locale={locale} size="lg" />');
     expect(HOME_PAGE).toContain("href={pageHref('about')}");
     expect(HOME_PAGE).toContain("t(locale, 'hero.cta.about')");
+    expect(HOME_PAGE).toContain('href={CV_DOWNLOADS.en}');
+    expect(HOME_PAGE).toContain('download');
+    expect(HOME_PAGE).toContain("t(locale, 'hero.cta.cv')");
     expect(HOME_PAGE).not.toContain('hero.cta.projects');
     expect(HOME_PAGE).not.toContain('hero.cta.homelab');
   });

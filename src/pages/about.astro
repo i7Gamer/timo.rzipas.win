@@ -53,6 +53,12 @@ const presentLabel = t(locale, 'about.present');
               orgUrl={job.url}
               location={pick(locale, job.location)}
               summary={pick(locale, job.summary)}
+              contribution={
+                job.contribution && {
+                  label: t(locale, 'about.experience.contribution'),
+                  text: pick(locale, job.contribution),
+                }
+              }
               detailHref={job.project?.href}
               detailLabel={
                 job.project ? pick(locale, job.project.label) : undefined

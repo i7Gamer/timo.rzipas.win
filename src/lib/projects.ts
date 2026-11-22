@@ -24,6 +24,7 @@ export interface Project {
   displayName?: Localized<string>;
   tagline: Localized<string>;
   description: Localized<string>;
+  contributionSummary?: Record<Locale, string>;
   tech: string[];
   repo?: string;
   sources?: Array<{ href: string; label: Localized<string> }>;
