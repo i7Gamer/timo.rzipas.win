@@ -50,11 +50,12 @@ describe('home page hero', () => {
 });
 
 describe('home page hero links', () => {
-  it('shows the social icons, About me link and English CV download', () => {
+  it('shows the social icons, About me link and localized CV download', () => {
     expect(HOME_PAGE).toContain('<SocialLinks locale={locale} size="lg" />');
     expect(HOME_PAGE).toContain("href={pageHref('about')}");
     expect(HOME_PAGE).toContain("t(locale, 'hero.cta.about')");
-    expect(HOME_PAGE).toContain('href={CV_DOWNLOADS.en}');
+    expect(HOME_PAGE).toContain('href={CV_DOWNLOADS[locale]}');
+    expect(HOME_PAGE).toContain('hreflang={locale}');
     expect(HOME_PAGE).toContain('download');
     expect(HOME_PAGE).toContain("t(locale, 'hero.cta.cv')");
     expect(HOME_PAGE).not.toContain('hero.cta.projects');

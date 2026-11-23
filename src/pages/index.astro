@@ -67,9 +67,9 @@ const TERMINAL_STRINGS = {
               {t(locale, 'hero.cta.about')} →
             </a>
             <a
-              href={CV_DOWNLOADS.en}
+              href={CV_DOWNLOADS[locale]}
               download
-              hreflang="en"
+              hreflang={locale}
               type="application/pdf"
               class="btn-accent inline-block"
             >
