@@ -161,7 +161,7 @@ const de: Partial<Record<UIKey, string>> = {
     'Bei Abacus verantworte ich vor allem den Java/Vaadin-ERP-Workflow, der Debitoren- und Kreditorenbelege nach der automatischen Erkennung verarbeitet. In Unity entwickle ich Hearthcoil, ein Indie-Spiel mit lokalem Koop.',
   'hero.location': 'Wohnhaft in der Schweiz',
   'hero.cta.about': 'Über mich',
-  'hero.cta.cv': 'Lebenslauf (EN)',
+  'hero.cta.cv': 'Lebenslauf (DE)',
   'hero.portraitAlt': 'Porträt von Timo Rzipa',
 
   'terminal.whoami.out':
