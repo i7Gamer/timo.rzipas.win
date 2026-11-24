@@ -383,7 +383,8 @@ function prepareExactQuestion(
   const unknown = documentAnswer([], 'unknown', 'index', locale, corpusVersion);
   if (outOfScope.test(terms) || profileQuestionNote(terms, locale))
     return { fallback: unknown, candidates: [], semanticPool: [] };
-  const approved = approvedAnswer(terms);
+  const careerScope = careerFollowUpScope(terms, history);
+  const approved = careerScope ? undefined : approvedAnswer(terms);
   const reviewed = (approved?.ids ?? []).flatMap((id) => {
     const fact = facts.find((entry) => entry.id === id);
     return fact ? [fact] : [];
@@ -434,14 +435,12 @@ function prepareExactQuestion(
     };
   }
 
-  const careerScope = careerFollowUpScope(terms, history);
   if (careerScope) {
     const candidates = careerCandidates(history, careerScope);
     return {
-      fallback:
-        careerScope === 'abacus' && candidates.length
-          ? documentAnswer(candidates, 'answer', 'index', locale, corpusVersion)
-          : unknown,
+      fallback: candidates.length
+        ? documentAnswer(candidates, 'answer', 'index', locale, corpusVersion)
+        : unknown,
       candidates,
       semanticPool: [],
     };

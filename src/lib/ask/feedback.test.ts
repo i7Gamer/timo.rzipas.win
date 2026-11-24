@@ -66,6 +66,53 @@ afterEach(async () => {
 });
 
 describe('portfolio Ask feedback regressions', () => {
+  it.each([
+    [
+      'en',
+      'work',
+      'more?',
+      'more about work',
+      'thats the same again tell me more',
+    ],
+    [
+      'de',
+      'Arbeit',
+      'Noch mehr?',
+      'Mehr über die Arbeit',
+      'Das hast du schon gesagt. Erzähl mir mehr',
+    ],
+  ] as const)(
+    'keeps work follow-ups fresh with the selector unavailable in %s',
+    async (locale, ...questions) => {
+      const select = vi.fn(async () => {
+        throw new Error('Model offline');
+      });
+      await open({ local: true, select });
+      const history: ChatTurn[] = [];
+      const seen = new Set<string>();
+      for (const question of questions) {
+        const response = await ask(question, locale, history);
+        expect(response.status, question).toBe(200);
+        expect(response.body.status, question).toBe('answer');
+        const claims = response.body.claims ?? [];
+        expect(claims.length, question).toBeGreaterThan(0);
+        for (const { id } of claims) {
+          expect(id).not.toBe('current-work');
+          expect(seen.has(id), `${question}: ${id}`).toBe(false);
+          seen.add(id);
+        }
+        history.push({
+          question,
+          answer: claims.map(({ text }) => text).join(' '),
+        });
+      }
+      expect(seen).toContain('abacus-workflow');
+      expect(seen).toContain('stadler-vpn');
+      expect(seen).toContain('tutoring');
+      expect(select).toHaveBeenCalled();
+    },
+  );
+
   it('lets the model choose a public highlight even without a named project', async () => {
     const select = vi.fn(async () => ({ status: 'answer', slots: [2] }));
     await open({ local: true, select });

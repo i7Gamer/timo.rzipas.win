@@ -9,6 +9,7 @@ import {
   sourceLink,
 } from './catalog';
 import { languageQuestion, moreQuestion } from './conversation';
+import { careerCandidates, careerFollowUpScope } from './career';
 import {
   approvedAnswer,
   asksAboutAICoding,
@@ -660,6 +661,19 @@ export function findSiteContent(
     return { status: 'unknown', sources: [], missing: [], note: profileNote };
   const contextualQuestion =
     subject?.href === PET_SOURCE_PATH ? normalized + ' pets' : normalized;
+  const careerScope = careerFollowUpScope(contextualQuestion, history);
+  const careerIds =
+    careerScope && careerCandidates(history, careerScope).map(({ id }) => id);
+  if (careerIds?.length === 0)
+    return {
+      status: 'unknown',
+      sources: [],
+      missing: [],
+      note:
+        index.locale === 'de'
+          ? 'Über welche Stelle oder Aufgabe möchtest du mehr erfahren?'
+          : 'Which role or part of Timo’s work would you like to explore?',
+    };
   const highlights = profileHighlightIds(contextualQuestion, history);
   if (highlights?.length === 0)
     return {
@@ -672,7 +686,9 @@ export function findSiteContent(
           : 'Which project or role would you like to hear more about?',
     };
   const modelIds =
-    highlights?.slice(0, 1) ?? modelOverviewIds(contextualQuestion);
+    careerIds ??
+    highlights?.slice(0, 1) ??
+    modelOverviewIds(contextualQuestion);
   const otherCats =
     subject?.href === PET_SOURCE_PATH && asksAboutOtherCats(normalized);
   if (otherCats && !subject?.catFactId)
@@ -687,6 +703,7 @@ export function findSiteContent(
           : 'Which cat should I leave out?',
     };
   const approved =
+    (careerIds ? { ids: careerIds, partial: undefined } : undefined) ??
     (otherCats
       ? {
           ids: PET_DETAIL_IDS.filter((id) => id !== subject?.catFactId),

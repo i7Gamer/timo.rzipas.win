@@ -3,6 +3,7 @@ import type { ChatTurn } from './history.ts';
 import {
   modelOverviewIds,
   moreQuestion,
+  workDetails,
   WORK_EXPERIENCE_IDS,
 } from './reviewed-questions.ts';
 
@@ -14,10 +15,20 @@ const careerFacts = [
   'early-stadler',
   ...WORK_EXPERIENCE_IDS,
 ].flatMap((id) => facts.filter((fact) => fact.id === id));
+const workFacts = [
+  ...careerFacts,
+  ...[
+    'abacus-tests',
+    'abacus-jenkins',
+    'abacus-reviews-tests',
+    'carini-document-view',
+    'carini-team',
+  ].flatMap((id) => facts.filter((fact) => fact.id === id)),
+];
 const abacusFacts = facts.filter(
   ({ id }) => id === 'abacus-workflow' || id === 'abacus-tests',
 );
-type CareerScope = 'career' | 'abacus';
+type CareerScope = 'career' | 'abacus' | 'work';
 
 function includesFact(text: string, fact: Fact) {
   return Object.values(fact.answer).some((answer) =>
@@ -30,24 +41,24 @@ export function careerFollowUpScope(
   history: readonly ChatTurn[],
 ): CareerScope | undefined {
   if (otherRoles.test(terms)) return 'career';
-  const previous = history.at(-1);
-  if (!previous || !moreQuestion.test(terms)) return;
+  if (!moreQuestion.test(terms) && !workDetails.test(terms)) return;
   const anchor = history.findLast(
     ({ question }) => !moreQuestion.test(normalize(question)),
   );
+  if (!anchor) return;
+  const anchorQuestion = normalize(anchor.question);
   if (
-    anchor &&
-    /\babacus\b/.test(normalize(anchor.question)) &&
+    /\babacus\b/.test(anchorQuestion) &&
     abacusFacts.some((fact) => includesFact(normalize(anchor.answer), fact))
   )
     return 'abacus';
-  const previousQuestion = normalize(previous.question);
+  if (otherRoles.test(anchorQuestion)) return 'career';
   if (
-    otherRoles.test(previousQuestion) ||
-    modelOverviewIds(previousQuestion) === WORK_EXPERIENCE_IDS ||
-    careerFacts.some((fact) => includesFact(normalize(previous.answer), fact))
+    modelOverviewIds(anchorQuestion) === WORK_EXPERIENCE_IDS ||
+    workDetails.test(anchorQuestion) ||
+    careerFacts.some((fact) => includesFact(normalize(anchor.answer), fact))
   )
-    return 'career';
+    return 'work';
 }
 
 export function careerCandidates(
@@ -55,7 +66,13 @@ export function careerCandidates(
   scope: CareerScope,
 ) {
   const covered = history.map(({ answer }) => normalize(answer));
-  return (scope === 'abacus' ? abacusFacts : careerFacts)
+  const scopedFacts =
+    scope === 'abacus'
+      ? abacusFacts
+      : scope === 'work'
+        ? workFacts
+        : careerFacts;
+  return scopedFacts
     .filter((fact) => !covered.some((previous) => includesFact(previous, fact)))
     .slice(0, MAX_CLAIMS);
 }

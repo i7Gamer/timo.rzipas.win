@@ -54,10 +54,11 @@ export function questionLocale(question: string, fallback: Locale): Locale {
   if (/^was (?:the|this|that|it|he|she|there)\b/.test(text)) return 'en';
   const german =
     /^war /.test(text) ||
-    /\b(?:was|wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses|ausbildung|freizeit|schwaechen|lebenslauf|spannendes|interessantes|kurzprofil|projekte)\b/.test(
+    /\b(?:was|wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses|ausbildung|freizeit|schwaechen|lebenslauf|spannendes|interessantes|kurzprofil|projekte|arbeit)\b/.test(
       text,
     );
   const english =
+    text === 'work' ||
     /\b(?:(?:short|quick|brief) (?:pitch|intro|bio)|what|whats|which|where|when|who|why|how|does|tell|show|have|are|please|thanks|thank|hello|called|languages?|langauges?|cats?|pets?|his|any|more|summary|summari[sz]e|experience|colou?rs?|male|female|gender|other|different|education|leisure|hobbies|downsides|perks|interesting|projects)\b/.test(
       text,
     );

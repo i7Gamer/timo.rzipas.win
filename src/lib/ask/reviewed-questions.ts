@@ -19,7 +19,7 @@ const genreCount =
 const kniffel = /\bkniffel\b/;
 
 export const moreQuestion =
-  /^(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|erzaehl mir mehr|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
+  /^(?:(?:that ?s the same(?: again)?|you already said that|das hast du schon gesagt) )?(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|erzaehl mir mehr|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
 
 export function asksAboutAICoding(terms: string) {
   return (
@@ -162,8 +162,9 @@ const workAndProjectInventory =
   /^(?:(?:please )?(?:list|show(?: me)?|give me|what are) (?:all )?(?:(?:timo ?s|his|your|the) )?(?:(?:work(?: experience)?|jobs?|roles?) and (?:personal )?projects|projects and (?:work(?: experience)?|jobs?|roles?))(?: (?:of|by|from) timo)?(?: please)?|(?:liste|zeig(?: mir)?) (?:alle? )?(?:timos )?(?:arbeit|jobs?|stellen|berufserfahrung) und projekte(?: von timo)?(?: auf)?)$/;
 const projectInventory =
   /^(?:(?:list|show(?: me)?) all (?:of )?(?:(?:timo ?s|his|your|the) )?projects(?: please)?|(?:liste|zeig(?: mir)?) alle (?:timos )?projekte(?: von timo)?(?: auf)?)$/;
-const workDetails =
-  /^(?:(?:(?:tell|give|show) me )?(?:more (?:details? )?about|expand on) (?:his|timo ?s|your) (?:work(?: experience)?|career)|(?:erzaehl mir )?mehr (?:zu|ueber) (?:timos|seine|seiner) (?:arbeit|berufserfahrung))$/;
+const workTopic = /^(?:work(?: experience)?|career|arbeit|berufserfahrung)$/;
+export const workDetails =
+  /^(?:(?:(?:tell|give|show) me )?(?:more (?:details? )?about|expand on) (?:(?:his|timo ?s|your|the) )?(?:work(?: experience)?|career)|(?:erzaehl mir )?mehr (?:zu|ueber) (?:(?:timos|seine|seiner|die|der) )?(?:arbeit|berufserfahrung))$/;
 const profileHighlightsQuestion = 'portfolio highlights';
 const highlightIds = [
   'hearthcoil-launcher-playtest',
@@ -244,7 +245,11 @@ export function profileQuestionNote(terms: string, locale: Locale) {
 export function modelOverviewIds(terms: string): readonly string[] | undefined {
   if (asksPetDetails(terms)) return PET_DETAIL_IDS;
   if (jobTitles.test(terms)) return ['career-role-titles'];
-  if (englishWorkSummary.test(terms) || germanWorkSummary.test(terms))
+  if (
+    workTopic.test(terms) ||
+    englishWorkSummary.test(terms) ||
+    germanWorkSummary.test(terms)
+  )
     return WORK_EXPERIENCE_IDS;
 }
 

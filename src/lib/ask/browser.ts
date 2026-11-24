@@ -368,7 +368,7 @@ export function setupAskWork(panel: HTMLElement) {
         ? subject && messages.missingSubject
           ? messages.missingSubject.replace('{subject}', () => subject.label)
           : messages.seePage
-        : related && !lead
+        : related && !lead && !answer.preferModel
           ? messages.related
           : '');
     if (statusLine)
@@ -635,10 +635,12 @@ export function setupAskWork(panel: HTMLElement) {
       const terms = normalize(question);
       const profileQuestion = profileFollowUp(terms, publicHistory);
       if (terms !== profileQuestion) question = profileQuestion;
-      const careerFollowUp =
-        panel.dataset.mode === 'local' &&
-        careerFollowUpScope(normalize(question), publicHistory);
+      const careerFollowUp = careerFollowUpScope(
+        normalize(question),
+        publicHistory,
+      );
       const projectContext =
+        !careerFollowUp &&
         !indexOnly &&
         (!chosen || projectListChosen) &&
         projectFollowUp(normalize(question), publicHistory);
@@ -657,9 +659,9 @@ export function setupAskWork(panel: HTMLElement) {
           (languageQuestion.test(shortFollowUp) ||
             moreQuestion.test(shortFollowUp) ||
             !(index && namesSiteSubject(question, index))));
-      if (careerFollowUp || (projectContext && !projectContext.projectId)) {
+      if (projectContext && !projectContext.projectId) {
         setSubjects([]);
-      } else if (isFollowUp) {
+      } else if (!careerFollowUp && isFollowUp) {
         const previous =
           pivot && earlier && pickSubject(pivot[1], earlier.subjects);
         const options = chosen

@@ -84,6 +84,9 @@ describe('Ask public page content', () => {
       questionLocale('Nenn mir ein spannendes Detail über Timo', 'en'),
     ).toBe('de');
     expect(questionLocale('Short pitch about Timo', 'de')).toBe('en');
+    expect(questionLocale('Arbeit', 'en')).toBe('de');
+    expect(questionLocale('Mehr über die Arbeit', 'en')).toBe('de');
+    expect(questionLocale('Work', 'de')).toBe('en');
   });
 
   it.each([
@@ -1718,6 +1721,87 @@ describe('Ask public page content', () => {
         inventory.querySelectorAll('a[href="/about/"], a[href="/projects/"]')
           .length,
       ).toBe(2);
+    } finally {
+      vi.unstubAllGlobals();
+      window.close();
+    }
+  });
+
+  it('keeps the “yo” work conversation on reviewed career evidence when the API is offline', async () => {
+    const window = new Window();
+    try {
+      vi.stubGlobal('document', window.document);
+      window.document.documentElement.lang = 'en';
+      const content = parseSiteContent(
+        {
+          locale: 'en',
+          pages: [
+            extractPage(
+              '<main><h1>About</h1><p data-ask-overview>Timo works as a software engineer at Abacus and previously worked at Stadler RDS. His professional work includes Java document workflows, VPN certificate management and C# and SQL tools. Current update: Outside work I am refining Hearthcoil and improving my portfolio chatbot.</p><h2>Experience</h2><h3>Software Engineer · Abacus</h3><p>Timo improved the receivables and payables document workflow and wrote automated tests for it.</p><h3>Software Developer · Stadler RDS</h3><p>Timo built an Angular frontend to manage VPN certificates used for communication between trains and Rail Data Services.</p><h3>Stadler internships</h3><p>Timo built C# and SQL plug-ins for Outlook and MindManager to share project data and make assigned tasks accessible.</p></main>',
+              '/about/',
+            ),
+            extractPage(
+              '<main><h1>CARINI</h1><p>Timo built a SharePoint document-management system.</p></main>',
+              '/projects/carini-management-system/',
+            ),
+          ],
+        },
+        'en',
+      )!;
+      const lookup = vi.fn<typeof fetch>(async (path) =>
+        path === SITE_CONTENT_PATH
+          ? Response.json(content)
+          : new Response(null, { status: 503 }),
+      );
+      vi.stubGlobal('fetch', lookup);
+      window.document.body.innerHTML =
+        '<section data-mode="local" data-version="fixture"><div data-ask-result></div><form><textarea></textarea><button type="submit">Ask</button></form></section>';
+      const panel = window.document.querySelector('section')!;
+      panel.dataset.messages = JSON.stringify({ wait: 'Looking…' });
+      setupAskWork(panel as unknown as HTMLElement);
+      const replies = () =>
+        Array.from(panel.querySelectorAll('[data-ask-reply]'));
+      for (const [index, question] of [
+        'yo',
+        'work',
+        'more?',
+        'more about work',
+        'thats the same again tell me more',
+      ].entries()) {
+        panel.querySelector('textarea')!.value = question;
+        panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
+        await vi.waitFor(() => expect(replies()).toHaveLength(index + 1));
+        await vi.waitFor(() =>
+          expect(panel.querySelector('button')?.disabled).toBe(false),
+        );
+      }
+
+      const [greeting, overview, otherRoles, abacus, carini] = replies();
+      expect(greeting.textContent).toMatch(/Hey|Hi/i);
+      expect(overview.textContent).toMatch(/Abacus.*Stadler.*Outlook/is);
+      expect(overview.querySelector('a')?.getAttribute('href')).toBe(
+        '/about/#abacus',
+      );
+      expect(otherRoles.textContent).toMatch(
+        /Code Base Camp.*CARINI.*2011 and 2013/is,
+      );
+      expect(abacus.textContent).toMatch(/automated tests.*Jenkins/is);
+      expect(carini.textContent).toMatch(/CARINI.*SharePoint/is);
+      expect(
+        replies()
+          .map(({ textContent }) => textContent)
+          .join(' '),
+      ).not.toMatch(/Outside work|portfolio chatbot/i);
+      expect(
+        lookup.mock.calls
+          .filter(([path]) => path === '/api/ask')
+          .map(([, options]) => JSON.parse(String(options?.body)).question),
+      ).toEqual([
+        'work',
+        'more?',
+        'more about work',
+        'thats the same again tell me more',
+      ]);
     } finally {
       vi.unstubAllGlobals();
       window.close();
