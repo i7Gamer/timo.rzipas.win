@@ -13,6 +13,7 @@ import { corpusVersion } from '../../src/lib/ask/version.ts';
 import {
   careerCandidates,
   careerFollowUpScope,
+  isEmployerScope,
 } from '../../src/lib/ask/career.ts';
 import {
   approvedAnswer,
@@ -378,13 +379,14 @@ function prepareExactQuestion(
   question: string,
   locale: Locale,
   history: readonly ChatTurn[] = [],
+  boundedOnly = false,
 ) {
   const terms = profileFollowUp(normalize(question), history);
   const unknown = documentAnswer([], 'unknown', 'index', locale, corpusVersion);
-  if (outOfScope.test(terms) || profileQuestionNote(terms, locale))
+  if (outOfScope.test(terms) || profileQuestionNote(terms, locale, question))
     return { fallback: unknown, candidates: [], semanticPool: [] };
   const careerScope = careerFollowUpScope(terms, history);
-  const approved = careerScope ? undefined : approvedAnswer(terms);
+  const approved = careerScope ? undefined : approvedAnswer(terms, question);
   const reviewed = (approved?.ids ?? []).flatMap((id) => {
     const fact = facts.find((entry) => entry.id === id);
     return fact ? [fact] : [];
@@ -401,6 +403,7 @@ function prepareExactQuestion(
         'index',
         locale,
         corpusVersion,
+        approved.missing,
       ),
       candidates: [],
       semanticPool: [],
@@ -437,9 +440,20 @@ function prepareExactQuestion(
 
   if (careerScope) {
     const candidates = careerCandidates(history, careerScope);
+    const fallbackCandidates = isEmployerScope(careerScope)
+      ? candidates.slice(0, 1)
+      : candidates;
     return {
       fallback: candidates.length
-        ? documentAnswer(candidates, 'answer', 'index', locale, corpusVersion)
+        ? documentAnswer(
+            fallbackCandidates,
+            fallbackCandidates.some(({ partial }) => partial)
+              ? 'partial'
+              : 'answer',
+            'index',
+            locale,
+            corpusVersion,
+          )
         : unknown,
       candidates,
       semanticPool: [],
@@ -452,7 +466,13 @@ function prepareExactQuestion(
     return {
       fallback:
         projectContext.listRequested && candidates.length
-          ? documentAnswer(candidates, 'answer', 'index', locale, corpusVersion)
+          ? documentAnswer(
+              candidates,
+              candidates.some(({ partial }) => partial) ? 'partial' : 'answer',
+              'index',
+              locale,
+              corpusVersion,
+            )
           : unknown,
       candidates,
       semanticPool: [],
@@ -506,6 +526,13 @@ function prepareExactQuestion(
       semanticPool: [],
     };
   }
+  if (boundedOnly)
+    return {
+      fallback: unknown,
+      candidates: [],
+      semanticPool: [],
+      retrievalRequired: true,
+    };
   const candidates = shortlist(question);
   const semanticPool = candidates.length
     ? []
@@ -521,6 +548,19 @@ function prepareExactQuestion(
     candidates,
     semanticPool,
     allowBroadSearch: !candidates.length && !semanticPool.length,
+  };
+}
+
+export function prepareBoundedQuestion(
+  question: string,
+  locale: Locale,
+  history: readonly ChatTurn[] = [],
+) {
+  const prepared = prepareExactQuestion(question, locale, history, true);
+  return {
+    ...prepared,
+    retrievalRequired:
+      'retrievalRequired' in prepared && prepared.retrievalRequired,
   };
 }
 

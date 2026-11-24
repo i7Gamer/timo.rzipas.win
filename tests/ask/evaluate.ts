@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
+import { setTimeout as delay } from 'node:timers/promises';
 import { writeFile } from 'node:fs/promises';
 import { request } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -31,11 +32,31 @@ import routing from './routing.json' with { type: 'json' };
 const LEXICAL_TIMEOUT_MS = 6_000;
 const PRIME_TIMEOUT_MS = 45_000;
 const WARM_PERCENTILE = 0.95;
-const mode = process.argv.includes('--index')
-  ? 'index'
-  : process.argv.includes('--lexical')
-    ? 'lexical'
-    : 'gateway';
+const HTTP_MAX_SAMPLES = 3;
+const HTTP_STARTUP_TIMEOUT_MS = 30_000;
+const HTTP_POLL_INTERVAL_MS = 500;
+const httpFlag = process.argv.indexOf('--http');
+const httpUrl = httpFlag < 0 ? undefined : process.argv[httpFlag + 1];
+if (httpFlag >= 0 && (!httpUrl || httpUrl.startsWith('--')))
+  throw new Error('--http requires a base URL');
+const httpOrigin = httpUrl ? new URL(httpUrl).origin : undefined;
+const sampleFlag = process.argv.indexOf('--samples');
+const sampleCount =
+  sampleFlag < 0 ? HTTP_MAX_SAMPLES : Number(process.argv[sampleFlag + 1]);
+if (
+  httpOrigin &&
+  (!Number.isInteger(sampleCount) ||
+    sampleCount < 1 ||
+    sampleCount > HTTP_MAX_SAMPLES)
+)
+  throw new Error(`--samples must be an integer from 1 to ${HTTP_MAX_SAMPLES}`);
+const mode = httpOrigin
+  ? 'http'
+  : process.argv.includes('--index')
+    ? 'index'
+    : process.argv.includes('--lexical')
+      ? 'lexical'
+      : 'gateway';
 const reportFlag = process.argv.indexOf('--report');
 const reportPath = reportFlag < 0 ? undefined : process.argv[reportFlag + 1];
 if (reportFlag >= 0 && (!reportPath || reportPath.startsWith('--')))
@@ -55,6 +76,15 @@ if (
 )
   throw new Error('--rank-port requires a valid TCP port');
 const rankWithGranite = graniteRanker(rankPort);
+let coldProbe: {
+  httpStatus: number | null;
+  status: string;
+  mode: string | null;
+  ids: string[];
+  citations: AskResult['sources'];
+  ms: number;
+  error?: string;
+} | null = null;
 
 type Fixture = {
   suite: string;
@@ -98,7 +128,7 @@ const baselineFixtures = process.argv.includes('--routing')
       : process.argv.includes('--original')
         ? original
         : suite;
-const fixtures = process.argv.includes('--answers')
+const allFixtures = process.argv.includes('--answers')
   ? basicFixtures('approved-answers', approvedAnswers)
   : baselineFixtures.map((fixture) => {
       const update = process.argv.includes('--baseline')
@@ -112,10 +142,71 @@ const fixtures = process.argv.includes('--answers')
           }
         : fixture;
     });
-if (process.argv.includes('--misses'))
+const fixtures =
+  mode === 'http'
+    ? allFixtures
+        .filter(({ question, locale }) => {
+          if (question === 'Which project used Flask?') return false;
+          return (
+            prepareQuestion(question, locale === 'de' ? 'de' : 'en').candidates
+              .length > 0
+          );
+        })
+        .slice(0, sampleCount)
+    : allFixtures;
+if (process.argv.includes('--misses') && mode !== 'http')
   assert.equal(fixtures.length, misses.size);
 
-if (mode !== 'index') {
+if (mode === 'http') {
+  const deadline = Date.now() + HTTP_STARTUP_TIMEOUT_MS;
+  for (;;) {
+    const ready = await fetch(new URL('/api/ask', httpOrigin!), {
+      signal: AbortSignal.timeout(2_000),
+    }).catch(() => undefined);
+    if (ready?.status === 405) break;
+    assert.ok(Date.now() < deadline, 'Ask gateway did not start through nginx');
+    await delay(HTTP_POLL_INTERVAL_MS);
+  }
+  const coldStart = performance.now();
+  try {
+    const response = await fetch(new URL('/api/ask', httpOrigin), {
+      method: 'POST',
+      headers: {
+        Origin: httpOrigin!,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question: 'Which project used Flask?',
+        locale: 'en',
+      }),
+      signal: AbortSignal.timeout(CLIENT_TIMEOUT),
+    });
+    const body: unknown = await response.json().catch(() => null);
+    const result = validateResult(body, 'en', corpusVersion);
+    const elapsed = Math.round(performance.now() - coldStart);
+    coldProbe = {
+      httpStatus: response.status,
+      status: result?.status ?? 'outage',
+      mode: result?.mode ?? null,
+      ids: result?.claims.map(({ id }) => id) ?? [],
+      citations: result?.sources ?? [],
+      ms: elapsed,
+    };
+    console.log('cold probe', JSON.stringify(coldProbe));
+  } catch (error) {
+    coldProbe = {
+      httpStatus: null,
+      status: 'outage',
+      ids: [],
+      citations: [],
+      ms: Math.round(performance.now() - coldStart),
+      error: error instanceof Error ? error.message : String(error),
+    };
+    console.log('cold probe', JSON.stringify(coldProbe));
+  }
+}
+
+if (mode !== 'index' && mode !== 'http') {
   const question = 'Where did Timo use Python and Flask?';
   const { candidates } = prepareQuestion(question, 'en');
   const primed = await askModel(
@@ -214,7 +305,29 @@ for (const fixture of fixtures) {
   let qwenEvidenceIds: string[] = [];
   const start = performance.now();
   let ms;
-  if (mode === 'gateway') {
+  if (mode === 'http') {
+    const started = performance.now();
+    try {
+      const response = await fetch(new URL('/api/ask', httpOrigin!), {
+        method: 'POST',
+        headers: {
+          Origin: httpOrigin!,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question, locale }),
+        signal: AbortSignal.timeout(CLIENT_TIMEOUT),
+      });
+      httpStatus = response.status;
+      const body: unknown = await response.json().catch(() => null);
+      actual =
+        httpStatus === 200 ? validateResult(body, locale, corpusVersion) : null;
+      ms = performance.now() - started;
+    } catch {
+      httpStatus = null;
+      actual = null;
+      ms = performance.now() - started;
+    }
+  } else if (mode === 'gateway') {
     const response = await runGateway(question, locale);
     httpStatus = response.status;
     ms = response.ms;
@@ -249,13 +362,20 @@ for (const fixture of fixtures) {
     );
   const route = graniteRan
     ? 'granite'
-    : qwenEvidenceIds.length
-      ? 'lexical'
-      : fallback.status === 'unknown'
-        ? mode === 'index' && (lexicalCandidates.length || semanticPool.length)
-          ? 'index-only'
-          : 'no-evidence'
-        : 'direct';
+    : mode === 'http'
+      ? actual?.mode === 'local'
+        ? 'http-local'
+        : actual
+          ? 'http-index'
+          : 'http-outage'
+      : qwenEvidenceIds.length
+        ? 'lexical'
+        : fallback.status === 'unknown'
+          ? mode === 'index' &&
+            (lexicalCandidates.length || semanticPool.length)
+            ? 'index-only'
+            : 'no-evidence'
+          : 'direct';
   rows.push({
     suite: fixture.suite,
     locale,
@@ -269,6 +389,7 @@ for (const fixture of fixtures) {
     route,
     httpStatus,
     status: actual?.status ?? 'error',
+    resultMode: actual?.mode ?? null,
     ids,
     citations: actual?.sources ?? [],
     match,
@@ -279,9 +400,10 @@ for (const fixture of fixtures) {
 const summary = [...new Set(rows.map(({ route }) => route))].map((route) => {
   const group = rows.filter((row) => row.route === route);
   const times = group
-    .filter(
-      ({ qwenEvidenceIds, status }) =>
-        qwenEvidenceIds.length && status !== 'error',
+    .filter(({ qwenEvidenceIds, resultMode, status }) =>
+      mode === 'http'
+        ? resultMode === 'local' && status !== 'error'
+        : qwenEvidenceIds.length > 0 && status !== 'error',
     )
     .map(({ ms }) => ms)
     .sort((a, b) => a - b);
@@ -290,7 +412,10 @@ const summary = [...new Set(rows.map(({ route }) => route))].map((route) => {
     total: group.length,
     passed: group.filter(({ match }) => match).length,
     errors: group.filter(({ status }) => status === 'error').length,
-    warmP95Ms: times.length
+    outages: group.filter(
+      ({ httpStatus }) => httpStatus === null || httpStatus !== 200,
+    ).length,
+    p95Ms: times.length
       ? times[Math.ceil(times.length * WARM_PERCENTILE) - 1]
       : null,
   };
@@ -321,7 +446,17 @@ if (process.argv.includes('--misses')) {
 if (reportPath)
   await writeFile(
     reportPath,
-    JSON.stringify({ mode, corpusVersion, summary, rows }, null, 2) + '\n',
+    JSON.stringify({ mode, corpusVersion, coldProbe, summary, rows }, null, 2) +
+      '\n',
   );
 if (mode === 'gateway' && rows.some(({ match }) => !match))
+  process.exitCode = 1;
+if (
+  mode === 'http' &&
+  (rows.some(({ match }) => !match) ||
+    !coldProbe ||
+    coldProbe.httpStatus !== 200 ||
+    coldProbe.status !== 'answer' ||
+    !coldProbe.ids.includes('spotify-python'))
+)
   process.exitCode = 1;

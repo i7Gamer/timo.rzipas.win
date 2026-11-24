@@ -68,18 +68,24 @@ function bytes(value: unknown) {
   return encoder.encode(JSON.stringify(value)).length;
 }
 
-export function selectChatHistory(turns: ChatTurn[], question: string) {
+export function selectChatHistory(
+  turns: ChatTurn[],
+  question: string,
+  anchorIndex?: number,
+) {
   if (bytes(turns) <= MAX_HISTORY_BYTES) return turns;
   const query = terms(question);
   const priority = turns
     .map((turn, index) => ({
       turn,
       index,
+      anchor: index === anchorIndex,
       recent: index >= turns.length - RECENT_TURNS,
       score: overlap(query, turn.question + ' ' + turn.answer),
     }))
     .sort(
       (a, b) =>
+        Number(b.anchor) - Number(a.anchor) ||
         Number(b.recent) - Number(a.recent) ||
         (a.recent ? 0 : b.score - a.score) ||
         b.index - a.index,

@@ -21,6 +21,7 @@ import { selectWithOllama } from './ollama.ts';
 import {
   askModel,
   broadEvidencePool,
+  prepareBoundedQuestion,
   prepareQuestion,
   type SelectFacts,
 } from './selection.ts';
@@ -126,6 +127,7 @@ export function createGateway({
   // Every request comes through the preview or container proxy. Forwarded
   // identities cannot split the quota or grow a table of client identifiers.
   const checkRequestQuota = quota(6, MINUTE);
+  const checkRetrievalQuota = quota(4, MINUTE);
   const checkModelQuota = quota(60, 60 * MINUTE);
   let running = false;
   let retryAt = 0;
@@ -168,16 +170,27 @@ export function createGateway({
       }
       if (response.destroyed) return;
       const { question, locale, history } = input;
-      const { fallback, candidates, semanticPool, allowBroadSearch } =
-        prepareQuestion(question, locale, history);
+      const bounded = prepareBoundedQuestion(question, locale, history);
+      let prepared: ReturnType<typeof prepareQuestion> = bounded;
       const unavailable = (status: number, wait?: number) =>
-        fallback.status === 'unknown'
+        prepared.fallback.status === 'unknown'
           ? fail(response, status, wait)
-          : reply(response, 200, fallback);
+          : reply(response, 200, prepared.fallback);
       if (requestWait) return unavailable(429, requestWait);
-      if (!local || (fallback.status !== 'unknown' && !candidates.length)) {
-        return reply(response, 200, fallback);
+      if (
+        !local ||
+        (!bounded.retrievalRequired &&
+          bounded.fallback.status !== 'unknown' &&
+          !bounded.candidates.length)
+      ) {
+        return reply(response, 200, bounded.fallback);
       }
+      if (bounded.retrievalRequired) {
+        const retrievalWait = checkRetrievalQuota();
+        if (retrievalWait) return unavailable(429, retrievalWait);
+        prepared = prepareQuestion(question, locale, history);
+      }
+      const { fallback, candidates, semanticPool, allowBroadSearch } = prepared;
       if (running || Date.now() < retryAt) {
         return unavailable(503);
       }

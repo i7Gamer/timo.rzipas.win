@@ -12,6 +12,7 @@ const offline = args.includes('--offline');
 const gatewayOffline = args.includes('--gateway-offline');
 const STARTUP_TIMEOUT_MS = 30_000;
 const POLL_INTERVAL_MS = 500;
+const localTimings: number[] = [];
 
 function request(path: string, options?: RequestInit) {
   return fetch(new URL(path, origin), {
@@ -39,6 +40,7 @@ async function expectAnswer(
   ids: string[],
   mode?: AskResult['mode'],
 ) {
+  const started = performance.now();
   const response = await ask(question, locale);
   assert.equal(response.status, 200, question);
   assert.equal(response.headers.get('cache-control'), 'no-store');
@@ -52,6 +54,19 @@ async function expectAnswer(
   assert.deepEqual(
     result.claims.map(({ id }) => id),
     ids,
+  );
+  const ms = Math.round(performance.now() - started);
+  if (result.mode === 'local') localTimings.push(ms);
+  console.log(
+    'answer',
+    JSON.stringify({
+      locale,
+      status: result.status,
+      ids: result.claims.map(({ id }) => id),
+      citations: result.sources,
+      mode: result.mode,
+      ms,
+    }),
   );
 }
 
@@ -96,9 +111,20 @@ if (offline || gatewayOffline) {
     ['en', englishFlask],
     ['de', germanFlask],
   ] as const) {
+    const started = performance.now();
     const response = await ask(question, locale);
+    const ms = Math.round(performance.now() - started);
     assert.equal(response.status, 503);
     assert.equal(response.headers.get('cache-control'), 'no-store');
+    console.log(
+      'outage',
+      JSON.stringify({
+        phase: gatewayOffline ? 'gateway-stopped' : 'ollama-paused',
+        locale,
+        httpStatus: response.status,
+        ms,
+      }),
+    );
   }
 } else {
   assert.equal(
@@ -124,3 +150,13 @@ const phase = startup
       ? 'Inference offline'
       : 'Local inference';
 console.log(phase + ' smoke passed in English and German');
+if (localTimings.length) {
+  const warm = [...localTimings].sort((a, b) => a - b);
+  console.log(
+    'warm inference latency',
+    JSON.stringify({
+      warmSamples: warm.length,
+      warmP95Ms: warm[Math.ceil(warm.length * 0.95) - 1],
+    }),
+  );
+}

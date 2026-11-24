@@ -3,13 +3,19 @@ import type { Locale } from '../../i18n';
 import {
   facts,
   MAX_CLAIMS,
+  missingDetails,
   normalize,
   outOfScope,
   PET_SOURCE_PATH,
   sourceLink,
 } from './catalog';
 import { languageQuestion, moreQuestion } from './conversation';
-import { careerCandidates, careerFollowUpScope } from './career';
+import {
+  careerCandidates,
+  careerFollowUpScope,
+  isEmployerScope,
+} from './career';
+import { projectCandidates, projectFollowUp } from './project-context';
 import {
   approvedAnswer,
   asksAboutAICoding,
@@ -656,14 +662,17 @@ export function findSiteContent(
 ): SiteAnswer | null {
   const normalized = normalize(question).replace(/\bhome lab\b/g, 'homelab');
   if (outOfScope.test(normalized)) return null;
-  const profileNote = profileQuestionNote(normalized, index.locale);
+  const profileNote = profileQuestionNote(normalized, index.locale, question);
   if (profileNote)
     return { status: 'unknown', sources: [], missing: [], note: profileNote };
   const contextualQuestion =
     subject?.href === PET_SOURCE_PATH ? normalized + ' pets' : normalized;
   const careerScope = careerFollowUpScope(contextualQuestion, history);
   const careerIds =
-    careerScope && careerCandidates(history, careerScope).map(({ id }) => id);
+    careerScope &&
+    careerCandidates(history, careerScope)
+      .slice(0, isEmployerScope(careerScope) ? 1 : MAX_CLAIMS)
+      .map(({ id }) => id);
   if (careerIds?.length === 0)
     return {
       status: 'unknown',
@@ -675,6 +684,20 @@ export function findSiteContent(
           : 'Which role or part of Timo’s work would you like to explore?',
     };
   const highlights = profileHighlightIds(contextualQuestion, history);
+  const projectIds =
+    !careerScope && projectFollowUp(contextualQuestion, history)?.listRequested
+      ? projectCandidates(history).map(({ id }) => id)
+      : undefined;
+  if (projectIds?.length === 0)
+    return {
+      status: 'unknown',
+      sources: [],
+      missing: [],
+      note:
+        index.locale === 'de'
+          ? 'Über welches Projekt möchtest du mehr erfahren?'
+          : 'Which project would you like to explore?',
+    };
   if (highlights?.length === 0)
     return {
       status: 'unknown',
@@ -687,6 +710,7 @@ export function findSiteContent(
     };
   const modelIds =
     careerIds ??
+    projectIds ??
     highlights?.slice(0, 1) ??
     modelOverviewIds(contextualQuestion);
   const otherCats =
@@ -702,7 +726,7 @@ export function findSiteContent(
           ? 'Welche Katze meinst du bereits?'
           : 'Which cat should I leave out?',
     };
-  const approved =
+  const approved: ReturnType<typeof approvedAnswer> =
     (careerIds ? { ids: careerIds, partial: undefined } : undefined) ??
     (otherCats
       ? {
@@ -710,7 +734,7 @@ export function findSiteContent(
           partial: undefined,
         }
       : undefined) ??
-    approvedAnswer(normalized) ??
+    approvedAnswer(normalized, question) ??
     (contextualQuestion !== normalized
       ? approvedAnswer(contextualQuestion)
       : undefined) ??
@@ -766,6 +790,9 @@ export function findSiteContent(
         sources: [...sources.values()],
         subjects: [...subjects.values()],
         missing: [],
+        note: approved?.missing
+          ? missingDetails[approved.missing][index.locale]
+          : undefined,
         lead: single ? matched[0].fact.answer[index.locale] : undefined,
       };
     }
@@ -847,7 +874,13 @@ export function findSiteContent(
             normalize(heading),
           ),
         )
-        .flatMap(({ paragraphs }) => paragraphs.slice(0, 1));
+        .flatMap(({ paragraphs }) => paragraphs.slice(0, 1))
+        .filter(
+          (excerpt) =>
+            !history.some(({ answer }) =>
+              normalize(answer).includes(normalize(excerpt)),
+            ),
+        );
       if (details.length)
         return {
           status: 'answer',
@@ -855,6 +888,7 @@ export function findSiteContent(
           missing: [],
           subjects: [subjectOf(target)],
         };
+      if (history.length) return null;
     }
   }
   const attribution =

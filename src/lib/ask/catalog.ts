@@ -26,12 +26,24 @@ export const outOfScope =
 
 export type AskStatus = 'answer' | 'partial' | 'unknown';
 export type AskMode = 'local' | 'index';
+export const missingDetails = {
+  'cv-gaps': {
+    en: 'The public CV does not establish whether there are any gaps. You can ask about a specific period.',
+    de: 'Ob es Lücken gibt, geht aus dem öffentlichen Lebenslauf nicht hervor. Du kannst nach einem bestimmten Zeitraum fragen.',
+  },
+  'additional-question': {
+    en: 'The sources support the answer above. The additional question is still unanswered.',
+    de: 'Die Quellen stützen die Antwort oben. Die zusätzliche Frage bleibt offen.',
+  },
+} as const;
+export type MissingDetail = keyof typeof missingDetails;
 export interface AskResult {
   status: AskStatus;
   mode: AskMode;
   locale: Locale;
   corpusVersion: string;
   clarifyProject?: string;
+  missing?: MissingDetail;
   claims: { id: string; text: string; sourceId: SourceId }[];
   sources: { id: SourceId; label: string; href: string }[];
 }
@@ -55,12 +67,14 @@ export function documentAnswer(
   mode: AskMode,
   locale: Locale,
   corpusVersion: string,
+  missing?: MissingDetail,
 ): AskResult {
   return {
     status,
     mode,
     locale,
     corpusVersion,
+    ...(missing ? { missing } : {}),
     claims: matches.map(({ id, answer, sourceId }) => ({
       id,
       text: answer[locale],
@@ -109,7 +123,11 @@ export function validateResult(
     !Array.isArray(claims) ||
     claims.length > MAX_CLAIMS ||
     (status === 'unknown') !== (claims.length === 0) ||
-    !Array.isArray(citations)
+    !Array.isArray(citations) ||
+    ('missing' in result &&
+      (status !== 'partial' ||
+        typeof result.missing !== 'string' ||
+        !Object.hasOwn(missingDetails, result.missing)))
   )
     return null;
 
@@ -132,6 +150,7 @@ export function validateResult(
     mode,
     locale,
     version,
+    result.missing,
   );
   if ('clarifyProject' in result) {
     const candidate = activeFacts.find(

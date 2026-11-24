@@ -6,6 +6,7 @@ import {
   documentAnswer,
   exampleMatch,
   isPortfolioPageHref,
+  missingDetails,
   normalize,
   validateResult,
   type AskResult,
@@ -39,8 +40,16 @@ import {
   type ChatTurn,
 } from './history';
 import { LOCAL_PETS_PATH, parseLocalPets, type LocalPets } from './local-pets';
-import { isShortPetFollowUp, profileFollowUp } from './reviewed-questions';
-import { careerFollowUpScope } from './career';
+import {
+  approvedAnswer,
+  isShortPetFollowUp,
+  profileFollowUp,
+} from './reviewed-questions';
+import {
+  careerAnchorIndex,
+  careerFollowUpScope,
+  isEmployerScope,
+} from './career';
 import {
   projectChoice,
   projectFollowUp,
@@ -314,7 +323,8 @@ export function setupAskWork(panel: HTMLElement) {
       sayUnknown(reply);
       return;
     }
-    reply.textContent = result.status === 'partial' ? messages.partial : '';
+    reply.textContent =
+      result.status === 'partial' && !result.missing ? messages.partial : '';
     for (const source of result.sources) {
       for (const { text } of result.claims.filter(
         ({ sourceId }) => sourceId === source.id,
@@ -322,6 +332,12 @@ export function setupAskWork(panel: HTMLElement) {
         addParagraph(reply, text);
       reply.append(citation(source.href, source.label));
     }
+    if (result.missing)
+      addParagraph(
+        reply,
+        missingDetails[result.missing][result.locale],
+        'text-muted',
+      );
     const confirmed = new Map<string, SiteSubject>();
     for (const { href, label } of result.sources) {
       const [path, fragment] = href.split('#');
@@ -368,9 +384,11 @@ export function setupAskWork(panel: HTMLElement) {
         ? subject && messages.missingSubject
           ? messages.missingSubject.replace('{subject}', () => subject.label)
           : messages.seePage
-        : related && !lead && !answer.preferModel
-          ? messages.related
-          : '');
+        : status === 'partial' && !missing.length
+          ? messages.partial
+          : related && !lead && !answer.preferModel
+            ? messages.related
+            : '');
     if (statusLine)
       addParagraph(
         reply,
@@ -641,7 +659,6 @@ export function setupAskWork(panel: HTMLElement) {
       );
       const projectContext =
         !careerFollowUp &&
-        !indexOnly &&
         (!chosen || projectListChosen) &&
         projectFollowUp(normalize(question), publicHistory);
       if (projectContext) projectForClarification = projectContext.focus;
@@ -656,11 +673,20 @@ export function setupAskWork(panel: HTMLElement) {
         earlier ||
         petFollowUp ||
         (shortFollowUp &&
+          !approvedAnswer(profileQuestion, question) &&
           (languageQuestion.test(shortFollowUp) ||
             moreQuestion.test(shortFollowUp) ||
             !(index && namesSiteSubject(question, index))));
       if (projectContext && !projectContext.projectId) {
         setSubjects([]);
+        if (projectContext.listRequested && index)
+          pageAnswer = findSiteContent(
+            question,
+            index,
+            'overview',
+            undefined,
+            publicHistory,
+          );
       } else if (!careerFollowUp && isFollowUp) {
         const previous =
           pivot && earlier && pickSubject(pivot[1], earlier.subjects);
@@ -712,9 +738,15 @@ export function setupAskWork(panel: HTMLElement) {
         pageAnswer =
           index &&
           ((choseSpelling
-            ? findSiteContent(question, index, 'overview', focus)
+            ? findSiteContent(question, index, 'overview', focus, publicHistory)
             : null) ??
-            findSiteContent(next ?? question, index, 'related', focus));
+            findSiteContent(
+              next ?? question,
+              index,
+              'related',
+              focus,
+              publicHistory,
+            ));
         if ((pageAnswer && canShowSiteImmediately(pageAnswer)) || indexOnly) {
           if (pageAnswer) showSite(reply, pageAnswer, focus);
           else sayUnknown(reply);
@@ -763,6 +795,9 @@ export function setupAskWork(panel: HTMLElement) {
       const history = selectChatHistory(
         publicHistory.map(({ question, answer }) => ({ question, answer })),
         question,
+        isEmployerScope(careerFollowUp)
+          ? careerAnchorIndex(publicHistory)
+          : undefined,
       );
       const response = await fetch('/api/ask', {
         method: 'POST',

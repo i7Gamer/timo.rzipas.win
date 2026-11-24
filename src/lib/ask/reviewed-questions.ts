@@ -1,8 +1,12 @@
 import type { Locale } from '../../i18n';
-import { facts, normalize } from './catalog.ts';
+import { facts, MAX_CLAIMS, normalize, type MissingDetail } from './catalog.ts';
 import type { ChatTurn } from './history.ts';
 
-type ReviewedAnswer = { ids: readonly string[]; partial?: true };
+type ReviewedAnswer = {
+  ids: readonly string[];
+  partial?: true;
+  missing?: MissingDetail;
+};
 
 const spotifyTracker = /\b(?:spotify ?tracker|spotify stats tracker)\b/;
 const lastFm = /\blast fm\b/;
@@ -152,7 +156,41 @@ const cvGaps =
 const personalJudgment =
   /^(?:(?:what are |tell me )?(?:all )?(?:the )?(?:his |timo s )?(?:personal )?(?:flaws|weaknesses|weak points|negatives|negative (?:things|traits)|downsides)(?: (?:about|of) (?:hiring )?(?:him|timo(?: rzipa)?))?|(?:(?:anything else |any )?more )?negative(?:s)?|(?:was sind )?(?:seine |timos )?(?:schwaechen|negative eigenschaften|nachteile))$/;
 const maintainerReview =
-  /^(?:what did (?:the |its )?maintainer (?:question|flag) (?:in|about|during) |was (?:hinterfragte|beanstandete) (?:der|die) maintainer(?:in)? (?:bei|an) )/;
+  /^(?:what did (?:the |its )?maintainer (?:question|flag) (?:in|about|during) |was (?:hinterfragte|beanstandete) (?:der|die) maintainer(?:in)? (?:bei|beim|an) )/;
+const reviewClause =
+  /[?!]\s*(?=\p{L})|(?:,\s*|\s+)(?:and|also|und|ausserdem|außerdem)\s+(?=(?:who|what|which|where|how|when|why|did|does|was|any|wer|wie|wo|wann|warum|welch\p{L}*|hat|gibt|lücken)\b)/iu;
+
+function projectReviewAnswer(
+  terms: string,
+  question: string,
+): ReviewedAnswer | undefined {
+  const [first, ...remaining] = question
+    .split(reviewClause)
+    .map(normalize)
+    .filter(Boolean);
+  const setback = setbacks.test(first ?? terms);
+  if (
+    !setback &&
+    (!maintainerReview.test(first) ||
+      !(spotifyTracker.test(first) || /\bupstream spotify\b/.test(first)))
+  )
+    return;
+
+  const ids = ['spotify-upstream-review'];
+  const unansweredCv =
+    (setback && cvGaps.test(first)) ||
+    remaining.some((part) => cvGaps.test(part));
+  if (unansweredCv) return { ids, partial: true, missing: 'cv-gaps' };
+  if (!remaining.length) return { ids };
+  if (remaining.length === 1) {
+    const additional = approvedAnswer(remaining[0]);
+    if (additional && !additional.partial) {
+      const combined = [...new Set([...ids, ...additional.ids])];
+      if (combined.length <= MAX_CLAIMS) return { ids: combined };
+    }
+  }
+  return { ids, partial: true, missing: 'additional-question' };
+}
 
 const profilePitch =
   /^(?:(?:(?:give|write|show) me )?(?:a )?(?:(?:short|quick|brief) )?(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)|(?:stell(?:e)? )?timo kurz vor|(?:ein )?kurzprofil (?:zu|von|ueber) timo)$/;
@@ -163,6 +201,8 @@ const workAndProjectInventory =
 const projectInventory =
   /^(?:(?:list|show(?: me)?) all (?:of )?(?:(?:timo ?s|his|your|the) )?projects(?: please)?|(?:liste|zeig(?: mir)?) alle (?:timos )?projekte(?: von timo)?(?: auf)?)$/;
 const workTopic = /^(?:work(?: experience)?|career|arbeit|berufserfahrung)$/;
+const stadlerOverview =
+  /^(?:(?:tell me about|what did (?:timo|he|you) do at|was hat (?:timo|er) bei) )?stadler(?: (rds|altenrhein))?(?: gemacht)?$/;
 export const workDetails =
   /^(?:(?:(?:tell|give|show) me )?(?:more (?:details? )?about|expand on) (?:(?:his|timo ?s|your|the) )?(?:work(?: experience)?|career)|(?:erzaehl mir )?mehr (?:zu|ueber) (?:(?:timos|seine|seiner|die|der) )?(?:arbeit|berufserfahrung))$/;
 const profileHighlightsQuestion = 'portfolio highlights';
@@ -223,12 +263,16 @@ export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
   return terms;
 }
 
-export function profileQuestionNote(terms: string, locale: Locale) {
+export function profileQuestionNote(
+  terms: string,
+  locale: Locale,
+  question = terms,
+) {
   if (personalJudgment.test(terms))
     return locale === 'de'
       ? 'Das öffentliche Portfolio beschreibt Timos Arbeit und Projekte. Möchtest du nach einer konkreten Projektgrenze oder einem Zeitraum im Lebenslauf fragen?'
       : 'The public portfolio describes Timo’s work and projects. Would you like to ask about a specific project limitation or a period in his CV?';
-  if (cvGaps.test(terms) && !setbacks.test(terms))
+  if (cvGaps.test(terms) && !projectReviewAnswer(terms, question))
     return locale === 'de'
       ? 'Welchen Zeitraum im Lebenslauf möchtest du prüfen?'
       : 'Which period in his CV would you like to check?';
@@ -297,12 +341,22 @@ export function needsDatedWorkEvidence(terms: string) {
   );
 }
 
-export function approvedAnswer(terms: string): ReviewedAnswer | undefined {
+export function approvedAnswer(
+  terms: string,
+  question = terms,
+): ReviewedAnswer | undefined {
   if (profilePitch.test(terms)) return { ids: ['portfolio-pitch'] };
   if (workAndProjectInventory.test(terms))
     return { ids: ['career-role-titles', 'portfolio-project-inventory'] };
   if (projectInventory.test(terms))
     return { ids: ['portfolio-project-inventory'] };
+  const stadlerRole = stadlerOverview.exec(terms);
+  if (stadlerRole)
+    return {
+      ids: [
+        stadlerRole[1] === 'altenrhein' ? 'stadler-plugins' : 'stadler-vpn',
+      ],
+    };
   if (workDetails.test(terms)) return { ids: WORK_EXPERIENCE_IDS };
   if (educationOverview.test(terms)) return { ids: ['cv-degree', 'cv-matura'] };
   if (educationProjects.test(terms))
@@ -312,15 +366,8 @@ export function approvedAnswer(terms: string): ReviewedAnswer | undefined {
   if (hiring.test(terms))
     return { ids: ['abacus-workflow', 'stadler-vpn', 'spotify-python'] };
   if (publicTimeline.test(terms)) return { ids: ['cv-2015-2016'] };
-  if (setbacks.test(terms))
-    return cvGaps.test(terms)
-      ? { ids: ['spotify-upstream-review'], partial: true }
-      : { ids: ['spotify-upstream-review'] };
-  if (
-    maintainerReview.test(terms) &&
-    (spotifyTracker.test(terms) || /\bupstream spotify\b/.test(terms))
-  )
-    return { ids: ['spotify-upstream-review'] };
+  const projectReview = projectReviewAnswer(terms, question);
+  if (projectReview) return projectReview;
   const [work, stack, extra] = terms.split(/\s+(?:and|und)\s+/);
   if (
     stack &&

@@ -52,9 +52,22 @@ const countQuestion =
 export function questionLocale(question: string, fallback: Locale): Locale {
   const text = normalize(question);
   if (/^was (?:the|this|that|it|he|she|there)\b/.test(text)) return 'en';
+  // English past-tense questions invert the auxiliary and subject; a following
+  // English article is a strong signal that "Was" is not German "what".
+  if (/^was [\p{L}\p{N}_-]+ (?:a|an|the)\b/u.test(text)) return 'en';
+  if (
+    /^was [\p{L}\p{N}_-]+ (?:built|written|made|created|designed|developed|used|based|run) (?:in|by|from)\b/u.test(
+      text,
+    )
+  )
+    return 'en';
+  if (text === 'was') return fallback;
   const german =
     /^war /.test(text) ||
-    /\b(?:was|wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses|ausbildung|freizeit|schwaechen|lebenslauf|spannendes|interessantes|kurzprofil|projekte|arbeit)\b/.test(
+    /^was (?:kostet|hat|macht|nutzt|verwendet|ist|sind|war|wird|kann|kannst|bedeutet|enthaelt|zeigt|erzaehlt)\b/.test(
+      text,
+    ) ||
+    /\b(?:wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses|ausbildung|freizeit|schwaechen|lebenslauf|spannendes|interessantes|kurzprofil|projekte|arbeit)\b/.test(
       text,
     );
   const english =

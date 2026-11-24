@@ -1556,7 +1556,6 @@ describe('gateway', () => {
   });
 
   it('preserves reviewed answers after the hourly inference budget is spent', async () => {
-    const requestsPerMinute = 6;
     const modelRequestsPerHour = 60;
     const minuteMs = 60_000;
     let now = Date.now();
@@ -1564,8 +1563,9 @@ describe('gateway', () => {
     const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
     try {
       await open({ select });
+      const retrievalsPerMinute = 4;
       for (let i = 0; i < modelRequestsPerHour; i++) {
-        if (i % requestsPerMinute === 0) now += minuteMs;
+        if (i % retrievalsPerMinute === 0) now += minuteMs;
         expect((await send()).status).toBe(200);
       }
       now += minuteMs;
@@ -1582,6 +1582,78 @@ describe('gateway', () => {
     } finally {
       clock.mockRestore();
     }
+  });
+
+  it('serves a bounded reviewed fallback after request admission is full', async () => {
+    const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
+    await open({ select });
+    for (let i = 0; i < 4; i++) expect((await send()).status).toBe(200);
+    const reviewed = {
+      body: JSON.stringify({
+        question: 'What inspired Hearthcoil?',
+        locale: 'en',
+      }),
+    };
+    for (let i = 0; i < 2; i++) expect((await send(reviewed)).status).toBe(200);
+    await expect(send(reviewed)).resolves.toMatchObject({
+      status: 200,
+      body: {
+        mode: 'index',
+        status: 'answer',
+        claims: [{ id: 'hearthcoil-game' }],
+      },
+    });
+    expect(select).toHaveBeenCalledTimes(4);
+  });
+
+  it('admits at most four retrieval requests per minute', async () => {
+    const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
+    const prepare = vi.spyOn(
+      await import('../../../services/ask/selection'),
+      'prepareQuestion',
+    );
+    try {
+      await open({ select });
+      for (let i = 0; i < 4; i++) expect((await send()).status).toBe(200);
+      const limited = await send();
+      expect(limited.status).toBe(429);
+      expect(Number(limited.retryAfter)).toBeGreaterThan(0);
+      expect(select).toHaveBeenCalledTimes(4);
+      expect(prepare).toHaveBeenCalledTimes(4);
+    } finally {
+      prepare.mockRestore();
+    }
+  });
+
+  it('keeps career and project follow-up fallbacks available at the request limit', async () => {
+    const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
+    await open({ select });
+    for (let i = 0; i < 4; i++) expect((await send()).status).toBe(200);
+    const career = {
+      body: JSON.stringify({
+        question: 'What other work experience?',
+        locale: 'en',
+      }),
+    };
+    const project = {
+      body: JSON.stringify({
+        question: 'What other projects have you worked on?',
+        locale: 'en',
+        history: [
+          {
+            question: 'projects?',
+            answer: 'Self-hosted Spotify history for multiple users.',
+          },
+        ],
+      }),
+    };
+    expect((await send(career)).status).toBe(200);
+    expect((await send(project)).status).toBe(200);
+    await expect(send(career)).resolves.toMatchObject({
+      status: 200,
+      body: { mode: 'index', status: 'answer', claims: expect.any(Array) },
+    });
+    expect(select).toHaveBeenCalledTimes(6);
   });
 
   it('cancels inference for a closed client without cooling down the gateway', async () => {

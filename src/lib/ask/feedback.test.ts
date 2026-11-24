@@ -2,7 +2,8 @@ import { request, type Server } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createGateway } from '../../../services/ask/server';
 import { prepareQuestion } from '../../../services/ask/selection';
-import type { ChatTurn } from './history';
+import { selectChatHistory, type ChatTurn } from './history';
+import { careerAnchorIndex } from './career';
 
 let gateway: Server | undefined;
 let port = 0;
@@ -66,6 +67,110 @@ afterEach(async () => {
 });
 
 describe('portfolio Ask feedback regressions', () => {
+  it('retains the grounded employer anchor when long history is shortened', async () => {
+    await open();
+    const question = 'What do you work on at Abacus?';
+    const initial = await ask(question);
+    const anchor = { question, answer: initial.body.claims![0].text };
+    const followUp = 'Tell me more';
+    const turns = [
+      anchor,
+      ...Array.from({ length: 12 }, () => ({
+        question: followUp,
+        answer: 'An earlier turn in the conversation. '.repeat(10),
+      })),
+    ];
+    const history = selectChatHistory(
+      turns,
+      followUp,
+      careerAnchorIndex(turns),
+    );
+    expect(history[0]).toEqual(anchor);
+    expect(history.length).toBeLessThan(turns.length);
+    expect(
+      (await ask(followUp, 'en', history)).body.claims?.map(({ id }) => id),
+    ).toEqual(['abacus-tests']);
+  });
+  it.each([
+    ['en', 'Anything that did not work out? Any holes in his CV?', 'cv-gaps'],
+    [
+      'de',
+      'Was hat bei seinen Projekten nicht funktioniert? Lücken im Lebenslauf?',
+      'cv-gaps',
+    ],
+    [
+      'en',
+      'What did the maintainer question in the upstream SpotifyTracker contribution? What was the budget?',
+      'additional-question',
+    ],
+    [
+      'de',
+      'Was hinterfragte der Maintainer beim Upstream-Beitrag zu SpotifyTracker, und wie hoch war das Budget?',
+      'additional-question',
+    ],
+  ] as const)(
+    'identifies an unanswered clause in %s: %s',
+    async (locale, question, missing) => {
+      await open();
+      expect((await ask(question, locale)).body).toMatchObject({
+        status: 'partial',
+        missing,
+        claims: [{ id: 'spotify-upstream-review' }],
+        sources: [{ href: '/projects/spotify-stats-tracker/#upstream-import' }],
+      });
+    },
+  );
+
+  it('answers two reviewed clauses without marking either as missing', async () => {
+    await open();
+    const result = await ask(
+      'What did the maintainer question in the upstream SpotifyTracker contribution? What languages does Timo speak?',
+    );
+    expect(result.body).toMatchObject({
+      status: 'answer',
+      claims: [
+        { id: 'spotify-upstream-review' },
+        { id: 'portfolio-spoken-languages' },
+      ],
+    });
+    expect(result.body).not.toHaveProperty('missing');
+  });
+
+  it.each([
+    [
+      'What do you work on at Abacus?',
+      'abacus-workflow',
+      'abacus-tests',
+      'abacus-jenkins',
+    ],
+    [
+      'What did Timo do at Stadler?',
+      'stadler-vpn',
+      'stadler-plugins',
+      'early-stadler',
+    ],
+  ] as const)(
+    'keeps successive employer details scoped after %s',
+    async (question, first, next, later) => {
+      await open();
+      const initial = await ask(question);
+      expect(initial.body.claims?.map(({ id }) => id)).toEqual([first]);
+      const history: ChatTurn[] = [
+        { question, answer: initial.body.claims![0].text },
+      ];
+      for (const id of [next, later]) {
+        const response = await ask('Tell me more', 'en', history);
+        expect(response.body.claims?.map((claim) => claim.id)).toEqual([id]);
+        history.push({
+          question: 'Tell me more',
+          answer: response.body.claims![0].text,
+        });
+      }
+      const switched = await ask('Other roles', 'en', history);
+      expect(switched.body.claims?.map(({ id }) => id)).toContain('tutoring');
+    },
+  );
+
   it.each([
     [
       'en',

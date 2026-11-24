@@ -79,6 +79,135 @@ describe('Ask public page content', () => {
     expect(questionLocale('Noch mehr?', 'en')).toBe('de');
   });
 
+  it('uses the page index for other projects when the gateway stays offline', async () => {
+    const window = new Window();
+    try {
+      vi.stubGlobal('document', window.document);
+      const content = index();
+      content.pages.push(
+        extractPage(
+          '<main><h1>Projects</h1><p data-ask-overview>Self-hosted Spotify history for multiple users.</p></main>',
+          '/projects/',
+        ),
+      );
+      const lookup = vi.fn<typeof fetch>(async (path) =>
+        path === SITE_CONTENT_PATH
+          ? Response.json(content)
+          : new Response(null, { status: 503 }),
+      );
+      vi.stubGlobal('fetch', lookup);
+      window.document.documentElement.lang = 'en';
+      window.document.body.innerHTML =
+        '<section data-mode="local" data-version="fixture" data-messages="{}"><div data-ask-result></div><div data-ask-actions></div><form><textarea></textarea><button type="submit">Ask</button></form></section>';
+      const panel = window.document.querySelector('section')!;
+      setupAskWork(panel as unknown as HTMLElement);
+      for (const [question, expected] of [
+        ['projects?', 'Self-hosted Spotify'],
+        ['anything more?', 'or other projects?'],
+        ['Other projects', 'Hearthcoil'],
+      ]) {
+        panel.querySelector('textarea')!.value = question;
+        panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
+        await vi.waitFor(() =>
+          expect(
+            panel.querySelector('[data-ask-reply]:last-child')?.textContent,
+          ).toContain(expected),
+        );
+      }
+      const reply = panel.querySelector('[data-ask-reply]:last-child')!;
+      expect(
+        reply.querySelector('a[href="/projects/hearthcoil/"]'),
+      ).not.toBeNull();
+      expect(reply.textContent).not.toContain('SpotifyTracker');
+    } finally {
+      vi.unstubAllGlobals();
+      window.close();
+    }
+  });
+
+  it('does not show the same project excerpt for a second request for more', () => {
+    const content = index();
+    const subject = {
+      href: '/projects/spotify-stats-tracker/',
+      label: 'SpotifyTracker',
+    };
+    const earlier = findSiteContent('more?', content, 'related', subject);
+    const excerpt = earlier!.sources[0].excerpts[0];
+    expect(excerpt).toContain('Reconciliation');
+    expect(
+      findSiteContent('more?', content, 'related', subject, [
+        { question: 'more?', answer: excerpt },
+      ]),
+    ).toBeNull();
+  });
+
+  it.each([
+    [
+      'en',
+      'Anything that did not work out? Any holes in his CV?',
+      'The public CV does not establish',
+    ],
+    [
+      'de',
+      'Was hat bei seinen Projekten nicht funktioniert? Lücken im Lebenslauf?',
+      'geht aus dem öffentlichen Lebenslauf nicht hervor',
+    ],
+  ] as const)(
+    'shows which part of a reviewed %s answer is missing online and offline',
+    async (locale, question, note) => {
+      const page = extractPage(tracker, '/projects/spotify-stats-tracker/');
+      const claim = facts.find(({ id }) => id === 'spotify-upstream-review')!;
+      for (const online of [true, false]) {
+        const window = new Window();
+        try {
+          vi.stubGlobal('document', window.document);
+          const lookup = vi.fn<typeof fetch>(async (path) =>
+            path === '/api/ask'
+              ? online
+                ? Response.json(
+                    documentAnswer(
+                      [claim],
+                      'partial',
+                      'index',
+                      locale,
+                      'fixture',
+                      'cv-gaps',
+                    ),
+                  )
+                : new Response(null, { status: 503 })
+              : online
+                ? new Response(null, { status: 503 })
+                : Response.json({ locale, pages: [page] }),
+          );
+          vi.stubGlobal('fetch', lookup);
+          window.document.documentElement.lang = locale;
+          window.document.body.innerHTML =
+            '<section data-mode="local" data-version="fixture" data-messages="{}"><div data-ask-result></div><form><textarea></textarea><button type="submit">Ask</button></form></section>';
+          const panel = window.document.querySelector('section')!;
+          setupAskWork(panel as unknown as HTMLElement);
+          panel.querySelector('textarea')!.value = question;
+          panel
+            .querySelector('form')!
+            .dispatchEvent(new window.Event('submit'));
+          await vi.waitFor(() => {
+            const reply = panel.querySelector('[data-ask-reply]');
+            expect(reply?.textContent).toContain(note);
+            expect(reply?.textContent).toContain(claim.answer[locale]);
+            expect(reply?.querySelector('a')?.getAttribute('href')).toBe(
+              '/projects/spotify-stats-tracker/#upstream-import',
+            );
+          });
+          expect(lookup.mock.calls.some(([path]) => path === '/api/ask')).toBe(
+            online,
+          );
+        } finally {
+          vi.unstubAllGlobals();
+          window.close();
+        }
+      }
+    },
+  );
+
   it('recognises the language of portfolio requests on either site', () => {
     expect(
       questionLocale('Nenn mir ein spannendes Detail über Timo', 'en'),

@@ -120,37 +120,55 @@ To test the website's exact answers and citations from Open WebUI, a
 [Pipe](https://docs.openwebui.com/features/extensibility/plugin/functions/pipe/)
 can use the Ask gateway as the answer source.
 
-## Docker smoke stack
+## Packaged Qwen Docker verification
 
-Run these commands from the repository root on a Docker-enabled host.
+Run from the repository root with Docker Compose available. Use a fresh project
+name for each run so the model volume and containers are isolated. The checked
+port, `18093`, must be free. The setup step downloads only the pinned Qwen model
+into that project's volume; it does not start the website or gateway.
 
 ```sh
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml config --quiet
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml --profile setup run --rm model-setup
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml up --build -d
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml exec -T ask node services/ask/ollama.ts
-node services/ask/smoke.ts http://127.0.0.1:18093
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml restart ask
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml pause ollama
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml config --quiet
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml --profile setup run --rm model-setup
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml up --build -d
+mkdir -p .local-ask
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --samples 3 --report .local-ask/qwen-docker-eval.json
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml restart ask
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml pause ollama
 node services/ask/smoke.ts http://127.0.0.1:18093 --offline
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml unpause ollama
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml stop ask
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml unpause ollama
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml restart ask
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml stop ask
 node services/ask/smoke.ts http://127.0.0.1:18093 --gateway-offline
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml down
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml down
 ```
 
-The setup container downloads the model into a named volume. The website
-publishes localhost port 18093 and proxies exactly `/api/ask` to the gateway.
-The gateway shares the Ollama network namespace and reaches the model through
-that namespace's loopback. Neither service publishes a host port. Runtime
-inference uses an internal network. The ordinary Docker build stays on the
-static site with the Ask panel off.
+The HTTP evaluator sends the cold Flask question first, then up to three
+English/German fixtures through the built nginx proxy and packaged gateway.
+That bounded run keeps the four requests within the gateway's per-minute
+retrieval budget. `--samples` accepts 1 through 3. The report gives the cold
+probe's status/mode, IDs, citations and latency, and each fixture's HTTP/result
+status, IDs, citation links and latency. Its summary gives p95 only for
+responses actually marked `local` by the gateway, plus mismatches and outages;
+it does not infer whether Qwen ran from local candidate lists. The optional JSON
+report preserves all rows. The smoke script checks
+exact reviewed IDs and citations when answering, and logs response timing. Its
+`--offline` and `--gateway-offline` phases require a no-store 503 and log the
+outage status and latency. Thus the paused-model phase checks nginx plus a live
+gateway without inference, while the stopped-gateway phase checks nginx's
+unavailable response. Run the regular smoke after the evaluator to capture
+warm answers; the evaluator's first request is the cold-load measurement.
+
+The website publishes only localhost port 18093 and proxies exactly
+`/api/ask`. The gateway shares Ollama's network namespace and reaches the model
+through that namespace's loopback. Neither service publishes a host port and
+runtime inference uses an internal network. The ordinary Docker build stays on
+the static site with the Ask panel off. `down` removes this project's
+containers and network but retains its named model volume; remove the volume
+only when you intend to delete the downloaded model.
 
 CI runs the smoke script with `--startup` to check the Ask-enabled image,
 nginx proxy and bilingual reviewed replies without downloading model weights.
-The full smoke also checks live inference and abstention. The offline phases
-exercise reviewed fallback with Ollama paused and the static site with the
-gateway stopped.
 
 ## Verify and update
 

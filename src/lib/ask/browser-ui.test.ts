@@ -70,6 +70,16 @@ describe('Ask about my work UI', () => {
           '[data-ask-collapse], [data-ask-restore], [data-ask-expand]',
         ),
       ).toHaveLength(3);
+      const toolIcons = Array.from(
+        details.parentElement?.querySelectorAll(
+          '[data-ask-collapse] svg, [data-ask-restore] svg, [data-ask-expand] svg',
+        ) ?? [],
+      );
+      expect(toolIcons).toHaveLength(3);
+      expect(
+        toolIcons.every((icon) => icon.getAttribute('aria-hidden') === 'true'),
+      ).toBe(true);
+      expect(new Set(toolIcons.map((icon) => icon.innerHTML)).size).toBe(3);
       expect(details.querySelector('summary button')).toBeNull();
       expect(
         details.parentElement
@@ -158,6 +168,52 @@ describe('Ask about my work UI', () => {
       restore.click();
       expect(panel.open).toBe(true);
       expect(panel.dataset.expanded).toBe('false');
+    } finally {
+      window.close();
+    }
+  });
+
+  it('routes mixed-language questions using the question language', async () => {
+    const window = new Window();
+    try {
+      const panel = fixture(window);
+      panel.dataset.messages = JSON.stringify({
+        wait: 'Looking...',
+        offline: 'Offline',
+      });
+      panel.dataset.askOtherMessages = JSON.stringify({
+        wait: 'Suche...',
+        offline: 'Offline',
+      });
+      const fetchMock = vi.fn(async () => ({ ok: false, status: 404 }));
+      vi.stubGlobal('fetch', fetchMock);
+      const input = panel.querySelector('textarea')!;
+      const form = panel.querySelector('form')!;
+      input.value = 'Was kostet SpotifyTracker?';
+      form.dispatchEvent(new window.Event('submit') as unknown as Event);
+      await vi.waitFor(() =>
+        expect(fetchMock).toHaveBeenCalledWith(
+          '/ask-content-de.json',
+          expect.any(Object),
+        ),
+      );
+      await vi.waitFor(() =>
+        expect(
+          (form.querySelector('button') as HTMLButtonElement).disabled,
+        ).toBe(false),
+      );
+
+      input.value = 'Was SpotifyTracker a rewrite?';
+      form.dispatchEvent(new window.Event('submit') as unknown as Event);
+      await vi.waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          '/ask-content.json',
+          expect.any(Object),
+        );
+      });
+      expect(
+        panel.querySelectorAll('[data-ask-user]')[1]?.getAttribute('lang'),
+      ).toBe('en');
     } finally {
       window.close();
     }
