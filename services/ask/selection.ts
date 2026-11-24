@@ -12,7 +12,7 @@ import {
 import { corpusVersion } from '../../src/lib/ask/version.ts';
 import {
   careerCandidates,
-  isCareerFollowUp,
+  careerFollowUpScope,
 } from '../../src/lib/ask/career.ts';
 import {
   approvedAnswer,
@@ -416,12 +416,18 @@ function prepareExactQuestion(
     return { fallback: unknown, candidates: [], semanticPool: [] };
   }
 
-  if (isCareerFollowUp(terms, history))
+  const careerScope = careerFollowUpScope(terms, history);
+  if (careerScope) {
+    const candidates = careerCandidates(history, careerScope);
     return {
-      fallback: unknown,
-      candidates: careerCandidates(history),
+      fallback:
+        careerScope === 'abacus' && candidates.length
+          ? documentAnswer(candidates, 'answer', 'index', locale, corpusVersion)
+          : unknown,
+      candidates,
       semanticPool: [],
     };
+  }
 
   const projectContext = projectFollowUp(terms, history);
   if (projectContext) {

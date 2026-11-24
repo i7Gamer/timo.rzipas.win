@@ -53,6 +53,8 @@ const en = {
   'ask.hint':
     'Ask about my projects or experience. Please leave out personal or confidential information.',
   'ask.send': 'Ask',
+  'ask.history':
+    'Selected earlier questions and replies may be sent to the local gateway for context. Local-only turns stay in this tab.',
   'ask.conversation': 'Conversation with Ask about my work',
   'ask.newChat': 'New chat',
   'ask.wait': 'Let me look…',
@@ -213,6 +215,8 @@ const de: Partial<Record<UIKey, string>> = {
   'ask.hint':
     'Frag nach meinen Projekten oder meiner Berufserfahrung. Bitte gib keine persönlichen oder vertraulichen Informationen ein.',
   'ask.send': 'Fragen',
+  'ask.history':
+    'Ausgewählte frühere Fragen und Antworten können zur Einordnung an das lokale Gateway gesendet werden. Rein lokale Nachrichten bleiben in diesem Tab.',
   'ask.conversation': 'Unterhaltung zu meiner Arbeit',
   'ask.newChat': 'Neuer Chat',
   'ask.wait': 'Ich schaue nach…',

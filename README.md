@@ -52,6 +52,13 @@ docker run -d --rm --name smoke --health-interval=2s -p 127.0.0.1:18093:80 timo-
 bash deploy/smoke-test.sh http://127.0.0.1:18093 smoke
 ```
 
+### Local portfolio chat
+
+Ask is off in ordinary builds. The [Ask README](services/ask/README.md) covers
+opt-in builds and the Docker smoke tests. In Ask-enabled chats, selected prior
+turns may be sent to the local gateway for context. Local-only turns stay in
+the browser tab.
+
 ### Adding a language
 
 1. Add the code to `src/i18n/locales.json` **and** to the `Locale` union in `src/i18n/index.ts`

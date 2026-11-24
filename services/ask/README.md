@@ -3,7 +3,7 @@
 This prototype uses the public fact catalogue in `src/data/ask/facts.json`. The
 model selects numbered evidence. The gateway renders the reviewed wording and
 links from the catalogue, and the browser checks them against its own copy.
-The panel includes three static answers and a CV link in each language.
+The panel includes three static answers in each language.
 Ask-enabled builds also extract the main text of every rendered public page into
 a matching per-language `/ask-content.json`. The index is generated and served
 with the pages, and the browser revalidates it on each question. Named page
@@ -70,10 +70,13 @@ continues to use same-URL language negotiation. The preview proxy handles only
 
 Qwen3-4B-Instruct-2507 Q4_K_M is a 2.5 GB text model with a pinned manifest
 digest. It uses 2,048 context tokens and a 96-token completion budget. The model
-receives one question and up to six public records. The browser keeps the thread
-in tab memory until reload or reset. It submits only the current question to the
-gateway. All callers share a six-per-minute request quota, a separate
-60-per-hour model budget and one in-flight inference.
+receives the question and up to six public records. The browser keeps the
+thread in tab memory until reload or reset. When it makes a gateway request,
+it can include selected earlier questions and replies, up to 2,000 bytes of
+history. Longer turns can be excerpted to fit. Local-only turns stay in the tab.
+All callers share a six-per-minute request quota, a separate 60-per-hour
+model budget and one in-flight inference. Reviewed answers can still be
+served when inference is limited or unavailable.
 
 The gateway gives inference six seconds. Prewarm the model if a cold load on
 your machine takes longer.
@@ -127,8 +130,12 @@ docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml --profile setu
 docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml up --build -d
 docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml exec -T ask node services/ask/ollama.ts
 node services/ask/smoke.ts http://127.0.0.1:18093
-docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml stop ask
+docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml restart ask
+docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml pause ollama
 node services/ask/smoke.ts http://127.0.0.1:18093 --offline
+docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml unpause ollama
+docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml stop ask
+node services/ask/smoke.ts http://127.0.0.1:18093 --gateway-offline
 docker compose -p ask-work-smoke -f deploy/docker-compose.ask.yml down
 ```
 
@@ -138,6 +145,12 @@ The gateway shares the Ollama network namespace and reaches the model through
 that namespace's loopback. Neither service publishes a host port. Runtime
 inference uses an internal network. The ordinary Docker build stays on the
 static site with the Ask panel off.
+
+CI runs the smoke script with `--startup` to check the Ask-enabled image,
+nginx proxy and bilingual reviewed replies without downloading model weights.
+The full smoke also checks live inference and abstention. The offline phases
+exercise reviewed fallback with Ollama paused and the static site with the
+gateway stopped.
 
 ## Verify and update
 

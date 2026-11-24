@@ -159,7 +159,6 @@ export function createGateway({
         return reply(response, 200, privatePets);
       }
       const requestWait = checkRequestQuota();
-      if (requestWait) return fail(response, 429, requestWait);
 
       let input;
       try {
@@ -171,16 +170,19 @@ export function createGateway({
       const { question, locale, history } = input;
       const { fallback, candidates, semanticPool, allowBroadSearch } =
         prepareQuestion(question, locale, history);
+      const unavailable = (status: number, wait?: number) =>
+        fallback.status === 'unknown'
+          ? fail(response, status, wait)
+          : reply(response, 200, fallback);
+      if (requestWait) return unavailable(429, requestWait);
       if (!local || (fallback.status !== 'unknown' && !candidates.length)) {
         return reply(response, 200, fallback);
       }
       if (running || Date.now() < retryAt) {
-        return fallback.status === 'unknown'
-          ? fail(response, 503)
-          : reply(response, 200, fallback);
+        return unavailable(503);
       }
       const modelWait = checkModelQuota();
-      if (modelWait) return fail(response, 429, modelWait);
+      if (modelWait) return unavailable(429, modelWait);
 
       running = true;
       const disconnect = new AbortController();
@@ -218,13 +220,13 @@ export function createGateway({
             : result,
         );
       } catch {
+        if (disconnect.signal.aborted || response.destroyed) return;
         failures += 1;
         // Let an aborted request unwind in the inference runtime before accepting
         // more model work. Success is the only thing that resets the failure count.
         if (failures >= 2) retryAt = Date.now() + MINUTE;
         else if (signal.aborted) retryAt = Date.now() + timeout;
-        if (fallback.status !== 'unknown') reply(response, 200, fallback);
-        else fail(response, 503);
+        unavailable(503);
       } finally {
         response.off('close', onClose);
         running = false;

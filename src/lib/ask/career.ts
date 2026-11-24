@@ -14,6 +14,10 @@ const careerFacts = [
   'early-stadler',
   ...WORK_EXPERIENCE_IDS,
 ].flatMap((id) => facts.filter((fact) => fact.id === id));
+const abacusFacts = facts.filter(
+  ({ id }) => id === 'abacus-workflow' || id === 'abacus-tests',
+);
+type CareerScope = 'career' | 'abacus';
 
 function includesFact(text: string, fact: Fact) {
   return Object.values(fact.answer).some((answer) =>
@@ -21,22 +25,37 @@ function includesFact(text: string, fact: Fact) {
   );
 }
 
-export function isCareerFollowUp(terms: string, history: readonly ChatTurn[]) {
-  if (otherRoles.test(terms)) return true;
+export function careerFollowUpScope(
+  terms: string,
+  history: readonly ChatTurn[],
+): CareerScope | undefined {
+  if (otherRoles.test(terms)) return 'career';
   const previous = history.at(-1);
-  if (!previous || !moreQuestion.test(terms)) return false;
+  if (!previous || !moreQuestion.test(terms)) return;
+  const anchor = history.findLast(
+    ({ question }) => !moreQuestion.test(normalize(question)),
+  );
+  if (
+    anchor &&
+    /\babacus\b/.test(normalize(anchor.question)) &&
+    abacusFacts.some((fact) => includesFact(normalize(anchor.answer), fact))
+  )
+    return 'abacus';
   const previousQuestion = normalize(previous.question);
-  const previousAnswer = normalize(previous.answer);
-  return (
+  if (
     otherRoles.test(previousQuestion) ||
     modelOverviewIds(previousQuestion) === WORK_EXPERIENCE_IDS ||
-    careerFacts.some((fact) => includesFact(previousAnswer, fact))
-  );
+    careerFacts.some((fact) => includesFact(normalize(previous.answer), fact))
+  )
+    return 'career';
 }
 
-export function careerCandidates(history: readonly ChatTurn[]) {
+export function careerCandidates(
+  history: readonly ChatTurn[],
+  scope: CareerScope,
+) {
   const covered = history.map(({ answer }) => normalize(answer));
-  return careerFacts
+  return (scope === 'abacus' ? abacusFacts : careerFacts)
     .filter((fact) => !covered.some((previous) => includesFact(previous, fact)))
     .slice(0, MAX_CLAIMS);
 }

@@ -703,6 +703,7 @@ function send({
   requestOrigin = origin,
   contentType = 'application/json',
   forwarded = '127.0.0.1',
+  signal = undefined as AbortSignal | undefined,
 } = {}) {
   return new Promise<{
     status: number;
@@ -716,6 +717,7 @@ function send({
         port,
         path,
         method,
+        signal,
         headers: {
           Host: '127.0.0.1:4511',
           Origin: requestOrigin,
@@ -751,6 +753,30 @@ afterEach(async () => {
 });
 
 describe('gateway', () => {
+  it.each([
+    ['Tell me more', 'abacus-tests'],
+    ['Other roles', 'tutoring'],
+  ])(
+    'uses the intended career scope for %s after a specific Abacus answer',
+    async (question, id) => {
+      const history = [
+        {
+          question: 'What do you work on at Abacus?',
+          answer: facts.find(({ id }) => id === 'abacus-workflow')!.answer.en,
+        },
+      ];
+      const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
+      await open({ select });
+      await expect(
+        send({ body: JSON.stringify({ question, locale: 'en', history }) }),
+      ).resolves.toMatchObject({
+        status: 200,
+        body: { mode: 'local', claims: [{ id }] },
+      });
+      expect(select).toHaveBeenCalledOnce();
+    },
+  );
+
   it.each([
     ['en', 'summarize work excperience'],
     ['de', 'Fass Timos Berufserfarung zusammen'],
@@ -1469,6 +1495,88 @@ describe('gateway', () => {
     const limited = await send({ forwarded: '127.0.0.7' });
     expect(limited.status).toBe(429);
     expect(Number(limited.retryAfter)).toBeGreaterThan(0);
+    await expect(
+      send({
+        body: JSON.stringify({ question: 'summarize work', locale: 'en' }),
+      }),
+    ).resolves.toMatchObject({
+      status: 200,
+      body: {
+        mode: 'index',
+        status: 'answer',
+        claims: [
+          { id: 'abacus-workflow' },
+          { id: 'stadler-vpn' },
+          { id: 'stadler-plugins' },
+        ],
+      },
+    });
+  });
+
+  it('preserves reviewed answers after the hourly inference budget is spent', async () => {
+    const requestsPerMinute = 6;
+    const modelRequestsPerHour = 60;
+    const minuteMs = 60_000;
+    let now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
+    try {
+      await open({ select });
+      for (let i = 0; i < modelRequestsPerHour; i++) {
+        if (i % requestsPerMinute === 0) now += minuteMs;
+        expect((await send()).status).toBe(200);
+      }
+      now += minuteMs;
+      expect((await send()).status).toBe(429);
+      await expect(
+        send({
+          body: JSON.stringify({ question: 'summarize work', locale: 'en' }),
+        }),
+      ).resolves.toMatchObject({
+        status: 200,
+        body: { mode: 'index', status: 'answer' },
+      });
+      expect(select).toHaveBeenCalledTimes(modelRequestsPerHour);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('cancels inference for a closed client without cooling down the gateway', async () => {
+    const started = Promise.withResolvers<void>();
+    const aborted = Promise.withResolvers<void>();
+    const client = new AbortController();
+    const select = vi
+      .fn()
+      .mockImplementationOnce(
+        (_question, _locale, _candidates, signal: AbortSignal) =>
+          new Promise((_resolve, reject) => {
+            signal.addEventListener(
+              'abort',
+              () => {
+                aborted.resolve();
+                reject(signal.reason);
+              },
+              { once: true },
+            );
+            started.resolve();
+          }),
+      )
+      .mockResolvedValue({ status: 'answer', slots: [1] });
+    await open({ select });
+    const pending = send({ signal: client.signal });
+    const cancelled = expect(pending).rejects.toMatchObject({
+      code: 'ABORT_ERR',
+    });
+    await started.promise;
+    client.abort();
+    await cancelled;
+    await aborted.promise;
+    await expect(send()).resolves.toMatchObject({
+      status: 200,
+      body: { mode: 'local' },
+    });
+    expect(select).toHaveBeenCalledTimes(2);
   });
 
   it('aborts at the deadline, refuses concurrent inference and keeps examples usable', async () => {

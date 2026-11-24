@@ -73,18 +73,21 @@ function index() {
 }
 
 describe('Ask public page content', () => {
+  const careerOverview = 'Give me a summary of his work experience';
+  const abacusRole = 'What do you work on at Abacus?';
   it('recognises a German request for more in an English chat', () => {
     expect(questionLocale('Noch mehr?', 'en')).toBe('de');
   });
 
   it.each([
-    ['Other projects', 'Hearthcoil', false],
-    ['SpotifyTracker', 'Reconciliation keeps', false],
-    ['this project', 'Reconciliation keeps', false],
-    ['this project', 'Reconciliation keeps', true],
+    ['Other projects', 'Hearthcoil', 200],
+    ['SpotifyTracker', 'Reconciliation keeps', 200],
+    ['this project', 'Reconciliation keeps', 200],
+    ['this project', 'Reconciliation keeps', 503],
+    ['Other projects', 'Hearthcoil', 429],
   ])(
-    'lets visitors resolve the project clarification with %s (%s, offline=%s)',
-    async (choice, expected, offline) => {
+    'lets visitors resolve the project clarification with %s (%s, HTTP %s)',
+    async (choice, expected, status) => {
       const window = new Window();
       try {
         vi.stubGlobal('document', window.document);
@@ -102,7 +105,7 @@ describe('Ask public page content', () => {
           const { question } = JSON.parse(String(options?.body));
           requests.push(question);
           if (question === 'anything more?') {
-            if (offline) return new Response(null, { status: 503 });
+            if (status !== 200) return new Response(null, { status });
             return Response.json({
               ...documentAnswer([], 'unknown', 'local', 'en', 'fixture'),
               clarifyProject: 'spotify-rewrite',
@@ -141,6 +144,56 @@ describe('Ask public page content', () => {
           choice === 'Other projects'
             ? ['anything more?', choice]
             : ['anything more?'],
+        );
+      } finally {
+        vi.unstubAllGlobals();
+        window.close();
+      }
+    },
+  );
+
+  it.each([
+    ['de', 'en', 'Was the Spotify tracker an original project or a rewrite?'],
+    [
+      'en',
+      'de',
+      'War SpotifyTracker ein eigenes Projekt oder eine Neuentwicklung?',
+    ],
+  ] as const)(
+    'answers the %s site’s %s Spotify rewrite question in the question language',
+    async (siteLocale, locale, question) => {
+      const window = new Window();
+      try {
+        vi.stubGlobal('document', window.document);
+        window.document.documentElement.lang = siteLocale;
+        const evidence = facts.filter(({ id }) => id === 'spotify-rewrite');
+        const lookup = vi.fn<typeof fetch>(async (path) => {
+          if (
+            path === SITE_CONTENT_PATH ||
+            String(path).startsWith('/ask-content-')
+          ) {
+            return Response.json({ ...index(), locale });
+          }
+          return Response.json(
+            documentAnswer(evidence, 'answer', 'index', locale, 'fixture'),
+          );
+        });
+        vi.stubGlobal('fetch', lookup);
+        window.document.body.innerHTML =
+          '<section data-mode="local" data-version="fixture"><div data-ask-result></div><form><textarea></textarea><button type="submit">Ask</button></form></section>';
+        const panel = window.document.querySelector('section')!;
+        panel.dataset.messages = JSON.stringify({ wait: 'Looking...' });
+        setupAskWork(panel as unknown as HTMLElement);
+        panel.querySelector('textarea')!.value = question;
+        panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
+        await vi.waitFor(() => {
+          const reply = panel.querySelector('[data-ask-reply]');
+          expect(reply?.textContent).toContain(evidence[0].answer[locale]);
+          expect(reply?.getAttribute('lang')).toBe(locale);
+        });
+        expect(lookup).toHaveBeenCalledWith(
+          '/ask-content-' + locale + '.json',
+          expect.any(Object),
         );
       } finally {
         vi.unstubAllGlobals();
@@ -286,32 +339,35 @@ describe('Ask public page content', () => {
   });
 
   it.each([
-    ['other experience?', 'en'],
-    ['different jobs?', 'en'],
-    ['anything else?', 'en'],
-    ['Andere Jobs?', 'de'],
+    ['other experience?', 'en', careerOverview, 'carini-dates'],
+    ['different jobs?', 'en', careerOverview, 'carini-dates'],
+    ['anything else?', 'en', careerOverview, 'carini-dates'],
+    ['Andere Jobs?', 'de', careerOverview, 'carini-dates'],
+    ['Tell me more', 'en', abacusRole, 'abacus-tests'],
+    ['Other roles', 'en', abacusRole, 'tutoring'],
   ] as const)(
     'sends the career follow-up %s and the previous reply to the gateway',
-    async (question, locale) => {
+    async (question, locale, initialQuestion, factId) => {
       const window = new Window();
       try {
         vi.stubGlobal('document', window.document);
         window.document.documentElement.lang = 'en';
         const content = index();
         content.pages.push(
-          extractPage('<main><h1>About</h1></main>', '/about/'),
+          extractPage(
+            '<main><h1>About</h1><h2>Experience</h2><h3>Software Engineer · Abacus</h3><p>Java and Vaadin document workflows.</p></main>',
+            '/about/',
+          ),
         );
-        const summary = 'Give me a summary of his work experience';
         const abacus = facts.find(({ id }) => id === 'abacus-workflow')!;
+        const detail = facts.find(({ id }) => id === factId)!;
         const lookup = vi.fn<typeof fetch>(async (path, options) => {
           if (path === SITE_CONTENT_PATH) return Response.json(content);
           if (path === '/ask-content-de.json')
             return Response.json({ ...content, locale: 'de' });
           const input = JSON.parse(String(options?.body));
           const selected =
-            input.question === summary
-              ? [abacus]
-              : facts.filter(({ id }) => id === 'carini-dates');
+            input.question === initialQuestion ? [abacus] : [detail];
           return Response.json(
             documentAnswer(
               selected,
@@ -329,8 +385,8 @@ describe('Ask public page content', () => {
         panel.dataset.messages = JSON.stringify({ wait: 'Looking...' });
         setupAskWork(panel as unknown as HTMLElement);
         for (const [prompt, expected] of [
-          [summary, abacus.answer.en],
-          [question, '2014'],
+          [initialQuestion, abacus.answer.en],
+          [question, detail.answer[locale]],
         ]) {
           panel.querySelector('textarea')!.value = prompt;
           panel
@@ -348,7 +404,9 @@ describe('Ask public page content', () => {
             body: JSON.stringify({
               question,
               locale,
-              history: [{ question: summary, answer: abacus.answer.en }],
+              history: [
+                { question: initialQuestion, answer: abacus.answer.en },
+              ],
             }),
           }),
         );

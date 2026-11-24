@@ -51,7 +51,9 @@ const countQuestion =
 
 export function questionLocale(question: string, fallback: Locale): Locale {
   const text = normalize(question);
+  if (/^was (?:the|this|that|it|he|she|there)\b/.test(text)) return 'en';
   const german =
+    /^war /.test(text) ||
     /\b(?:was|wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses)\b/.test(
       text,
     );

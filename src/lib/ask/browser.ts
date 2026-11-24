@@ -40,7 +40,7 @@ import {
 } from './history';
 import { LOCAL_PETS_PATH, parseLocalPets, type LocalPets } from './local-pets';
 import { isShortPetFollowUp } from './reviewed-questions';
-import { isCareerFollowUp } from './career';
+import { careerFollowUpScope } from './career';
 import {
   projectChoice,
   projectFollowUp,
@@ -576,7 +576,7 @@ export function setupAskWork(panel: HTMLElement) {
       const publicHistory = transcript.filter(({ localOnly }) => !localOnly);
       const careerFollowUp =
         panel.dataset.mode === 'local' &&
-        isCareerFollowUp(normalize(question), publicHistory);
+        careerFollowUpScope(normalize(question), publicHistory);
       const projectContext =
         !indexOnly &&
         (!chosen || projectListChosen) &&
@@ -710,7 +710,9 @@ export function setupAskWork(panel: HTMLElement) {
       });
       controller.signal.throwIfAborted();
       if (response.status === 429) {
-        if (pageAnswer) {
+        if (projectForClarification) {
+          askProjectScope(reply, projectForClarification, question);
+        } else if (pageAnswer) {
           showSite(reply, pageAnswer, focus, true);
           addParagraph(reply, messages.limited, 'text-muted');
         } else {

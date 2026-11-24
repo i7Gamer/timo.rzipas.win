@@ -1,9 +1,17 @@
 import assert from 'node:assert/strict';
+import { setTimeout as delay } from 'node:timers/promises';
 import { validateResult, type AskResult } from '../../src/lib/ask/catalog.ts';
 import { corpusVersion } from '../../src/lib/ask/version.ts';
 
-const origin = new URL(process.argv[2] ?? 'http://127.0.0.1:18093').origin;
-const offline = process.argv.includes('--offline');
+const args = process.argv.slice(2);
+const origin = new URL(
+  args.find((arg) => !arg.startsWith('--')) ?? 'http://127.0.0.1:18093',
+).origin;
+const startup = args.includes('--startup');
+const offline = args.includes('--offline');
+const gatewayOffline = args.includes('--gateway-offline');
+const STARTUP_TIMEOUT_MS = 30_000;
+const POLL_INTERVAL_MS = 500;
 
 function request(path: string, options?: RequestInit) {
   return fetch(new URL(path, origin), {
@@ -28,8 +36,8 @@ function ask(
 async function expectAnswer(
   question: string,
   locale: AskResult['locale'],
-  mode: AskResult['mode'],
   ids: string[],
+  mode?: AskResult['mode'],
 ) {
   const response = await ask(question, locale);
   assert.equal(response.status, 200, question);
@@ -39,12 +47,22 @@ async function expectAnswer(
     result,
     'response must use the same reviewed corpus as this checkout',
   );
-  assert.equal(result.mode, mode);
+  if (mode) assert.equal(result.mode, mode);
   assert.equal(result.status, ids.length ? 'answer' : 'unknown');
   assert.deepEqual(
     result.claims.map(({ id }) => id),
     ids,
   );
+}
+
+if (!gatewayOffline) {
+  const deadline = Date.now() + STARTUP_TIMEOUT_MS;
+  for (;;) {
+    const response = await request('/api/ask').catch(() => undefined);
+    if (response?.status === 405) break;
+    assert.ok(Date.now() < deadline, 'Ask gateway did not start through nginx');
+    await delay(POLL_INTERVAL_MS);
+  }
 }
 
 assert.equal((await request('/healthz')).status, 200);
@@ -56,6 +74,7 @@ for (const locale of ['en', 'de']) {
   const html = await response.text();
   assert.match(html, new RegExp('<html lang="' + locale + '"'));
   assert.match(html, /data-ask-work/);
+  assert.match(html, /id="ask-work-history"/);
   assert.match(
     html,
     new RegExp('/downloads/timo-rzipa-cv-' + locale + '\\.pdf'),
@@ -65,31 +84,43 @@ for (const locale of ['en', 'de']) {
 
 assert.equal((await request('/api/tags')).status, 404);
 assert.equal((await request('/api/ask/')).status, 404);
-if (offline) {
-  const response = await ask('Which project used Flask?', 'en');
-  assert.equal(response.status, 503);
-  assert.equal(response.headers.get('cache-control'), 'no-store');
+const englishFlask = 'Which project used Flask?';
+const germanFlask = 'Wofür hat Timo Flask eingesetzt?';
+if (offline || gatewayOffline) {
+  if (offline) {
+    const work = ['abacus-workflow', 'stadler-vpn', 'stadler-plugins'];
+    await expectAnswer('Summarize work', 'en', work, 'index');
+    await expectAnswer('Fass Timos Arbeit zusammen', 'de', work, 'index');
+  }
+  for (const [locale, question] of [
+    ['en', englishFlask],
+    ['de', germanFlask],
+  ] as const) {
+    const response = await ask(question, locale);
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+  }
 } else {
-  assert.equal((await request('/api/ask')).status, 405);
   assert.equal(
     (await ask('Which project used Flask?', 'en', 'https://example.org'))
       .status,
     403,
   );
-  await expectAnswer('Tell me about your projects.', 'en', 'index', [
-    'spotify-rewrite',
-    'myspeed-fork',
-    'tutto-modes',
-  ]);
-  await expectAnswer('Wofür hat Timo Flask eingesetzt?', 'de', 'local', [
-    'spotify-python',
-  ]);
-  await expectAnswer('Which project used Flask?', 'en', 'local', [
-    'spotify-python',
-  ]);
-  await expectAnswer('Who won the 2002 World Cup?', 'en', 'index', []);
+  const projects = ['spotify-rewrite', 'myspeed-fork', 'tutto-modes'];
+  await expectAnswer('Tell me about your projects.', 'en', projects, 'index');
+  await expectAnswer('Welche Projekte gibt es?', 'de', projects, 'index');
+  if (!startup) {
+    await expectAnswer(germanFlask, 'de', ['spotify-python'], 'local');
+    await expectAnswer(englishFlask, 'en', ['spotify-python'], 'local');
+    await expectAnswer('Who won the 2002 World Cup?', 'en', []);
+  }
 }
 
-console.log(
-  offline ? 'Offline fallback smoke passed' : 'Local inference smoke passed',
-);
+const phase = startup
+  ? 'Ask container startup'
+  : gatewayOffline
+    ? 'Gateway offline'
+    : offline
+      ? 'Inference offline'
+      : 'Local inference';
+console.log(phase + ' smoke passed in English and German');
