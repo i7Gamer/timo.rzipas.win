@@ -20,6 +20,8 @@ import {
   asksUnsupportedDetail,
   modelOverviewIds,
   needsDatedWorkEvidence,
+  profileFollowUp,
+  profileQuestionNote,
   reviewedFactId,
   WORK_EXPERIENCE_IDS,
 } from '../../src/lib/ask/reviewed-questions.ts';
@@ -376,9 +378,9 @@ function prepareExactQuestion(
   locale: Locale,
   history: readonly ChatTurn[] = [],
 ) {
-  const terms = normalize(question);
+  const terms = profileFollowUp(normalize(question), history);
   const unknown = documentAnswer([], 'unknown', 'index', locale, corpusVersion);
-  if (outOfScope.test(terms))
+  if (outOfScope.test(terms) || profileQuestionNote(terms, locale))
     return { fallback: unknown, candidates: [], semanticPool: [] };
   const approved = approvedAnswer(terms);
   const reviewed = (approved?.ids ?? []).flatMap((id) => {

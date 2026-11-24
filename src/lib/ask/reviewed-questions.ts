@@ -1,3 +1,9 @@
+import type { Locale } from '../../i18n';
+import { normalize } from './catalog.ts';
+import type { ChatTurn } from './history.ts';
+
+type ReviewedAnswer = { ids: readonly string[]; partial?: true };
+
 const spotifyTracker = /\b(?:spotify ?tracker|spotify stats tracker)\b/;
 const lastFm = /\blast fm\b/;
 const tutto = /\btutto\b/;
@@ -69,6 +75,8 @@ const petTopic = /\b(?:pets?|cats?|haustiere?|katzen?)\b/;
 const catName = /\b(?:rudi|georgi|benji)\b/;
 const petDetails = /\b(?:breeds?|colou?rs?|coats?|rassen?|fell\w*|farben?)\b/;
 const petNames = /\b(?:names?|called|heiss\w*|namen?)\b/;
+const petKinds =
+  /^(?:what kind(?: of)?(?: (?:cats?|pets?)(?: does (?:he|timo) have)?)?|what kind are they|was fuer(?: (?:katzen|haustiere)(?: hat (?:er|timo))?)?|welche art (?:katzen|haustiere))$/;
 const petSex =
   /\b(?:male|female|boys?|girls?|sex|gender|maennlich\w*|weiblich\w*|kater|geschlecht)\b/;
 const exactBreed =
@@ -103,6 +111,7 @@ export function isShortPetFollowUp(terms: string) {
     /^(?:names?|their names|called|colou?rs?|coats?|breeds?|namen?|ihre namen|farben?|fellfarben?|rassen?|sex|gender|geschlecht)$/.test(
       terms,
     ) ||
+    petKinds.test(terms) ||
     (petSex.test(terms) &&
       /\b(?:they|he|she|sie|er|all three|alle drei)\b/.test(terms)) ||
     asksAboutOtherCats(terms)
@@ -123,6 +132,67 @@ const germanWorkSummary =
 const jobTitles =
   /^(?:(?:what|which) (?:jobs?|roles?|positions?|job titles?) (?:did|does|has|have) (?:timo|he|you) (?:have|had|hold|held)|(?:what|which) (?:were|are) (?:his|timo s|your) (?:roles?|job titles?)|welche (?:rollen?|stellen|positionen) (?:hatte|hat|hattest|hast) (?:timo|er|du))$/;
 
+const educationOverview =
+  /^(?:(?:tell me about |what is |what s )?(?:his |timo s |your )?education(?:al background)?|what did (?:timo|he|you) study|(?:timos |seine )?ausbildung|was hat (?:er|timo) studiert)$/;
+const educationProjects =
+  /^(?:education projects|what else about (?:his|timo s|your) education|(?:what|which) projects did (?:he|timo|you) (?:build|do) (?:during (?:his|your) studies|at school)|projekte waehrend (?:der|seiner) ausbildung)$/;
+const leisure =
+  /^(?:(?:timo s |his )?(?:leisure|hobbies|spare time|freizeit)|what does (?:he|timo) do (?:for fun|in his (?:spare|free) time)|was macht (?:er|timo) in seiner freizeit)$/;
+const homelabMotivation =
+  /^(?:homelab motivation|motivation (?:for|fuer) (?:the |his |timos )?home ?lab|why (?:(?:does|did) (?:timo|he)|do you) (?:self host|run (?:a|his|your) home ?lab)|warum (?:betreibt (?:timo|er) (?:ein|sein) home ?lab|hostet (?:timo|er) selbst))$/;
+const hiring =
+  /^(?:why (?:should|would) (?:i|we) hire (?:him|you|timo(?: rzipa)?)|warum sollte(?:n)? (?:ich|wir) (?:ihn|dich|timo(?: rzipa)?) einstellen)$/;
+const perks = /^(?:perks|vorteile)$/;
+const publicTimeline =
+  /^(?:(?:no )?(?:info|information) (?:about|for) |what (?:happened|did (?:timo|he) do|was (?:timo|he) doing) (?:in|from) |(?:keine )?(?:infos?|informationen) (?:zu|ueber) |was (?:machte|tat) (?:er|timo) (?:von|zwischen) )?2015 (?:to |and |bis |und )?2016$/;
+const setbacks =
+  /^(?:anything that did not work out|what did not work out (?:on his projects|in his work)|(?:any|a) documented project setback|was hat bei seinen projekten nicht funktioniert)(?: (?:and |und )?(?:any )?(?:gaps?|holes?) in (?:his |the )?(?:cv|resume))?$/;
+const cvGaps =
+  /\b(?:(?:gaps?|holes?) in (?:(?:his|your|timo s|the) )?(?:cv|resume)|luecken? im lebenslauf)\b/;
+const personalJudgment =
+  /^(?:(?:what are |tell me )?(?:all )?(?:the )?(?:his |timo s )?(?:personal )?(?:flaws|weaknesses|weak points|negatives|negative (?:things|traits)|downsides)(?: (?:about|of) (?:hiring )?(?:him|timo(?: rzipa)?))?|(?:(?:anything else |any )?more )?negative(?:s)?|(?:was sind )?(?:seine |timos )?(?:schwaechen|negative eigenschaften|nachteile))$/;
+const maintainerReview =
+  /^(?:what did (?:the |its )?maintainer (?:question|flag) (?:in|about|during) |was (?:hinterfragte|beanstandete) (?:der|die) maintainer(?:in)? (?:bei|an) )/;
+
+export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
+  const previous = normalize(history.at(-1)?.question ?? '');
+  if (moreQuestion.test(terms) && educationOverview.test(previous))
+    return 'education projects';
+  if (
+    /^(?:motivation|why|warum)$/.test(terms) &&
+    /^(?:home ?lab|tell me about (?:the |his )?home ?lab|erzaehl mir (?:vom|ueber das) home ?lab)$/.test(
+      previous,
+    )
+  )
+    return 'homelab motivation';
+  if (perks.test(terms) && hiring.test(previous)) return previous;
+  if (
+    petKinds.test(terms) &&
+    reviewedPets(previous)?.ids.includes('about.cats')
+  )
+    return 'what kind of cats';
+  return terms;
+}
+
+export function profileQuestionNote(terms: string, locale: Locale) {
+  if (personalJudgment.test(terms))
+    return locale === 'de'
+      ? 'Das öffentliche Portfolio beschreibt Timos Arbeit und Projekte. Möchtest du nach einer konkreten Projektgrenze oder einem Zeitraum im Lebenslauf fragen?'
+      : 'The public portfolio describes Timo’s work and projects. Would you like to ask about a specific project limitation or a period in his CV?';
+  if (cvGaps.test(terms) && !setbacks.test(terms))
+    return locale === 'de'
+      ? 'Welchen Zeitraum im Lebenslauf möchtest du prüfen?'
+      : 'Which period in his CV would you like to check?';
+  if (perks.test(terms))
+    return locale === 'de'
+      ? 'Meinst du Timos Berufserfahrung oder Zusatzleistungen bei einem Arbeitgeber?'
+      : 'Do you mean Timo’s experience or benefits at an employer?';
+  if (terms === 'motivation')
+    return locale === 'de'
+      ? 'Meinst du die Motivation für sein Homelab, ein Projekt oder seine Berufswahl?'
+      : 'Do you mean his motivation for self-hosting, a project, or his career?';
+}
+
 export function modelOverviewIds(terms: string): readonly string[] | undefined {
   if (asksPetDetails(terms)) return PET_DETAIL_IDS;
   if (jobTitles.test(terms)) return ['career-role-titles'];
@@ -130,7 +200,7 @@ export function modelOverviewIds(terms: string): readonly string[] | undefined {
     return WORK_EXPERIENCE_IDS;
 }
 
-function reviewedPets(terms: string) {
+function reviewedPets(terms: string): ReviewedAnswer | undefined {
   const name = catName.exec(terms)?.[0];
   if ((!name && !petTopic.test(terms)) || unsupportedPetDetail.test(terms))
     return;
@@ -143,10 +213,10 @@ function reviewedPets(terms: string) {
       ))
   ) {
     return exactBreed.test(terms)
-      ? { ids: ['about.cats.' + name], partial: true as const }
+      ? { ids: ['about.cats.' + name], partial: true }
       : { ids: ['about.cats.' + name] };
   }
-  if (petDetails.test(terms) && petTopic.test(terms))
+  if ((petDetails.test(terms) || petKinds.test(terms)) && petTopic.test(terms))
     return {
       ids: PET_DETAIL_IDS,
     };
@@ -174,9 +244,24 @@ export function needsDatedWorkEvidence(terms: string) {
   );
 }
 
-export function approvedAnswer(
-  terms: string,
-): { ids: readonly string[]; partial?: true } | undefined {
+export function approvedAnswer(terms: string): ReviewedAnswer | undefined {
+  if (educationOverview.test(terms)) return { ids: ['cv-degree', 'cv-matura'] };
+  if (educationProjects.test(terms))
+    return { ids: ['bachelor-contribution', 'htl-dornbirn-class-website'] };
+  if (leisure.test(terms)) return { ids: ['portfolio-leisure'] };
+  if (homelabMotivation.test(terms)) return { ids: ['homelab-motivation'] };
+  if (hiring.test(terms))
+    return { ids: ['abacus-workflow', 'stadler-vpn', 'spotify-python'] };
+  if (publicTimeline.test(terms)) return { ids: ['cv-2015-2016'] };
+  if (setbacks.test(terms))
+    return cvGaps.test(terms)
+      ? { ids: ['spotify-upstream-review'], partial: true }
+      : { ids: ['spotify-upstream-review'] };
+  if (
+    maintainerReview.test(terms) &&
+    (spotifyTracker.test(terms) || /\bupstream spotify\b/.test(terms))
+  )
+    return { ids: ['spotify-upstream-review'] };
   const [work, stack, extra] = terms.split(/\s+(?:and|und)\s+/);
   if (
     stack &&

@@ -36,9 +36,65 @@ const starters = [
 ];
 ---
 
-<section class="max-w-3xl" aria-labelledby="ask-work-title" data-ask-exclude>
+<section
+  class="panel relative overflow-hidden shadow-sm"
+  aria-labelledby="ask-work-title"
+  data-ask-exclude
+>
+  <div class="ask-window-tools" data-ask-window-tools hidden>
+    <button
+      type="button"
+      data-ask-collapse
+      aria-controls="ask-work-body"
+      aria-label={
+        locale === 'de' ? 'Unterhaltung einklappen' : 'Collapse conversation'
+      }
+      class="grid size-8 shrink-0 place-items-center rounded-full focus-visible:outline-accent focus-visible:outline-offset-2"
+    >
+      <span
+        aria-hidden="true"
+        class="size-2.5 rounded-full bg-red-400/80"
+      ></span>
+    </button>
+    <button
+      type="button"
+      data-ask-restore
+      aria-controls="ask-work-body"
+      aria-label={
+        locale === 'de'
+          ? 'Unterhaltung wiederherstellen'
+          : 'Restore conversation'
+      }
+      class="grid size-8 shrink-0 place-items-center rounded-full focus-visible:outline-accent focus-visible:outline-offset-2"
+    >
+      <span
+        aria-hidden="true"
+        class="size-2.5 rounded-full bg-amber-400/80"
+      ></span>
+    </button>
+    <button
+      type="button"
+      data-ask-expand
+      aria-controls="ask-work-body"
+      aria-pressed="false"
+      aria-label={
+        locale === 'de' ? 'Unterhaltung vergrößern' : 'Expand conversation'
+      }
+      data-ask-restore-size={
+        locale === 'de'
+          ? 'Unterhaltung verkleinern'
+          : 'Restore conversation size'
+      }
+      class="grid size-8 shrink-0 place-items-center rounded-full focus-visible:outline-accent focus-visible:outline-offset-2"
+    >
+      <span
+        aria-hidden="true"
+        class="size-2.5 rounded-full bg-emerald-400/80"
+      ></span>
+    </button>
+  </div>
   <details
-    class="panel"
+    class="ask-details"
     data-ask-work
     data-mode={mode}
     data-ask-local-pets={localPets}
@@ -48,15 +104,20 @@ const starters = [
       messagesFor(locale === 'en' ? 'de' : 'en'),
     )}
   >
-    <summary
-      id="ask-work-title"
-      class="text-accent cursor-pointer rounded-xl px-5 py-4 font-mono font-semibold"
-    >
-      {t(locale, 'ask.title')}
+    <summary class="ask-summary text-muted flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 font-mono text-xs">
+      <span id="ask-work-title">{t(locale, 'ask.title')}</span>
+      <span
+        aria-hidden="true"
+        class="ask-chevron size-2 border-r border-b"
+      ></span>
     </summary>
-    <div class="border-line space-y-4 border-t px-4 py-4 sm:px-5">
+    <div
+      id="ask-work-body"
+      data-ask-body
+      class="ask-body-inner border-line space-y-4 border-t px-4 py-4 sm:px-5"
+    >
       <div
-        class="text-ink max-h-[min(52svh,32rem)] space-y-3 overflow-y-auto overscroll-contain text-base leading-relaxed empty:hidden"
+        class="text-ink space-y-3 overflow-y-auto overscroll-contain pb-1 text-base leading-relaxed empty:hidden"
         role="log"
         aria-label={t(locale, 'ask.conversation')}
         aria-live="polite"
@@ -159,3 +220,60 @@ const starters = [
     </div>
   </details>
 </section>
+
+<style>
+  .ask-window-tools:not([hidden]) {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0.5rem;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+  }
+
+  .ask-details[data-window-controls] .ask-summary {
+    padding-inline-start: 7rem;
+  }
+
+  .ask-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .ask-chevron {
+    transform: rotate(45deg);
+  }
+
+  .ask-details[open] .ask-chevron {
+    transform: rotate(225deg);
+  }
+
+  .ask-details::details-content {
+    interpolate-size: allow-keywords;
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 240ms ease,
+      content-visibility 240ms allow-discrete;
+  }
+
+  .ask-details[open]::details-content {
+    block-size: auto;
+  }
+
+  [data-ask-result] {
+    max-height: min(52svh, 32rem);
+    transition: max-height 320ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  }
+
+  .ask-details[data-expanded='true'] [data-ask-result] {
+    max-height: min(70svh, 56rem);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ask-details::details-content,
+    [data-ask-result] {
+      transition: none;
+    }
+  }
+</style>

@@ -18,6 +18,7 @@ import {
   modelOverviewIds,
   needsDatedWorkEvidence,
   PET_DETAIL_IDS,
+  profileQuestionNote,
   reviewedFactId,
 } from './reviewed-questions';
 import type { LocalPets } from './local-pets';
@@ -651,6 +652,9 @@ export function findSiteContent(
 ): SiteAnswer | null {
   const normalized = normalize(question).replace(/\bhome lab\b/g, 'homelab');
   if (outOfScope.test(normalized)) return null;
+  const profileNote = profileQuestionNote(normalized, index.locale);
+  if (profileNote)
+    return { status: 'unknown', sources: [], missing: [], note: profileNote };
   const contextualQuestion =
     subject?.href === PET_SOURCE_PATH ? normalized + ' pets' : normalized;
   const modelIds = modelOverviewIds(contextualQuestion);

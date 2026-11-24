@@ -1572,6 +1572,56 @@ describe('Ask public page content', () => {
     expect(unknownReply('en', 0)).not.toBe(unknownReply('en', 1));
   });
 
+  it('keeps education and pet follow-ups grounded when inference is offline', async () => {
+    const window = new Window();
+    try {
+      vi.stubGlobal('document', window.document);
+      const content = index();
+      content.pages.push(
+        extractPage('<main><h1>About</h1><p>Education</p></main>', '/about/'),
+        extractPage(
+          '<main><h1>Bachelor thesis</h1><p>Monte Carlo simulation.</p></main>',
+          '/projects/bachelor-thesis/',
+        ),
+      );
+      const fetchLocal = vi.fn<typeof fetch>(async (path) =>
+        path === SITE_CONTENT_PATH
+          ? Response.json(content)
+          : new Response(null, { status: 503 }),
+      );
+      vi.stubGlobal('fetch', fetchLocal);
+      window.document.documentElement.lang = 'en';
+      window.document.body.innerHTML =
+        '<section data-mode="local" data-version="fixture" data-messages="{}"><div data-ask-result></div><form><textarea></textarea><button type="submit">Ask</button></form></section>';
+      const panel = window.document.querySelector('section')!;
+      setupAskWork(panel as unknown as HTMLElement);
+      const ask = async (question: string, answer: RegExp) => {
+        panel.querySelector('textarea')!.value = question;
+        panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
+        await vi.waitFor(() => {
+          expect(panel.querySelector('button')?.disabled).toBe(false);
+          expect(
+            panel.querySelector('[data-ask-reply]:last-child')?.textContent,
+          ).toMatch(answer);
+        });
+        return panel.querySelector('[data-ask-reply]:last-child')!;
+      };
+      const education = await ask('education', /BSc.*Matura/is);
+      expect(education.textContent).not.toMatch(/master/i);
+      await ask('more', /thesis.*class/is);
+      await ask('pets', /three cats/i);
+      const pets = await ask('what kind', /Rudi.*Georgi.*Benji/s);
+      expect(pets.querySelector('a[href$=".txt"]')).toBeNull();
+      await ask('all negatives about him', /period in his CV/i);
+      expect(fetchLocal.mock.calls.some(([path]) => path === '/api/ask')).toBe(
+        true,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      window.close();
+    }
+  });
+
   it.each([
     ['ah yes thats what i meant thanks', 'en', 'You’re welcome!'],
     [

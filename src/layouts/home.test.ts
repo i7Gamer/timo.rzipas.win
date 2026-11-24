@@ -49,6 +49,18 @@ describe('home page hero', () => {
   );
 });
 
+describe('Ask about my work placement', () => {
+  it('places the full-width Ask panel after the hero and before featured work', () => {
+    const heroEnd = HOME_PAGE.indexOf('</section>');
+    const ask = HOME_PAGE.indexOf('<AskWork locale={locale} />');
+    const featured = HOME_PAGE.indexOf("t(locale, 'section.featured.title')");
+    expect(HOME_PAGE).toContain('{showAskWork && <AskWork locale={locale} />}');
+    expect(ask).toBeGreaterThan(heroEnd);
+    expect(ask).toBeLessThan(featured);
+    expect(HOME_PAGE).not.toContain('max-w-3xl');
+  });
+});
+
 describe('home page hero links', () => {
   it('shows the social icons, About me link and localized CV download', () => {
     expect(HOME_PAGE).toContain('<SocialLinks locale={locale} size="lg" />');

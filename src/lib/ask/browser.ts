@@ -39,7 +39,7 @@ import {
   type ChatTurn,
 } from './history';
 import { LOCAL_PETS_PATH, parseLocalPets, type LocalPets } from './local-pets';
-import { isShortPetFollowUp } from './reviewed-questions';
+import { isShortPetFollowUp, profileFollowUp } from './reviewed-questions';
 import { careerFollowUpScope } from './career';
 import {
   projectChoice,
@@ -136,10 +136,51 @@ export function setupAskWork(panel: HTMLElement) {
   let active: AbortController | undefined;
   let unknownCount = 0;
   let followLatest = true;
+  let previousScrollTop = 0;
   let localPets: Promise<LocalPets | null> | undefined;
   form.hidden = false;
+  const disclosure = panel as HTMLDetailsElement;
+  const windowTools = panel.parentElement?.querySelector<HTMLElement>(
+    '[data-ask-window-tools]',
+  );
+  const collapse = windowTools?.querySelector<HTMLButtonElement>(
+    '[data-ask-collapse]',
+  );
+  const restore =
+    windowTools?.querySelector<HTMLButtonElement>('[data-ask-restore]');
+  const expand =
+    windowTools?.querySelector<HTMLButtonElement>('[data-ask-expand]');
+  const expandLabel = expand?.getAttribute('aria-label');
+  if (windowTools) {
+    panel.dataset.windowControls = '';
+    windowTools.hidden = false;
+  }
+  const updateWindowControls = () => {
+    const open = String(disclosure.open);
+    collapse?.setAttribute('aria-expanded', open);
+    restore?.setAttribute('aria-expanded', open);
+  };
+  const setOpen = (open: boolean) => {
+    disclosure.open = open;
+    updateWindowControls();
+  };
+  const setExpanded = (expanded: boolean) => {
+    panel.dataset.expanded = String(expanded);
+    const label = expanded ? expand?.dataset.askRestoreSize : expandLabel;
+    expand?.setAttribute('aria-pressed', String(expanded));
+    if (label) expand?.setAttribute('aria-label', label);
+    setOpen(true);
+  };
+  updateWindowControls();
+  disclosure.addEventListener('toggle', updateWindowControls);
+  collapse?.addEventListener('click', () => setOpen(false));
+  restore?.addEventListener('click', () => setExpanded(false));
+  expand?.addEventListener('click', () =>
+    setExpanded(!disclosure.open || panel.dataset.expanded !== 'true'),
+  );
   const submitPrompt = (question: string) => {
     if (button.disabled) return;
+    setOpen(true);
     input.value = question;
     input.focus();
     form.requestSubmit();
@@ -156,13 +197,24 @@ export function setupAskWork(panel: HTMLElement) {
     }
   }
   output.addEventListener('scroll', () => {
-    followLatest =
-      output.scrollHeight - output.clientHeight - output.scrollTop <=
-      SCROLL_TOLERANCE;
+    const { scrollHeight, clientHeight, scrollTop } = output;
+    if (scrollHeight - clientHeight - scrollTop <= SCROLL_TOLERANCE)
+      followLatest = true;
+    else if (scrollTop < previousScrollTop) followLatest = false;
+    previousScrollTop = scrollTop;
   });
   const scrollToLatest = () => {
-    if (followLatest) output.scrollTop = output.scrollHeight;
+    if (followLatest) {
+      output.scrollTop = output.scrollHeight;
+      previousScrollTop = output.scrollTop;
+    }
   };
+  const observedReplies = new Set<HTMLElement>();
+  const outputObserver =
+    typeof ResizeObserver === 'undefined'
+      ? undefined
+      : new ResizeObserver(scrollToLatest);
+  outputObserver?.observe(output);
 
   const sayUnknown = (reply: HTMLElement) => {
     reply.textContent = unknownReply(locale, unknownCount++);
@@ -380,6 +432,8 @@ export function setupAskWork(panel: HTMLElement) {
     pending = undefined;
     unknownCount = 0;
     transcript.length = 0;
+    for (const reply of observedReplies) outputObserver?.unobserve(reply);
+    observedReplies.clear();
     output.replaceChildren();
     if (controls) controls.hidden = true;
     if (starters) starters.hidden = false;
@@ -406,6 +460,8 @@ export function setupAskWork(panel: HTMLElement) {
       if (validation) validation.textContent = messages.length;
       return;
     }
+    setOpen(true);
+    followLatest = true;
     locale = questionLocale(line, locale);
     messages = locale === siteLocale ? siteMessages : otherMessages;
     if (validation) validation.textContent = '';
@@ -426,6 +482,8 @@ export function setupAskWork(panel: HTMLElement) {
     reply.setAttribute('data-ask-reply', '');
     reply.lang = locale;
     output.append(reply);
+    outputObserver?.observe(reply);
+    observedReplies.add(reply);
     scrollToLatest();
 
     const social = socialReply(line, locale);
@@ -574,6 +632,9 @@ export function setupAskWork(panel: HTMLElement) {
       }
 
       const publicHistory = transcript.filter(({ localOnly }) => !localOnly);
+      const terms = normalize(question);
+      const profileQuestion = profileFollowUp(terms, publicHistory);
+      if (terms !== profileQuestion) question = profileQuestion;
       const careerFollowUp =
         panel.dataset.mode === 'local' &&
         careerFollowUpScope(normalize(question), publicHistory);

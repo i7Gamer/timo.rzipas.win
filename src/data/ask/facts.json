@@ -16,6 +16,16 @@
       },
       "topics": ["timo rzipa", "about timo", "über timo"]
     },
+    "portfolio-projects": {
+      "href": "/projects/",
+      "label": { "en": "Portfolio · Projects", "de": "Portfolio · Projekte" },
+      "topics": []
+    },
+    "homelab": {
+      "href": "/homelab/",
+      "label": { "en": "Portfolio · Homelab", "de": "Portfolio · Homelab" },
+      "topics": []
+    },
     "portfolio-website": {
       "href": "/projects/this-website/",
       "label": {
@@ -1500,6 +1510,44 @@
         "de": "Alle drei Katzen von Timo sind männlich."
       },
       "evidence": ["pets.txt"]
+    },
+    {
+      "id": "portfolio-leisure",
+      "sourceId": "portfolio-projects",
+      "facet": "personal software interests",
+      "aliases": [],
+      "answer": {
+        "en": "Timo builds software for things he wants to use himself, including listening statistics, network monitoring and games he can play with friends.",
+        "de": "Timo entwickelt Software, die er selbst nutzen möchte, etwa für Hörstatistiken, Netzwerküberwachung und Spiele mit Freunden."
+      },
+      "evidence": ["projects.intro"]
+    },
+    {
+      "id": "homelab-motivation",
+      "sourceId": "homelab",
+      "facet": "why Timo self-hosts",
+      "aliases": [],
+      "answer": {
+        "en": "Timo self-hosts to understand the whole stack hands-on, from DNS and TLS to proxies, backups and monitoring. He also keeps his data on his own hardware so he can query and analyse it himself.",
+        "de": "Timo betreibt seine Dienste selbst, um den ganzen Stack praktisch zu verstehen, von DNS und TLS bis zu Proxys, Backups und Monitoring. Seine Daten bleiben auf seiner eigenen Hardware, wo er sie selbst abfragen und auswerten kann."
+      },
+      "evidence": ["homelab.why"]
+    },
+    {
+      "id": "cv-2015-2016",
+      "sourceId": "portfolio-about",
+      "facet": "published study and internship timeline for 2015 to 2016",
+      "aliases": [],
+      "answer": {
+        "en": "Timo completed his Matura at HTL Dornbirn in 2015 and began his BSc at FH Vorarlberg in 2016. His CV also lists several software engineering internships at Stadler across 2015–2018. The published dates are given in years.",
+        "de": "Timo schloss 2015 die HTL Dornbirn mit der Matura ab und begann 2016 sein BSc-Studium an der FH Vorarlberg. Im Lebenslauf stehen auch mehrere Praktika in der Softwareentwicklung bei Stadler zwischen 2015 und 2018. Die veröffentlichten Daten sind Jahresangaben."
+      },
+      "evidence": [
+        "cv.pdf",
+        "htl-dornbirn.to",
+        "stadler-internships.from",
+        "stadler-internships.to"
+      ]
     }
   ],
   "examples": [

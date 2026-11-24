@@ -45,6 +45,14 @@ const about = {
   intro: { en: t('en', 'about.intro'), de: t('de', 'about.intro') },
   spokenLanguages: SPOKEN_LANGUAGES,
 };
+const publicCopy = {
+  homelab: {
+    why: { en: t('en', 'homelab.why.text'), de: t('de', 'homelab.why.text') },
+  },
+  projects: {
+    intro: { en: t('en', 'projects.intro'), de: t('de', 'projects.intro') },
+  },
+};
 const digest = (value: string | Buffer) =>
   createHash('sha256').update(value).digest('hex');
 
@@ -92,6 +100,7 @@ describe('curated evidence', () => {
           EDUCATION.find((entry) => entry.id === id) ??
           (id === CURRENT_WORK.id ? CURRENT_WORK : undefined) ??
           (id === 'about' ? about : undefined) ??
+          publicCopy[id as keyof typeof publicCopy] ??
           (field === 'href' && Object.hasOwn(sources, id)
             ? sources[id as keyof typeof sources]
             : undefined);
@@ -133,6 +142,10 @@ describe('curated evidence', () => {
           expect(href).toBe(PET_SOURCE_PATH);
         } else if (id === 'portfolio-about') {
           expect(href).toBe('/about/');
+        } else if (id === 'portfolio-projects') {
+          expect(href).toBe('/projects/');
+        } else if (id === 'homelab') {
+          expect(href).toBe('/homelab/');
         } else if (id === 'spotify-compare-pr') {
           expect(href).toBe(
             'https://github.com/i7Gamer/SpotifyTracker/pull/44',

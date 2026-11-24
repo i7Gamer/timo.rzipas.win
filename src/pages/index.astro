@@ -114,6 +114,8 @@ const TERMINAL_STRINGS = {
     </div>
   </section>
 
+  {showAskWork && <AskWork locale={locale} />}
+
   <div class="space-y-16 py-10">
     <section>
       <div class="flex flex-wrap items-end justify-between gap-4">
@@ -128,8 +130,6 @@ const TERMINAL_STRINGS = {
         ))}
       </div>
     </section>
-
-    {showAskWork && <AskWork locale={locale} />}
 
     <section>
       <div class="panel-lg">
