@@ -27,7 +27,7 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
   <section class="py-10">
     <header class="mb-10">
       <PathHeading path="homelab" />
-      <p class="text-muted mt-4 max-w-3xl text-lg">
+      <p data-ask-overview class="text-muted mt-4 max-w-3xl text-lg">
         {t(locale, 'homelab.intro')}
       </p>
     </header>
@@ -92,7 +92,9 @@ const DIAGRAM_STEPS: readonly UIKey[] = [
 
         <div class="panel-lg self-start">
           <SectionHeading>{t(locale, 'homelab.why.title')}</SectionHeading>
-          <p class="text-muted mt-4">{t(locale, 'homelab.why.text')}</p>
+          <p data-ask-overview class="text-muted mt-4">
+            {t(locale, 'homelab.why.text')}
+          </p>
         </div>
       </div>
 

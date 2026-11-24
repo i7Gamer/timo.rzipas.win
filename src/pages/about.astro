@@ -7,6 +7,7 @@ import SkillGroups from '../components/SkillGroups.astro';
 import SocialLinks from '../components/SocialLinks.astro';
 import { QUALIFICATIONS } from '../data/qualifications';
 import { EDUCATION } from '../data/education';
+import { CURRENT_WORK } from '../data/current-work';
 import { JOBS } from '../data/jobs';
 import { SPOKEN_LANGUAGES } from '../data/skills';
 import { getLocale, pick, t } from '../i18n';
@@ -34,6 +35,22 @@ const presentLabel = t(locale, 'about.present');
     </header>
 
     <div class="space-y-16">
+      <section id={CURRENT_WORK.id} class="scroll-mt-24">
+        <SectionHeading>{pick(locale, CURRENT_WORK.title)}</SectionHeading>
+        <time
+          datetime={CURRENT_WORK.date}
+          class="text-muted mt-3 block text-sm"
+        >
+          {new Intl.DateTimeFormat(locale === 'de' ? 'de-CH' : 'en-GB', {
+            dateStyle: 'long',
+            timeZone: 'UTC',
+          }).format(new Date(CURRENT_WORK.date))}
+        </time>
+        <p class="text-muted mt-3 max-w-3xl leading-relaxed">
+          {pick(locale, CURRENT_WORK.summary)}
+        </p>
+      </section>
+
       <div>
         <SectionHeading>{t(locale, 'about.experience.title')}</SectionHeading>
         <ol class="mt-7">
@@ -72,6 +89,8 @@ const presentLabel = t(locale, 'about.present');
         <ol class="mt-7">
           {EDUCATION.map((entry) => (
             <TimelineItem
+              id={entry.id}
+              summary={entry.summary && pick(locale, entry.summary)}
               period={formatPeriod(locale, entry.from, entry.to, presentLabel)}
               title={pick(locale, entry.degree)}
               org={entry.school}

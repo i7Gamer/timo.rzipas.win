@@ -1,0 +1,46 @@
+[
+  {
+    "locale": "en",
+    "question": "What keeps SpotifyTracker from logging the same play twice after a long pause?",
+    "status": "answer",
+    "id": "spotify-reconciliation-example"
+  },
+  {
+    "locale": "de",
+    "question": "Was verhindert in SpotifyTracker nach einer langen Pause doppelte Wiedergaben?",
+    "status": "answer",
+    "id": "spotify-reconciliation-example"
+  },
+  {
+    "locale": "en",
+    "question": "How can Timo test the Hearthcoil combat rules without loading an entire Unity level?",
+    "status": "answer",
+    "id": "hearthcoil-rules-testing"
+  },
+  {
+    "locale": "de",
+    "question": "Wie kann Timo die Kampfregeln von Hearthcoil prüfen, ohne ein ganzes Unity-Level zu laden?",
+    "status": "answer",
+    "id": "hearthcoil-rules-testing"
+  },
+  {
+    "locale": "en",
+    "question": "Who issued the train VPN certificates that Timo worked with at Stadler?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Wer hat die VPN-Zertifikate für die Züge bei Stadler ausgestellt?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "Which company published Hearthcoil?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Welcher Anbieter hat Hearthcoil veröffentlicht?",
+    "status": "unknown"
+  }
+]

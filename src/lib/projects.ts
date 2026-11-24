@@ -6,6 +6,12 @@ export interface ProjectStoryContent {
   contribution: Record<Locale, string>;
   decisions: Record<Locale, string>;
   outcome: Record<Locale, string>;
+  additionalSections?: readonly {
+    id: string;
+    title: Localized<string>;
+    text: Localized<string>;
+    links?: readonly { href: string; label: Localized<string> }[];
+  }[];
   provenance?: Record<Locale, string>;
   upstream?: string;
   images?: Array<{

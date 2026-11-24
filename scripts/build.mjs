@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { copyFileSync, readFileSync } from 'node:fs';
 
 // Single source of truth for supported locales, shared with src/i18n.
 const locales = JSON.parse(
@@ -15,5 +15,23 @@ for (const locale of locales) {
   });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
+  }
+}
+
+const askMode = process.env.ASK_WORK;
+if (askMode === 'local' || askMode === 'index') {
+  for (const selected of locales) {
+    for (const alternate of locales.filter((locale) => locale !== selected)) {
+      copyFileSync(
+        new URL(
+          `../dist/ask-${askMode}/${alternate}/ask-content.json`,
+          import.meta.url,
+        ),
+        new URL(
+          `../dist/ask-${askMode}/${selected}/ask-content-${alternate}.json`,
+          import.meta.url,
+        ),
+      );
+    }
   }
 }

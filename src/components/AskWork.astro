@@ -1,0 +1,152 @@
+---
+import { t, type Locale } from '../i18n';
+import {
+  examples,
+  facts,
+  isPortfolioPageHref,
+  sourceLink,
+} from '../lib/ask/catalog';
+import { corpusVersion } from '../lib/ask/version';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const mode = import.meta.env.ASK_WORK_MODE;
+const localPets = import.meta.env.ASK_LOCAL_PETS ? 'true' : undefined;
+const messagesFor = (locale: Locale) => ({
+  wait: t(locale, 'ask.wait'),
+  offline: t(locale, 'ask.offline'),
+  partial: t(locale, 'ask.partial'),
+  evidence: t(locale, 'ask.evidence'),
+  topic: t(locale, 'ask.topic'),
+  related: t(locale, 'ask.related'),
+  seePage: t(locale, 'ask.seePage'),
+  missing: t(locale, 'ask.missing'),
+  missingSubject: t(locale, 'ask.missingSubject'),
+  spec: t(locale, 'ask.spec'),
+  length: t(locale, 'ask.length'),
+  limited: t(locale, 'ask.limited'),
+});
+const starters = [
+  t(locale, 'ask.start.homelab'),
+  t(locale, 'ask.start.spotify'),
+  t(locale, 'ask.start.ai'),
+];
+---
+
+<section class="max-w-3xl" aria-labelledby="ask-work-title" data-ask-exclude>
+  <details
+    class="panel"
+    data-ask-work
+    data-mode={mode}
+    data-ask-local-pets={localPets}
+    data-version={corpusVersion}
+    data-messages={JSON.stringify(messagesFor(locale))}
+    data-ask-other-messages={JSON.stringify(
+      messagesFor(locale === 'en' ? 'de' : 'en'),
+    )}
+  >
+    <summary
+      id="ask-work-title"
+      class="text-accent cursor-pointer rounded-xl px-5 py-4 font-mono font-semibold"
+    >
+      {t(locale, 'ask.title')}
+    </summary>
+    <div class="border-line space-y-4 border-t px-4 py-4 sm:px-5">
+      <div
+        class="text-ink max-h-[min(52svh,32rem)] space-y-3 overflow-y-auto overscroll-contain text-base leading-relaxed empty:hidden"
+        role="log"
+        aria-label={t(locale, 'ask.conversation')}
+        aria-live="polite"
+        aria-atomic="false"
+        data-ask-result
+      ></div>
+      <form data-ask-form hidden>
+        <label for="ask-question" class="sr-only">
+          {t(locale, 'ask.label')}
+        </label>
+        <p id="ask-work-hint" class="sr-only">
+          {t(locale, 'ask.hint')}
+        </p>
+        <div class="border-line bg-surface focus-within:border-accent grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 rounded-xl border p-2">
+          <textarea
+            id="ask-question"
+            aria-describedby="ask-work-hint"
+            placeholder={t(locale, 'ask.placeholder')}
+            rows="2"
+            required
+            maxlength="1000"
+            class="placeholder:text-muted text-ink min-w-0 resize-y bg-transparent px-2 py-1.5 leading-relaxed outline-none"
+          ></textarea>
+          <button type="submit" class="btn-primary shrink-0">
+            {t(locale, 'ask.send')}
+          </button>
+        </div>
+        <div
+          class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1"
+          data-ask-controls
+          hidden
+        >
+          <p class="text-muted text-xs" data-ask-topic hidden></p>
+          <button
+            type="button"
+            data-ask-reset
+            class="link-accent ml-auto rounded px-2 py-1 text-xs"
+          >
+            {t(locale, 'ask.newChat')}
+          </button>
+        </div>
+        <p
+          class="text-muted mt-2 text-sm empty:hidden"
+          aria-live="polite"
+          data-ask-validation
+        ></p>
+      </form>
+      <div class="flex flex-wrap gap-2 empty:hidden" data-ask-actions></div>
+      <div class="flex flex-wrap gap-2" data-ask-starters hidden>
+        {starters.map((question) => (
+          <button
+            type="button"
+            class="btn-muted text-sm"
+            data-ask-prompt={question}
+          >
+            {question}
+          </button>
+        ))}
+      </div>
+      <div data-ask-static-examples>
+        <h2 class="text-muted font-mono text-sm">
+          {t(locale, 'ask.examples')}
+        </h2>
+        <ul class="mt-2 space-y-2">
+          {examples.map(({ factId, question }) => {
+            const fact = facts.find(({ id }) => id === factId);
+            if (!fact) throw new Error('Unknown example fact ' + factId);
+            const source = sourceLink(fact.sourceId, locale);
+            return (
+              <li>
+                <details class="border-line rounded-md border px-3 py-2 text-sm">
+                  <summary class="text-ink cursor-pointer">
+                    {question[locale]}
+                  </summary>
+                  <p class="text-muted mt-2">{fact.answer[locale]}</p>
+                  {isPortfolioPageHref(source.href) ? (
+                    <a class="link-accent mt-1 inline-block" href={source.href}>
+                      {source.label}
+                    </a>
+                  ) : (
+                    <span class="text-muted mt-1 block text-xs">
+                      {source.label}
+                    </span>
+                  )}
+                </details>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  </details>
+</section>

@@ -1,0 +1,555 @@
+[
+  {
+    "locale": "en",
+    "question": "What is Timo working on now?",
+    "status": "answer",
+    "id": "current-work",
+    "href": "/about/#current-work",
+    "baseline": "routing"
+  },
+  {
+    "locale": "de",
+    "question": "Woran arbeitet Timo gerade?",
+    "status": "answer",
+    "id": "current-work",
+    "href": "/about/#current-work",
+    "baseline": "routing"
+  },
+  {
+    "locale": "en",
+    "question": "What projects is he working on at the moment?",
+    "status": "answer",
+    "id": "current-work",
+    "href": "/about/#current-work"
+  },
+  {
+    "locale": "de",
+    "question": "Welche Projekte baut er aktuell?",
+    "status": "answer",
+    "id": "current-work",
+    "href": "/about/#current-work"
+  },
+  {
+    "locale": "en",
+    "question": "Which company published Hearthcoil?",
+    "status": "answer",
+    "id": "hearthcoil-release-plan",
+    "href": "/about/#current-work",
+    "baseline": "paraphrases"
+  },
+  {
+    "locale": "de",
+    "question": "Welcher Anbieter hat Hearthcoil veröffentlicht?",
+    "status": "answer",
+    "id": "hearthcoil-release-plan",
+    "href": "/about/#current-work",
+    "baseline": "paraphrases"
+  },
+  {
+    "locale": "en",
+    "question": "Does Hearthcoil have a publisher?",
+    "status": "answer",
+    "id": "hearthcoil-release-plan",
+    "href": "/about/#current-work"
+  },
+  {
+    "locale": "de",
+    "question": "Wie will Timo Hearthcoil veröffentlichen?",
+    "status": "answer",
+    "id": "hearthcoil-release-plan",
+    "href": "/about/#current-work"
+  },
+  {
+    "locale": "en",
+    "question": "How did Timo get push notifications working in Coilwatch?",
+    "status": "answer",
+    "id": "coilwatch-push-notifications",
+    "href": "/projects/hearthcoil/#coilwatch-notifications"
+  },
+  {
+    "locale": "de",
+    "question": "Wie hat Timo Push-Nachrichten in Coilwatch zum Laufen gebracht?",
+    "status": "answer",
+    "id": "coilwatch-push-notifications",
+    "href": "/projects/hearthcoil/#coilwatch-notifications"
+  },
+  {
+    "locale": "en",
+    "question": "What import improvement did Timo contribute to the original SpotifyStatsTracker?",
+    "status": "answer",
+    "id": "spotify-upstream-review",
+    "href": "/projects/spotify-stats-tracker/#upstream-import"
+  },
+  {
+    "locale": "de",
+    "question": "Was hat Timo beim Import im ursprünglichen SpotifyStatsTracker verbessert?",
+    "status": "answer",
+    "id": "spotify-upstream-review",
+    "href": "/projects/spotify-stats-tracker/#upstream-import"
+  },
+  {
+    "locale": "en",
+    "question": "Who created the original SpotifyStatsTracker?",
+    "status": "answer",
+    "id": "spotify-rewrite",
+    "href": "/projects/spotify-stats-tracker/"
+  },
+  {
+    "locale": "de",
+    "question": "Wer hat das ursprüngliche SpotifyStatsTracker entwickelt?",
+    "status": "answer",
+    "id": "spotify-rewrite",
+    "href": "/projects/spotify-stats-tracker/"
+  },
+  {
+    "locale": "en",
+    "question": "What year did Timo invent the original SpotifyTracker upstream app?",
+    "status": "partial",
+    "id": "spotify-rewrite",
+    "href": "/projects/spotify-stats-tracker/",
+    "baseline": "original"
+  },
+  {
+    "locale": "en",
+    "question": "How many genres does Last.fm provide to SpotifyTracker?",
+    "status": "partial",
+    "id": "spotify-enrichment",
+    "href": "/projects/spotify-stats-tracker/",
+    "baseline": "routing"
+  },
+  {
+    "locale": "de",
+    "question": "Wie viele Genres liefert Last.fm an SpotifyTracker?",
+    "status": "partial",
+    "id": "spotify-enrichment",
+    "href": "/projects/spotify-stats-tracker/",
+    "baseline": "routing"
+  },
+  {
+    "locale": "en",
+    "question": "What is the exact date Timo joined Stadler RDS as an employee?",
+    "status": "partial",
+    "id": "stadler-start-month",
+    "href": "/about/#stadler-rds",
+    "baseline": "held-out"
+  },
+  {
+    "locale": "de",
+    "question": "An welchem genauen Datum begann Timo bei Stadler RDS?",
+    "status": "partial",
+    "id": "stadler-start-month",
+    "href": "/about/#stadler-rds",
+    "baseline": "held-out"
+  },
+  {
+    "locale": "en",
+    "question": "What was the title of Timo's bachelor thesis?",
+    "status": "answer",
+    "id": "bachelor-title",
+    "href": "/downloads/timo-rzipa-bachelor-thesis.pdf#page=1",
+    "baseline": "held-out"
+  },
+  {
+    "locale": "de",
+    "question": "Wie lautete der genaue Titel von Timos Bachelorarbeit?",
+    "status": "answer",
+    "id": "bachelor-title",
+    "href": "/downloads/timo-rzipa-bachelor-thesis.pdf#page=1",
+    "baseline": "held-out"
+  },
+  {
+    "locale": "en",
+    "question": "What exact programming language was used for the Carini document viewer?",
+    "status": "answer",
+    "id": "carini-document-view",
+    "href": "/projects/carini-management-system/",
+    "baseline": "held-out"
+  },
+  {
+    "locale": "de",
+    "question": "In welcher Programmiersprache wurde die Dokumentenansicht für Carini geschrieben?",
+    "status": "answer",
+    "id": "carini-document-view",
+    "href": "/projects/carini-management-system/",
+    "baseline": "held-out"
+  },
+  {
+    "locale": "en",
+    "question": "Does Timo's CV list a master's degree after FH Vorarlberg?",
+    "status": "answer",
+    "id": "cv-masters-listing",
+    "href": "cv",
+    "baseline": "held-out"
+  },
+  {
+    "locale": "de",
+    "question": "Ist im Lebenslauf nach der FH Vorarlberg ein Masterabschluss aufgeführt?",
+    "status": "answer",
+    "id": "cv-masters-listing",
+    "href": "cv",
+    "baseline": "held-out"
+  },
+  {
+    "locale": "de",
+    "question": "Welche Sprache hat Timo für die Monatsabrechnung bei Carini eingesetzt?",
+    "status": "partial",
+    "id": "carini-billing-scope",
+    "href": "/projects/carini-management-system/",
+    "baseline": "original"
+  },
+  {
+    "locale": "en",
+    "question": "What language did Timo use for monthly billing at Carini?",
+    "status": "partial",
+    "id": "carini-billing-scope",
+    "href": "/projects/carini-management-system/"
+  },
+  {
+    "locale": "en",
+    "question": "Can MySpeed predict next month’s bandwidth bill?",
+    "status": "answer",
+    "id": "myspeed-forecast-scope",
+    "href": "/projects/myspeed/",
+    "baseline": "original"
+  },
+  {
+    "locale": "de",
+    "question": "Kann MySpeed den Bandbreitenbedarf für das nächste Jahr vorhersagen?",
+    "status": "answer",
+    "id": "myspeed-forecast-scope",
+    "href": "/projects/myspeed/",
+    "baseline": "original"
+  },
+  {
+    "locale": "en",
+    "question": "Can MySpeed forecast my bandwidth needs?",
+    "status": "answer",
+    "id": "myspeed-forecast-scope",
+    "href": "/projects/myspeed/"
+  },
+  {
+    "locale": "de",
+    "question": "Kann MySpeed den Bandbreitenbedarf prognostizieren?",
+    "status": "answer",
+    "id": "myspeed-forecast-scope",
+    "href": "/projects/myspeed/"
+  },
+  {
+    "locale": "en",
+    "question": "In the Classic Kniffel test, 1–5 are kept, the last die just rolled a 6, turn score was zero and another draw is disabled. What does Otto recommend?",
+    "status": "answer",
+    "id": "tutto-kniffel-completed-fixture",
+    "href": "/projects/tutto/#kniffel-test-cases"
+  },
+  {
+    "locale": "de",
+    "question": "Im Kniffel-Test mit klassischen Regeln sind 1–5 bereits behalten, der letzte Würfel zeigte gerade eine 6, der Zugpunktestand war null und eine weitere Karte kann nicht gezogen werden. Was empfiehlt Otto?",
+    "status": "answer",
+    "id": "tutto-kniffel-completed-fixture",
+    "href": "/projects/tutto/#kniffel-test-cases"
+  },
+  {
+    "locale": "en",
+    "question": "In the Kniffel probability test, 1–5 are kept and the last die has not been rolled. What is the completion probability?",
+    "status": "answer",
+    "id": "tutto-kniffel-completion-fixture",
+    "href": "/projects/tutto/#kniffel-test-cases"
+  },
+  {
+    "locale": "de",
+    "question": "Im Kniffel-Wahrscheinlichkeitstest sind 1–5 bereits behalten und der letzte Würfel wurde noch nicht geworfen. Wie hoch ist die Wahrscheinlichkeit für den Abschluss?",
+    "status": "answer",
+    "id": "tutto-kniffel-completion-fixture",
+    "href": "/projects/tutto/#kniffel-test-cases"
+  },
+  {
+    "locale": "en",
+    "question": "What are the odds for a Kniffel with four dice left?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Wie hoch ist die Kniffel-Wahrscheinlichkeit mit vier übrigen Würfeln?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "How many points does Otto recommend for a Modernized Kniffel with a turn score of 800?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Wie viele Punkte empfiehlt Otto bei einem Kniffel mit modernisierten Regeln und 800 Zugpunkten?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "What is Hearthcoil’s Steam release date?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Wann erscheint Hearthcoil auf Steam?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "How much will MySpeed say I will pay next month?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Wie hoch ist laut MySpeed meine Rechnung nächsten Monat?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "Which vendor built the OCR used by Abacus?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Welcher Anbieter entwickelte die OCR für Abacus?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "Where is Timo based?",
+    "status": "answer",
+    "id": "portfolio-role-location",
+    "href": "/about/"
+  },
+  {
+    "locale": "de",
+    "question": "Wo ist Timo ansässig?",
+    "status": "answer",
+    "id": "portfolio-role-location",
+    "href": "/about/"
+  },
+  {
+    "locale": "en",
+    "question": "What is Timo’s English level?",
+    "status": "answer",
+    "id": "portfolio-spoken-languages",
+    "href": "/about/"
+  },
+  {
+    "locale": "de",
+    "question": "Welches Sprachniveau hat Timo in Englisch?",
+    "status": "answer",
+    "id": "portfolio-spoken-languages",
+    "href": "/about/"
+  },
+  {
+    "locale": "en",
+    "question": "How much faster is SpotifyTracker’s Compare view when sorting?",
+    "status": "answer",
+    "id": "spotify-compare-performance",
+    "href": "https://github.com/i7Gamer/SpotifyTracker/pull/44"
+  },
+  {
+    "locale": "de",
+    "question": "Wie schnell ist die Vergleichsansicht in SpotifyTracker beim Umsortieren?",
+    "status": "answer",
+    "id": "spotify-compare-performance",
+    "href": "https://github.com/i7Gamer/SpotifyTracker/pull/44"
+  },
+  {
+    "locale": "en",
+    "question": "How is this portfolio site hosted?",
+    "status": "answer",
+    "id": "portfolio-website-architecture",
+    "href": "/projects/this-website/"
+  },
+  {
+    "locale": "de",
+    "question": "Wie wird diese Website gehostet?",
+    "status": "answer",
+    "id": "portfolio-website-architecture",
+    "href": "/projects/this-website/"
+  },
+  {
+    "locale": "en",
+    "question": "How does Tutto stay compatible with the older server?",
+    "status": "answer",
+    "id": "tutto-online-compatibility",
+    "href": "https://github.com/i7Gamer/Tutto/pull/14"
+  },
+  {
+    "locale": "de",
+    "question": "Wie bleibt Tutto mit dem älteren Server kompatibel?",
+    "status": "answer",
+    "id": "tutto-online-compatibility",
+    "href": "https://github.com/i7Gamer/Tutto/pull/14"
+  },
+  {
+    "locale": "en",
+    "question": "Does Ask Otto use an LLM?",
+    "status": "answer",
+    "id": "tutto-coach",
+    "href": "/projects/tutto/"
+  },
+  {
+    "locale": "de",
+    "question": "Nutzt Ask Otto ein Sprachmodell?",
+    "status": "answer",
+    "id": "tutto-coach",
+    "href": "/projects/tutto/"
+  },
+  {
+    "locale": "en",
+    "question": "Does Timo use AI to write code?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Nutzt Timo KI zum Programmieren?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "How did Timo use AI to code Tutto?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Wie hat Timo KI beim Programmieren von Tutto eingesetzt?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "What did Timo rewrite in SpotifyTracker, and which tech stack did he use?",
+    "status": "answer",
+    "id": "spotify-python",
+    "href": "/projects/spotify-stats-tracker/#contribution"
+  },
+  {
+    "locale": "de",
+    "question": "Welche Komponenten hat Timo bei SpotifyTracker neu entwickelt und welche Technologien hat er verwendet?",
+    "status": "answer",
+    "id": "spotify-python",
+    "href": "/projects/spotify-stats-tracker/#contribution"
+  },
+  {
+    "locale": "en",
+    "question": "what is timo currently doing?",
+    "status": "answer",
+    "id": "current-work",
+    "href": "/about/#current-work"
+  },
+  {
+    "locale": "en",
+    "question": "whats timo up to",
+    "status": "answer",
+    "id": "current-work",
+    "href": "/about/#current-work"
+  },
+  {
+    "locale": "en",
+    "question": "What’s Timo up to these days?",
+    "status": "answer",
+    "id": "current-work",
+    "href": "/about/#current-work"
+  },
+  {
+    "locale": "de",
+    "question": "Was macht Timo aktuell?",
+    "status": "answer",
+    "id": "current-work",
+    "href": "/about/#current-work"
+  },
+  {
+    "locale": "en",
+    "question": "Does Timo have pets?",
+    "status": "answer",
+    "id": "about.cats",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "en",
+    "question": "What are his cats called?",
+    "status": "answer",
+    "id": "about.cats.names",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "en",
+    "question": "What colour is Rudi?",
+    "status": "answer",
+    "id": "about.cats.rudi",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "en",
+    "question": "What breed is Georgi?",
+    "status": "answer",
+    "id": "about.cats.georgi",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "en",
+    "question": "What exact coat variety is Benji?",
+    "status": "partial",
+    "id": "about.cats.benji",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "en",
+    "question": "Show me photos of Timo’s cats",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Hat Timo Haustiere?",
+    "status": "answer",
+    "id": "about.cats",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "de",
+    "question": "Wie heissen seine Katzen?",
+    "status": "answer",
+    "id": "about.cats.names",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "de",
+    "question": "Welche Farbe hat Rudi?",
+    "status": "answer",
+    "id": "about.cats.rudi",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "de",
+    "question": "Welche Rasse hat Georgi?",
+    "status": "answer",
+    "id": "about.cats.georgi",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "de",
+    "question": "Welche genaue Fellvariante hat Benji?",
+    "status": "partial",
+    "id": "about.cats.benji",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "de",
+    "question": "Zeig mir Fotos von Timos Katzen",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "Are all of Timo’s cats male?",
+    "status": "answer",
+    "id": "about.cats.sex",
+    "href": "/ask-pets.txt"
+  },
+  {
+    "locale": "de",
+    "question": "Ist Benji ein Kater?",
+    "status": "answer",
+    "id": "about.cats.sex",
+    "href": "/ask-pets.txt"
+  }
+]

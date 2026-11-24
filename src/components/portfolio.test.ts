@@ -1,6 +1,7 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, expect, it } from 'vitest';
 
+import { PROJECT_AI_NOTES } from '../data/project-ai';
 import { PROJECTS } from '../data/projects';
 import { Window } from 'happy-dom';
 import { LOCALES } from '../i18n';
@@ -122,6 +123,38 @@ describe('portfolio components', () => {
     },
   );
 
+  it.each(LOCALES)(
+    'renders the AI section only on the Hearthcoil story in %s',
+    async (locale) => {
+      const container = await AstroContainer.create();
+      for (const project of PROJECTS.filter(({ story }) => story)) {
+        const html = await container.renderToString(ProjectStory, {
+          props: { project, locale },
+        });
+        const document = new Window().document;
+        document.body.innerHTML = html;
+        const section = document.querySelector('#ai-usage');
+        if (project.slug === 'hearthcoil') {
+          expect(section?.textContent).toContain(
+            PROJECT_AI_NOTES.hearthcoil!.development[locale],
+          );
+          expect(section?.textContent).toContain(
+            locale === 'en' ? 'AI use' : 'KI-Einsatz',
+          );
+        } else {
+          expect(section).toBeNull();
+        }
+      }
+    },
+  );
+
+  it('omits the AI section for projects without verified notes', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(ProjectStory, {
+      props: { project, locale: 'en' },
+    });
+    expect(html).not.toContain('id="ai-usage"');
+  });
   it('renders no logo for projects without one', async () => {
     const container = await AstroContainer.create();
     for (const component of [ProjectCard, ProjectStory]) {

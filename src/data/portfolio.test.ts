@@ -38,6 +38,7 @@ describe('portfolio content contracts', () => {
         'this-website',
         'bachelor-thesis',
         'carini-management-system',
+        'hearthcoil',
       ].sort(),
     );
     for (const project of PROJECTS) {
@@ -70,11 +71,22 @@ describe('portfolio content contracts', () => {
     // The overview is the public page; the root requires a login.
     expect(spotify.link).toBe('https://music.rzipas.win/overview');
     expect(SERVICES.map((s) => s.name)).toContain('SpotifyTracker');
-    const { provenance, upstream, ...ownCopy } = spotify.story!;
+    const { provenance, upstream, additionalSections, ...ownCopy } =
+      spotify.story!;
     expect(upstream).toBe('https://github.com/TzurSoffer/SpotifyStatsTracker');
     expect(provenance?.en).toContain('TzurSoffer/SpotifyStatsTracker');
+    const upstreamSection = additionalSections?.find(
+      ({ id }) => id === 'upstream-import',
+    );
+    expect(upstreamSection?.text.en).toContain(
+      'TzurSoffer’s original SpotifyStatsTracker',
+    );
+    expect(upstreamSection?.text.de).toContain(
+      'TzurSoffers ursprünglichem SpotifyStatsTracker',
+    );
     const text = JSON.stringify([
       ownCopy,
+      additionalSections?.filter(({ id }) => id !== 'upstream-import'),
       spotify.tagline,
       spotify.description,
     ]);

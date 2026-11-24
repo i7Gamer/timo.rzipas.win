@@ -1,0 +1,262 @@
+import { readFile } from 'node:fs/promises';
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from 'node:http';
+import { MAX_QUESTION } from '../../src/lib/ask/catalog.ts';
+import { isChatHistory } from '../../src/lib/ask/history.ts';
+import {
+  LOCAL_PETS_PATH,
+  parseLocalPets,
+  type LocalPets,
+} from '../../src/lib/ask/local-pets.ts';
+import {
+  rankedCandidates,
+  rankWithGranite,
+  type RankFacts,
+} from './granite.ts';
+import { graniteLocal, localPorts, LOOPBACK } from './local-profile.ts';
+import { selectWithOllama } from './ollama.ts';
+import {
+  askModel,
+  broadEvidencePool,
+  prepareQuestion,
+  type SelectFacts,
+} from './selection.ts';
+
+const LOCAL_ORIGINS = [localPorts.en, localPorts.de].map(
+  (port) => `http://${LOOPBACK}:${port}`,
+);
+const MAX_BYTES = 8 * 1024;
+const MINUTE = 60_000;
+const UPSTREAM_TIMEOUT = 6_000;
+
+function quota(limit: number, window: number) {
+  const entries: number[] = [];
+  return () => {
+    const now = Date.now();
+    while (entries.length && entries[0] + window <= now) entries.shift();
+    if (entries.length >= limit)
+      return Math.ceil((entries[0] + window - now) / 1000);
+    entries.push(now);
+    return 0;
+  };
+}
+
+function reply(response: ServerResponse, status: number, payload: object) {
+  if (response.destroyed) return;
+  response.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  response.end(JSON.stringify(payload));
+}
+
+function fail(response: ServerResponse, status: number, retryAfter = 0) {
+  if (response.destroyed) return;
+  if (retryAfter) response.setHeader('Retry-After', retryAfter);
+  if (status === 405) response.setHeader('Allow', 'POST');
+  if (status === 413) response.setHeader('Connection', 'close');
+  reply(response, status, { error: status });
+}
+
+async function readQuestion(request: IncomingMessage) {
+  if (Number(request.headers['content-length']) > MAX_BYTES) throw 413;
+  let size = 0;
+  const chunks: Buffer[] = [];
+  for await (const chunk of request.iterator({ destroyOnReturn: false })) {
+    size += chunk.length;
+    if (size > MAX_BYTES) throw 413;
+    chunks.push(chunk);
+  }
+  const value: unknown = JSON.parse(
+    new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)),
+  );
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Object.keys(value).some(
+      (key) => !['question', 'locale', 'history'].includes(key),
+    )
+  )
+    throw 400;
+  const { question, locale, history } = value as {
+    question?: unknown;
+    locale?: unknown;
+    history?: unknown;
+  };
+  if (typeof question !== 'string' || (locale !== 'en' && locale !== 'de'))
+    throw 400;
+  if (history !== undefined && !isChatHistory(history)) throw 400;
+  const trimmed = question.trim();
+  if (!trimmed || [...trimmed].length > MAX_QUESTION || !trimmed.isWellFormed())
+    throw 400;
+  return { question: trimmed, locale, history } as const;
+}
+
+export function createGateway({
+  select = selectWithOllama,
+  rank,
+  timeout = UPSTREAM_TIMEOUT,
+  local = true,
+  origins = LOCAL_ORIGINS,
+  privatePets,
+}: {
+  select?: SelectFacts;
+  rank?: RankFacts;
+  timeout?: number;
+  local?: boolean;
+  origins?: readonly string[];
+  privatePets?: LocalPets;
+} = {}) {
+  const siteOrigins = new Map(
+    origins.map((origin) => {
+      const site = new URL(origin);
+      if (
+        !['http:', 'https:'].includes(site.protocol) ||
+        site.origin !== origin
+      ) {
+        throw new Error('Expected an exact HTTP or HTTPS site origin');
+      }
+      return [site.host, origin];
+    }),
+  );
+  // Every request comes through the preview or container proxy. Forwarded
+  // identities cannot split the quota or grow a table of client identifiers.
+  const checkRequestQuota = quota(6, MINUTE);
+  const checkModelQuota = quota(60, 60 * MINUTE);
+  let running = false;
+  let retryAt = 0;
+  let failures = 0;
+
+  return createServer(
+    {
+      headersTimeout: 5_000,
+      requestTimeout: 5_000,
+      connectionsCheckingInterval: 1_000,
+    },
+    async (request, response) => {
+      const asksLocalPets = request.url === LOCAL_PETS_PATH;
+      if (request.url !== '/api/ask' && (!asksLocalPets || !privatePets))
+        return fail(response, 404);
+      if (request.method !== 'POST') return fail(response, 405);
+      const origin = siteOrigins.get(request.headers.host ?? '');
+      if (!origin || request.headers.origin !== origin) {
+        return fail(response, 403);
+      }
+      if (
+        request.headers['content-type']
+          ?.split(';', 1)[0]
+          .trim()
+          .toLowerCase() !== 'application/json'
+      ) {
+        return fail(response, 415);
+      }
+      if (asksLocalPets && privatePets) {
+        if (!LOCAL_ORIGINS.includes(origin)) return fail(response, 403);
+        return reply(response, 200, privatePets);
+      }
+      const requestWait = checkRequestQuota();
+      if (requestWait) return fail(response, 429, requestWait);
+
+      let input;
+      try {
+        input = await readQuestion(request);
+      } catch (error) {
+        return fail(response, error === 413 ? 413 : 400);
+      }
+      if (response.destroyed) return;
+      const { question, locale, history } = input;
+      const { fallback, candidates, semanticPool, allowBroadSearch } =
+        prepareQuestion(question, locale, history);
+      if (!local || (fallback.status !== 'unknown' && !candidates.length)) {
+        return reply(response, 200, fallback);
+      }
+      if (running || Date.now() < retryAt) {
+        return fallback.status === 'unknown'
+          ? fail(response, 503)
+          : reply(response, 200, fallback);
+      }
+      const modelWait = checkModelQuota();
+      if (modelWait) return fail(response, 429, modelWait);
+
+      running = true;
+      const disconnect = new AbortController();
+      const onClose = () => disconnect.abort();
+      response.once('close', onClose);
+      const signal = AbortSignal.any([
+        disconnect.signal,
+        AbortSignal.timeout(timeout),
+      ]);
+      try {
+        const pool =
+          allowBroadSearch && !semanticPool.length
+            ? broadEvidencePool(question)
+            : semanticPool;
+        const selected =
+          rank && pool.length && !candidates.length
+            ? await rankedCandidates(rank, question, locale, pool, signal)
+            : candidates;
+        const result = await askModel(
+          select,
+          question,
+          locale,
+          selected,
+          signal,
+          history,
+        );
+        if (!result || signal.aborted)
+          throw new Error('Invalid selector result');
+        failures = 0;
+        reply(
+          response,
+          200,
+          result.status === 'unknown' && fallback.status !== 'unknown'
+            ? fallback
+            : result,
+        );
+      } catch {
+        failures += 1;
+        // Let an aborted request unwind in the inference runtime before accepting
+        // more model work. Success is the only thing that resets the failure count.
+        if (failures >= 2) retryAt = Date.now() + MINUTE;
+        else if (signal.aborted) retryAt = Date.now() + timeout;
+        if (fallback.status !== 'unknown') reply(response, 200, fallback);
+        else fail(response, 503);
+      } finally {
+        response.off('close', onClose);
+        running = false;
+      }
+    },
+  );
+}
+
+if (import.meta.main) {
+  const { ASK_ORIGIN } = process.env;
+  // The container has a private interface to nginx and shares Ollama's
+  // loopback. The standalone preview binds directly to the host's loopback.
+  const container = process.argv.includes('--container');
+  if (container && !ASK_ORIGIN)
+    throw new Error('Set ASK_ORIGIN to the site origin in container mode');
+  if (container && graniteLocal)
+    throw new Error('The Granite profile requires a native loopback gateway');
+  const bind = container ? '0.0.0.0' : LOOPBACK;
+  const privatePets =
+    !container && !ASK_ORIGIN && graniteLocal
+      ? await readFile(
+          new URL('../../.local-ask/pets.json', import.meta.url),
+          'utf8',
+        )
+          .then((text) => parseLocalPets(JSON.parse(text)))
+          .catch(() => null)
+      : null;
+  createGateway({
+    origins: ASK_ORIGIN ? [ASK_ORIGIN] : LOCAL_ORIGINS,
+    rank: graniteLocal ? rankWithGranite : undefined,
+    privatePets: privatePets ?? undefined,
+  }).listen(localPorts.gateway, bind, () =>
+    console.log('Ask gateway on http://' + bind + ':' + localPorts.gateway),
+  );
+}

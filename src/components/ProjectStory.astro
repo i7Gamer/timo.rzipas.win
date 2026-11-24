@@ -8,6 +8,7 @@ import {
   type ProjectStoryContent,
 } from '../lib/projects';
 import ProjectLogo from './ProjectLogo.astro';
+import { PROJECT_AI_NOTES } from '../data/project-ai';
 
 interface Props {
   project: Project & { story: ProjectStoryContent };
@@ -16,7 +17,14 @@ interface Props {
 const { project, locale } = Astro.props;
 const sources = projectSources(project, locale);
 const { story } = project;
+const aiNote =
+  project.slug === 'hearthcoil' ? PROJECT_AI_NOTES.hearthcoil : undefined;
 const sections = ['problem', 'contribution', 'decisions', 'outcome'] as const;
+const contributionAnchor =
+  import.meta.env.ASK_WORK_MODE !== 'off' &&
+  project.slug === 'spotify-stats-tracker'
+    ? 'contribution'
+    : undefined;
 const SCREENSHOT_WIDTHS = [480, 800, 1200];
 const linkScreenshots = project.slug !== 'spotify-stats-tracker';
 ---
@@ -71,7 +79,9 @@ const linkScreenshots = project.slug !== 'spotify-stats-tracker';
   </header>
   <div class="mt-10 grid gap-8 md:grid-cols-2">
     {sections.map((section) => (
-      <section>
+      <section
+        id={section === contributionAnchor ? contributionAnchor : undefined}
+      >
         <>
           <h2 class="text-ink font-mono text-lg font-semibold">
             {t(locale, `project.story.${section}`)}
@@ -83,6 +93,44 @@ const linkScreenshots = project.slug !== 'spotify-stats-tracker';
       </section>
     ))}
   </div>
+  {story.additionalSections?.map(({ id, title, text, links }) => (
+    <section id={id} class="mt-8 max-w-3xl scroll-mt-24">
+      <h2 class="text-ink font-mono text-lg font-semibold">
+        {pick(locale, title)}
+      </h2>
+      <p class="text-muted mt-3 leading-relaxed">{pick(locale, text)}</p>
+      {links && (
+        <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          {links.map(({ href, label }) => (
+            <li>
+              <a class="link-accent" href={href}>
+                {pick(locale, label)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  ))}
+  {aiNote && (
+    <section id="ai-usage" class="panel mt-8 p-5">
+      <h2 class="text-ink font-mono text-lg font-semibold">
+        {locale === 'de' ? 'KI-Einsatz' : 'AI use'}
+      </h2>
+      <h3 class="text-ink mt-4 text-sm font-semibold">
+        {locale === 'de' ? 'Entwicklung' : 'Development'}
+      </h3>
+      <p class="text-muted mt-3 leading-relaxed">
+        {pick(locale, aiNote.development)}
+      </p>
+      <h3 class="text-ink mt-4 text-sm font-semibold">
+        {locale === 'de' ? 'Produkt' : 'Product'}
+      </h3>
+      <p class="text-muted mt-3 leading-relaxed">
+        {pick(locale, aiNote.product)}
+      </p>
+    </section>
+  )}
   {story.provenance && (
     <aside class="border-line text-muted mt-8 border-l-2 pl-4 text-sm">
       {pick(locale, story.provenance)}{' '}
