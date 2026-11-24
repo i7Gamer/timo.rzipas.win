@@ -1,5 +1,5 @@
 import type { Locale } from '../../i18n';
-import { normalize } from './catalog.ts';
+import { facts, normalize } from './catalog.ts';
 import type { ChatTurn } from './history.ts';
 
 type ReviewedAnswer = { ids: readonly string[]; partial?: true };
@@ -19,7 +19,7 @@ const genreCount =
 const kniffel = /\bkniffel\b/;
 
 export const moreQuestion =
-  /^(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|more|erzaehl mir mehr|(?:sonst )?noch (?:etwas|was|mehr))$/;
+  /^(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|erzaehl mir mehr|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
 
 export function asksAboutAICoding(terms: string) {
   return (
@@ -154,10 +154,58 @@ const personalJudgment =
 const maintainerReview =
   /^(?:what did (?:the |its )?maintainer (?:question|flag) (?:in|about|during) |was (?:hinterfragte|beanstandete) (?:der|die) maintainer(?:in)? (?:bei|an) )/;
 
+const profilePitch =
+  /^(?:(?:(?:give|write|show) me )?(?:a )?(?:(?:short|quick|brief) )?(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)|(?:stell(?:e)? )?timo kurz vor|(?:ein )?kurzprofil (?:zu|von|ueber) timo)$/;
+const interestingHighlight =
+  /^(?:(?:(?:tell|show|give) me |what (?:is|s) )?(?:one |an? |the )?(?:most )?(?:interesting|surprising|fun) (?:detail|fact|thing)(?: about (?:timo(?: rzipa)?|him|his work|the portfolio))?(?: please)?|(?:(?:nenn|zeig) mir )?(?:ein )?(?:interessantes|spannendes|ueberraschendes) (?:detail|beispiel)(?: (?:ueber|zu) timo)?(?: bitte)?)$/;
+const workAndProjectInventory =
+  /^(?:(?:please )?(?:list|show(?: me)?|give me|what are) (?:all )?(?:(?:timo ?s|his|your|the) )?(?:(?:work(?: experience)?|jobs?|roles?) and (?:personal )?projects|projects and (?:work(?: experience)?|jobs?|roles?))(?: (?:of|by|from) timo)?(?: please)?|(?:liste|zeig(?: mir)?) (?:alle? )?(?:timos )?(?:arbeit|jobs?|stellen|berufserfahrung) und projekte(?: von timo)?(?: auf)?)$/;
+const projectInventory =
+  /^(?:(?:list|show(?: me)?) all (?:of )?(?:(?:timo ?s|his|your|the) )?projects(?: please)?|(?:liste|zeig(?: mir)?) alle (?:timos )?projekte(?: von timo)?(?: auf)?)$/;
+const workDetails =
+  /^(?:(?:(?:tell|give|show) me )?(?:more (?:details? )?about|expand on) (?:his|timo ?s|your) (?:work(?: experience)?|career)|(?:erzaehl mir )?mehr (?:zu|ueber) (?:timos|seine|seiner) (?:arbeit|berufserfahrung))$/;
+const profileHighlightsQuestion = 'portfolio highlights';
+const highlightIds = [
+  'hearthcoil-launcher-playtest',
+  'spotify-reconciliation-example',
+  'portfolio-website-architecture',
+  'htl-dornbirn-class-website',
+  'homelab-motivation',
+];
+
+export function profileHighlightIds(
+  terms: string,
+  history: readonly ChatTurn[],
+) {
+  if (terms !== profileHighlightsQuestion && !interestingHighlight.test(terms))
+    return;
+  const seen = history.map(({ answer }) => normalize(answer));
+  return highlightIds.filter((id) => {
+    const fact = facts.find((entry) => entry.id === id);
+    return (
+      fact &&
+      !Object.values(fact.answer).some((text) =>
+        text.split(/(?<=[.!?])\s+/).some((sentence) => {
+          const excerpt = normalize(sentence);
+          return excerpt && seen.some((previous) => previous.includes(excerpt));
+        }),
+      )
+    );
+  });
+}
+
 export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
   const previous = normalize(history.at(-1)?.question ?? '');
-  if (moreQuestion.test(terms) && educationOverview.test(previous))
-    return 'education projects';
+  if (moreQuestion.test(terms)) {
+    if (educationOverview.test(previous)) return 'education projects';
+    const anchor = normalize(
+      history.findLast(
+        ({ question }) => !moreQuestion.test(normalize(question)),
+      )?.question ?? '',
+    );
+    if (profilePitch.test(anchor) || interestingHighlight.test(anchor))
+      return profileHighlightsQuestion;
+  }
   if (
     /^(?:motivation|why|warum)$/.test(terms) &&
     /^(?:home ?lab|tell me about (?:the |his )?home ?lab|erzaehl mir (?:vom|ueber das) home ?lab)$/.test(
@@ -245,6 +293,12 @@ export function needsDatedWorkEvidence(terms: string) {
 }
 
 export function approvedAnswer(terms: string): ReviewedAnswer | undefined {
+  if (profilePitch.test(terms)) return { ids: ['portfolio-pitch'] };
+  if (workAndProjectInventory.test(terms))
+    return { ids: ['career-role-titles', 'portfolio-project-inventory'] };
+  if (projectInventory.test(terms))
+    return { ids: ['portfolio-project-inventory'] };
+  if (workDetails.test(terms)) return { ids: WORK_EXPERIENCE_IDS };
   if (educationOverview.test(terms)) return { ids: ['cv-degree', 'cv-matura'] };
   if (educationProjects.test(terms))
     return { ids: ['bachelor-contribution', 'htl-dornbirn-class-website'] };

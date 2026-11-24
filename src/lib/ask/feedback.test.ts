@@ -1,5 +1,5 @@
 import { request, type Server } from 'node:http';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createGateway } from '../../../services/ask/server';
 import { prepareQuestion } from '../../../services/ask/selection';
 import type { ChatTurn } from './history';
@@ -66,6 +66,75 @@ afterEach(async () => {
 });
 
 describe('portfolio Ask feedback regressions', () => {
+  it('lets the model choose a public highlight even without a named project', async () => {
+    const select = vi.fn(async () => ({ status: 'answer', slots: [2] }));
+    await open({ local: true, select });
+    const response = await ask('most interesting detail please');
+    expect(select.mock.calls).toHaveLength(1);
+    expect(response.body).toMatchObject({
+      status: 'answer',
+      claims: [{ id: 'spotify-reconciliation-example' }],
+      sources: [{ href: '/projects/spotify-stats-tracker/' }],
+    });
+  });
+
+  it('continues a pitch with new examples and keeps work follow-ups scoped', async () => {
+    await open();
+    const history: ChatTurn[] = [];
+    const turns = [
+      ['short pitch about timo', ['portfolio-pitch']],
+      ['any more details?', ['hearthcoil-launcher-playtest']],
+      [
+        'more about his work',
+        ['abacus-workflow', 'stadler-vpn', 'stadler-plugins'],
+      ],
+    ] as const;
+    for (const [question, expectedIds] of turns) {
+      const response = await ask(question, 'en', history);
+      expect(response.body.status).toBe('answer');
+      expect(response.body.claims?.map(({ id }) => id)).toEqual(expectedIds);
+      history.push({
+        question,
+        answer: response.body.claims!.map(({ text }) => text).join(' '),
+      });
+    }
+  });
+
+  it.each([
+    ['list all timos work and projects', 'en'],
+    ['Liste alle Jobs und Projekte von Timo auf', 'de'],
+  ] as const)(
+    'cites the full public inventory for %s',
+    async (question, locale) => {
+      const select = vi.fn(async () => ({ status: 'unknown', slots: [] }));
+      await open({ local: true, select });
+      const response = await ask(question, locale);
+      expect(response.body).toMatchObject({
+        status: 'answer',
+        claims: [
+          { id: 'career-role-titles' },
+          { id: 'portfolio-project-inventory' },
+        ],
+        sources: [{ href: '/about/' }, { href: '/projects/' }],
+      });
+      expect(select).not.toHaveBeenCalled();
+    },
+  );
+
+  it('excludes highlights already shown after a broad profile question', async () => {
+    await open();
+    const question = 'Tell me one interesting fact about Timo';
+    const first = await ask(question);
+    expect(first.body.claims?.[0]?.id).toBe('hearthcoil-launcher-playtest');
+    const next = await ask('Any more details?', 'en', [
+      {
+        question,
+        answer: first.body.claims![0].text.split(/(?<=[.!?])\s+/)[0],
+      },
+    ]);
+    expect(next.body.claims?.[0]?.id).toBe('spotify-reconciliation-example');
+  });
+
   it.each([
     ['education', ['cv-degree', 'cv-matura']],
     ['leisure', ['portfolio-leisure']],

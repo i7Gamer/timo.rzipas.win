@@ -1,4 +1,4 @@
-# Ask about my work
+# Ask about Timo
 
 This prototype uses the public fact catalogue in `src/data/ask/facts.json`. The
 model selects numbered evidence. The gateway renders the reviewed wording and

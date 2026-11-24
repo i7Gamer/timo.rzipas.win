@@ -60,8 +60,11 @@ describe('Ask about my work UI', () => {
       ) as unknown as HTMLDetailsElement;
       expect(details.open).toBe(false);
       expect(details.querySelector('summary')?.textContent).toContain(
-        'Ask about my work',
+        'Ask about Timo',
       );
+      expect(
+        details.querySelector('[data-ask-result]')?.getAttribute('aria-label'),
+      ).toBe('Conversation with Ask about Timo');
       expect(
         details.parentElement?.querySelectorAll(
           '[data-ask-collapse], [data-ask-restore], [data-ask-expand]',
@@ -79,6 +82,28 @@ describe('Ask about my work UI', () => {
       expect(
         details.querySelector('[data-ask-body]')?.hasAttribute('inert'),
       ).toBe(false);
+    } finally {
+      window.close();
+    }
+  });
+
+  it('renders the German panel name and conversation label', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(AskWork, {
+      props: { locale: 'de' },
+    });
+    const window = new Window();
+    try {
+      window.document.body.innerHTML = html;
+      const details = window.document.querySelector(
+        'details[data-ask-work]',
+      ) as unknown as HTMLDetailsElement;
+      expect(details.querySelector('summary')?.textContent).toContain(
+        'Fragen zu Timo',
+      );
+      expect(
+        details.querySelector('[data-ask-result]')?.getAttribute('aria-label'),
+      ).toBe('Unterhaltung: Fragen zu Timo');
     } finally {
       window.close();
     }

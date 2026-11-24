@@ -79,6 +79,13 @@ describe('Ask public page content', () => {
     expect(questionLocale('Noch mehr?', 'en')).toBe('de');
   });
 
+  it('recognises the language of portfolio requests on either site', () => {
+    expect(
+      questionLocale('Nenn mir ein spannendes Detail über Timo', 'en'),
+    ).toBe('de');
+    expect(questionLocale('Short pitch about Timo', 'de')).toBe('en');
+  });
+
   it.each([
     ['Other projects', 'Hearthcoil', 200],
     ['SpotifyTracker', 'Reconciliation keeps', 200],
@@ -1616,6 +1623,101 @@ describe('Ask public page content', () => {
       expect(fetchLocal.mock.calls.some(([path]) => path === '/api/ask')).toBe(
         true,
       );
+    } finally {
+      vi.unstubAllGlobals();
+      window.close();
+    }
+  });
+
+  it('keeps a profile conversation in scope and lists all work and projects when inference is offline', async () => {
+    const window = new Window();
+    try {
+      vi.stubGlobal('document', window.document);
+      window.document.documentElement.lang = 'en';
+      const content = parseSiteContent(
+        {
+          locale: 'en',
+          pages: [
+            extractPage(
+              '<main><h1>About</h1><p data-ask-overview>Timo works as a software engineer at Abacus and previously worked at Stadler. His professional work includes Java document workflows, VPN setup, and C# and SQL plugins.</p></main>',
+              '/about/',
+            ),
+            extractPage(
+              '<main><h1>Projects</h1><p data-ask-overview>Timo’s public projects include SpotifyTracker, MySpeed, Tutto, Hearthcoil, his bachelor thesis, CARINI, and this portfolio website.</p></main>',
+              '/projects/',
+            ),
+            extractPage(
+              '<main><h1>Hearthcoil</h1><p>A couch co-op game in Unity.</p></main>',
+              '/projects/hearthcoil/',
+            ),
+          ],
+        },
+        'en',
+      )!;
+      const requests: { question: string; history?: unknown[] }[] = [];
+      const lookup = vi.fn<typeof fetch>(async (path, options) => {
+        if (path === SITE_CONTENT_PATH) return Response.json(content);
+        if (path === '/api/ask') {
+          requests.push(JSON.parse(String(options?.body)));
+          return new Response(null, { status: 503 });
+        }
+        return new Response(null, { status: 404 });
+      });
+      vi.stubGlobal('fetch', lookup);
+      window.document.body.innerHTML =
+        '<section data-mode="local" data-version="fixture"><div data-ask-result></div><form><textarea></textarea><button type="submit">Ask</button></form></section>';
+      const panel = window.document.querySelector('section')!;
+      panel.dataset.messages = JSON.stringify({
+        wait: 'Thinking…',
+        related: 'Related detail',
+        seePage: 'See the page for more.',
+      });
+      setupAskWork(panel as unknown as HTMLElement);
+      const replies = () =>
+        Array.from(panel.querySelectorAll('[data-ask-reply]'));
+      for (const [index, question] of [
+        'short pitch about timo',
+        'any more details?',
+        'more about his work',
+        'list all timos work and projects',
+      ].entries()) {
+        panel.querySelector('textarea')!.value = question;
+        panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
+        await vi.waitFor(() => expect(replies()).toHaveLength(index + 1));
+        await vi.waitFor(() =>
+          expect(panel.querySelector('button')?.disabled).toBe(false),
+        );
+      }
+
+      expect(requests).toEqual([
+        expect.objectContaining({
+          question: 'portfolio highlights',
+          history: [
+            expect.objectContaining({
+              question: 'short pitch about timo',
+              answer: expect.stringContaining('Abacus'),
+            }),
+          ],
+        }),
+      ]);
+      const [pitch, highlight, work, inventory] = replies();
+      expect(pitch.textContent).toMatch(/Abacus.*Stadler/s);
+      expect(highlight.textContent).toMatch(/Hearthcoil.*launcher/is);
+      expect(work.textContent).toMatch(/Abacus.*Stadler/s);
+      for (const project of [
+        'SpotifyTracker',
+        'Tutto',
+        'timo.rzipas.win',
+        'MySpeed',
+        'Bachelor thesis',
+        'Carini · SharePoint',
+        'Hearthcoil',
+      ])
+        expect(inventory.textContent).toContain(project);
+      expect(
+        inventory.querySelectorAll('a[href="/about/"], a[href="/projects/"]')
+          .length,
+      ).toBe(2);
     } finally {
       vi.unstubAllGlobals();
       window.close();

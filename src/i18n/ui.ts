@@ -41,7 +41,7 @@ const en = {
 
   'section.featured.title': 'Featured projects',
   'section.featured.all': 'All projects',
-  'ask.title': 'Ask about my work',
+  'ask.title': 'Ask about Timo',
   'ask.examples': 'Example questions',
   'ask.start.homelab': 'Tell me about the homelab',
   'ask.start.spotify': 'What is SpotifyTracker?',
@@ -55,7 +55,7 @@ const en = {
   'ask.send': 'Ask',
   'ask.history':
     'Selected earlier questions and replies may be sent to the local gateway for context. Local-only turns stay in this tab.',
-  'ask.conversation': 'Conversation with Ask about my work',
+  'ask.conversation': 'Conversation with Ask about Timo',
   'ask.newChat': 'New chat',
   'ask.wait': 'Let me look…',
   'ask.offline': 'I had trouble looking that up. Try again in a moment.',
@@ -203,7 +203,7 @@ const de: Partial<Record<UIKey, string>> = {
   'terminal.clear.out': 'Terminal geleert.',
 
   'section.featured.title': 'Ausgewählte Projekte',
-  'ask.title': 'Fragen zu meiner Arbeit',
+  'ask.title': 'Fragen zu Timo',
   'ask.examples': 'Beispielfragen',
   'ask.start.homelab': 'Erzähl mir vom Homelab',
   'ask.start.spotify': 'Was ist SpotifyTracker?',
@@ -217,7 +217,7 @@ const de: Partial<Record<UIKey, string>> = {
   'ask.send': 'Fragen',
   'ask.history':
     'Ausgewählte frühere Fragen und Antworten können zur Einordnung an das lokale Gateway gesendet werden. Rein lokale Nachrichten bleiben in diesem Tab.',
-  'ask.conversation': 'Unterhaltung zu meiner Arbeit',
+  'ask.conversation': 'Unterhaltung: Fragen zu Timo',
   'ask.newChat': 'Neuer Chat',
   'ask.wait': 'Ich schaue nach…',
   'ask.offline':

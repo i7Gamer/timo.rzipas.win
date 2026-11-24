@@ -726,7 +726,15 @@ export function setupAskWork(panel: HTMLElement) {
       } else {
         setSubjects([]);
 
-        const overview = index && findSiteContent(question, index, 'overview');
+        const overview =
+          index &&
+          findSiteContent(
+            question,
+            index,
+            'overview',
+            undefined,
+            publicHistory,
+          );
         if (overview && canShowSiteImmediately(overview)) {
           showSite(reply, overview);
           return;

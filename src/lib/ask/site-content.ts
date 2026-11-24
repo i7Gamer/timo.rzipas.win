@@ -18,9 +18,11 @@ import {
   modelOverviewIds,
   needsDatedWorkEvidence,
   PET_DETAIL_IDS,
+  profileHighlightIds,
   profileQuestionNote,
   reviewedFactId,
 } from './reviewed-questions';
+import type { ChatTurn } from './history';
 import type { LocalPets } from './local-pets';
 import { answerPets } from './pets';
 import { editDistance } from './spelling';
@@ -649,6 +651,7 @@ export function findSiteContent(
   index: SiteContent,
   kind: 'overview' | 'related' = 'related',
   subject?: SiteSubject,
+  history: readonly ChatTurn[] = [],
 ): SiteAnswer | null {
   const normalized = normalize(question).replace(/\bhome lab\b/g, 'homelab');
   if (outOfScope.test(normalized)) return null;
@@ -657,7 +660,19 @@ export function findSiteContent(
     return { status: 'unknown', sources: [], missing: [], note: profileNote };
   const contextualQuestion =
     subject?.href === PET_SOURCE_PATH ? normalized + ' pets' : normalized;
-  const modelIds = modelOverviewIds(contextualQuestion);
+  const highlights = profileHighlightIds(contextualQuestion, history);
+  if (highlights?.length === 0)
+    return {
+      status: 'unknown',
+      sources: [],
+      missing: [],
+      note:
+        index.locale === 'de'
+          ? 'Über welches Projekt oder welche Station möchtest du mehr erfahren?'
+          : 'Which project or role would you like to hear more about?',
+    };
+  const modelIds =
+    highlights?.slice(0, 1) ?? modelOverviewIds(contextualQuestion);
   const otherCats =
     subject?.href === PET_SOURCE_PATH && asksAboutOtherCats(normalized);
   if (otherCats && !subject?.catFactId)

@@ -90,6 +90,21 @@ describe('curated evidence', () => {
           continue;
         }
         const [id, field] = pointer.split('.');
+        if (pointer === 'projects.entries') {
+          evidence.set(
+            pointer,
+            digest(
+              JSON.stringify(
+                PROJECTS.map(({ slug, name, displayName }) => ({
+                  slug,
+                  name,
+                  displayName,
+                })),
+              ),
+            ),
+          );
+          continue;
+        }
         const project = PROJECTS.find(({ slug }) => slug === sourceSlugs[id]);
         const story = project?.story;
         const job = JOBS.find(({ id: jobId }) => jobId === id);
@@ -113,6 +128,20 @@ describe('curated evidence', () => {
       }
     }
     expect(Object.fromEntries(evidence)).toMatchSnapshot();
+  });
+
+  it('lists every public project entry in both locales', () => {
+    const inventory = facts.find(
+      ({ id }) => id === 'portfolio-project-inventory',
+    )!;
+    for (const locale of ['en', 'de'] as const) {
+      const answer = inventory.answer[locale];
+      for (const project of PROJECTS) {
+        const name = project.displayName?.[locale] ?? project.name;
+        expect(answer, `${locale}: ${project.slug}`).toContain(name);
+      }
+    }
+    expect(inventory.evidence).toContain('projects.entries');
   });
 
   it('keeps each claim and example tied to a permitted public destination', () => {

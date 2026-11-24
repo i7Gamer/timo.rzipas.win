@@ -21,6 +21,7 @@ import {
   modelOverviewIds,
   needsDatedWorkEvidence,
   profileFollowUp,
+  profileHighlightIds,
   profileQuestionNote,
   reviewedFactId,
   WORK_EXPERIENCE_IDS,
@@ -416,6 +417,21 @@ function prepareExactQuestion(
         )))
   ) {
     return { fallback: unknown, candidates: [], semanticPool: [] };
+  }
+
+  const highlightIds = profileHighlightIds(terms, history);
+  if (highlightIds) {
+    const candidates = highlightIds.flatMap((id) =>
+      facts.filter((fact) => fact.id === id),
+    );
+    const [highlight] = candidates;
+    return {
+      fallback: highlight
+        ? documentAnswer([highlight], 'answer', 'index', locale, corpusVersion)
+        : unknown,
+      candidates,
+      semanticPool: [],
+    };
   }
 
   const careerScope = careerFollowUpScope(terms, history);

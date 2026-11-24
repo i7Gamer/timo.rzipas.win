@@ -1523,6 +1523,33 @@
       "evidence": ["projects.intro"]
     },
     {
+      "id": "portfolio-project-inventory",
+      "sourceId": "portfolio-projects",
+      "facet": "public project page inventory",
+      "aliases": [],
+      "answer": {
+        "en": "The portfolio’s project pages cover SpotifyTracker, Tutto, timo.rzipas.win, MySpeed, Bachelor thesis, Carini · SharePoint and Hearthcoil.",
+        "de": "Die Projektseiten des Portfolios behandeln SpotifyTracker, Tutto, timo.rzipas.win, MySpeed, Bachelorarbeit, Carini · SharePoint und Hearthcoil."
+      },
+      "evidence": ["projects.entries"]
+    },
+    {
+      "id": "portfolio-pitch",
+      "sourceId": "portfolio-about",
+      "facet": "software engineering work at Abacus and earlier Stadler RDS",
+      "aliases": [],
+      "answer": {
+        "en": "Timo builds software that automates workflows. At Abacus he works on document processing for accounting teams, and at Stadler RDS he built an interface for managing train VPN certificates.",
+        "de": "Timo entwickelt Software, die Arbeitsabläufe automatisiert. Bei Abacus arbeitet er an der Belegverarbeitung für die Buchhaltung. Bei Stadler RDS baute er eine Oberfläche zur Verwaltung von VPN-Zertifikaten für Züge."
+      },
+      "evidence": [
+        "abacus.role",
+        "abacus.contribution",
+        "stadler-rds.role",
+        "stadler-rds.highlights"
+      ]
+    },
+    {
       "id": "homelab-motivation",
       "sourceId": "homelab",
       "facet": "why Timo self-hosts",
