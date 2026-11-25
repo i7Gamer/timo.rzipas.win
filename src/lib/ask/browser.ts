@@ -5,6 +5,8 @@ import {
   PET_SOURCE_PATH,
   documentAnswer,
   exampleMatch,
+  extendedPitchLead,
+  hasExtendedPitchClaims,
   isPortfolioPageHref,
   missingDetails,
   normalize,
@@ -311,6 +313,8 @@ export function setupAskWork(panel: HTMLElement) {
     }
     reply.textContent =
       result.status === 'partial' && !result.missing ? messages.partial : '';
+    if (hasExtendedPitchClaims(result.claims))
+      addParagraph(reply, extendedPitchLead[result.locale]);
     for (const source of result.sources) {
       for (const { text } of result.claims.filter(
         ({ sourceId }) => sourceId === source.id,

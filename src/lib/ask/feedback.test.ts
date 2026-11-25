@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createGateway } from '../../../services/ask/server';
 import { prepareQuestion } from '../../../services/ask/selection';
 import { selectChatHistory, type ChatTurn } from './history';
+import { EXTENDED_PITCH_IDS } from './catalog';
 import { careerAnchorIndex } from './career';
 
 let gateway: Server | undefined;
@@ -68,6 +69,134 @@ afterEach(async () => {
 });
 
 describe('portfolio Ask feedback regressions', () => {
+  it.each([true, false])(
+    'only accepts a model-led pitch with all approved paragraphs (%s)',
+    async (complete) => {
+      const ids = [...EXTENDED_PITCH_IDS].reverse();
+      const summarize = vi.fn(async () => ({
+        ids: complete ? ids : ids.slice(0, -1),
+      }));
+      await open({ local: true, summarize });
+      const reply = (await ask('give me good 200 word pitch about timo')).body;
+      expect(reply).toMatchObject({
+        status: 'answer',
+        mode: complete ? 'local' : 'index',
+      });
+      expect(reply.claims?.map(({ id }) => id)).toEqual(
+        complete ? ids : EXTENDED_PITCH_IDS,
+      );
+      expect(summarize).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each([
+    ['en', 'summary of his CV'],
+    ['de', 'Kurze Zusammenfassung von Timos Lebenslauf'],
+  ] as const)('summarizes the public CV in %s', async (locale, question) => {
+    await open();
+    expect((await ask(question, locale)).body).toMatchObject({
+      status: 'answer',
+      claims: [
+        { id: 'career-role-titles' },
+        { id: 'cv-degree' },
+        { id: 'cv-matura' },
+      ],
+      sources: expect.arrayContaining([
+        expect.objectContaining({ href: '/about/' }),
+      ]),
+    });
+  });
+
+  it('keeps both public education entries when the model omits one', async () => {
+    const summarize = vi.fn(async () => ({
+      ids: ['career-role-titles', 'cv-matura'],
+    }));
+    await open({ local: true, summarize });
+    expect((await ask('Summary of his CV')).body).toMatchObject({
+      mode: 'index',
+      claims: [
+        { id: 'career-role-titles' },
+        { id: 'cv-degree' },
+        { id: 'cv-matura' },
+      ],
+    });
+    expect(summarize).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['en', 'summary of projects', 'anything else?'],
+    ['de', 'Zusammenfassung von Timos Projekten', 'Und sonst noch?'],
+  ] as const)(
+    'continues a project summary with fresh project evidence in %s',
+    async (locale, question, followUp) => {
+      await open();
+      const first = (await ask(question, locale)).body;
+      expect(first).toMatchObject({
+        status: 'answer',
+        claims: [
+          { id: 'spotify-rewrite' },
+          { id: 'myspeed-fork' },
+          { id: 'tutto-modes' },
+        ],
+      });
+      expect(
+        (
+          await ask(followUp, locale, [
+            {
+              question,
+              answer: first.claims!.map(({ text }) => text).join(' '),
+            },
+          ])
+        ).body,
+      ).toMatchObject({
+        status: 'answer',
+        claims: [
+          { id: 'hearthcoil-game' },
+          { id: 'bachelor-contribution' },
+          { id: 'carini-team' },
+        ],
+      });
+    },
+  );
+
+  it.each([
+    ['en', 'give me good 200 word pitch about timo', 'this is not 200 words'],
+    [
+      'de',
+      'Schreib mir einen Pitch über Timo in etwa 200 Wörtern',
+      'Das sind keine 200 Wörter.',
+    ],
+  ] as const)(
+    'answers a length-specific pitch and its correction in %s',
+    async (locale, question, correction) => {
+      await open();
+      const first = (await ask(question, locale)).body;
+      const revised = (
+        await ask(correction, locale, [{ question, answer: 'Short draft.' }])
+      ).body;
+      for (const answer of [first, revised]) {
+        expect(answer.status).toBe('answer');
+        const words = answer
+          .claims!.map(({ text }) => text)
+          .join(' ')
+          .trim()
+          .split(/\s+/u).length;
+        expect(words).toBeGreaterThanOrEqual(190);
+        expect(words).toBeLessThanOrEqual(215);
+        if (locale === 'en') expect(words).toBe(200);
+        expect(answer.sources).toEqual(
+          expect.arrayContaining(
+            [
+              '/about/',
+              '/projects/spotify-stats-tracker/',
+              '/projects/hearthcoil/',
+            ].map((href) => expect.objectContaining({ href })),
+          ),
+        );
+      }
+    },
+  );
+
   it.each([
     ['en', 'Which project used Flask? Who won the World Cup?'],
     ['en', 'Which project used Flask and who won the World Cup?'],

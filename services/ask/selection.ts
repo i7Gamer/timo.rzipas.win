@@ -6,6 +6,7 @@ import {
   outOfScope,
   sources,
   MAX_CLAIMS,
+  PROJECT_OVERVIEW_IDS,
   type AskStatus,
   type Fact,
 } from '../../src/lib/ask/catalog.ts';
@@ -34,7 +35,6 @@ import type { ChatTurn } from '../../src/lib/ask/history.ts';
 import {
   projectCandidates,
   projectFollowUp,
-  PROJECT_OVERVIEW_IDS,
   PROJECT_OVERVIEW_PATTERNS,
 } from '../../src/lib/ask/project-context.ts';
 import { editDistance } from '../../src/lib/ask/spelling.ts';

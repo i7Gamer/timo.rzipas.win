@@ -1,5 +1,12 @@
 import type { Locale } from '../../i18n';
-import { facts, MAX_CLAIMS, normalize, type MissingDetail } from './catalog.ts';
+import {
+  facts,
+  EXTENDED_PITCH_IDS,
+  MAX_CLAIMS,
+  normalize,
+  PROJECT_OVERVIEW_IDS,
+  type MissingDetail,
+} from './catalog.ts';
 import type { ChatTurn } from './history.ts';
 
 type ReviewedAnswer = {
@@ -23,7 +30,7 @@ const genreCount =
 const kniffel = /\bkniffel\b/;
 
 export const moreQuestion =
-  /^(?:(?:that ?s the same(?: again)?|you already said that|das hast du schon gesagt) )?(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|erzaehl mir mehr|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
+  /^(?:(?:that ?s the same(?: again)?|you already said that|das hast du schon gesagt) )?(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|erzaehl mir mehr|(?:und )?sonst noch|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
 
 export function asksAboutAICoding(terms: string) {
   return (
@@ -190,6 +197,10 @@ export function questionClauses(question: string) {
 
 const profilePitch =
   /^(?:(?:(?:give|write|show) me )?(?:a )?(?:(?:short|quick|brief) )?(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)|(?:stell(?:e)? )?timo kurz vor|(?:ein )?kurzprofil (?:zu|von|ueber) timo)$/;
+const extendedPitch =
+  /^(?:(?:(?:give|write|show) me )?(?:a )?(?:(?:good|nice|clear) )?(?:200 word (?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)|(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?) (?:in|of) (?:about |around )?200 words)|(?:schreib(?:e)? mir )?(?:einen? )?(?:guten? )?(?:pitch|kurzprofil|vorstellung) (?:ueber|zu|von) timo (?:in|mit) (?:etwa |rund )?200 woerter[n]?)$/;
+const pitchLengthCorrection =
+  /^(?:(?:this|that|it) (?:is not|isn t|was not|wasn t) (?:about )?200 words|(?:das|es) (?:sind|waren) keine 200 woerter)$/;
 const interestingHighlight =
   /^(?:(?:(?:tell|show|give) me |what (?:is|s) )?(?:one |an? |the )?(?:most )?(?:interesting|surprising|fun) (?:detail|fact|thing)(?: about (?:timo(?: rzipa)?|him|his work|the portfolio))?(?: please)?|(?:(?:nenn|zeig) mir )?(?:ein )?(?:interessantes|spannendes|ueberraschendes) (?:detail|beispiel)(?: (?:ueber|zu) timo)?(?: bitte)?)$/;
 const workAndProjectInventory =
@@ -245,6 +256,15 @@ export function profileHighlightIds(
 
 export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
   const previous = normalize(history.at(-1)?.question ?? '');
+  if (pitchLengthCorrection.test(terms)) {
+    const previousPitch = normalize(
+      history.findLast(
+        ({ question }) => !pitchLengthCorrection.test(normalize(question)),
+      )?.question ?? '',
+    );
+    if (extendedPitch.test(previousPitch) || profilePitch.test(previousPitch))
+      return '200 word pitch about timo';
+  }
   if (moreQuestion.test(terms)) {
     if (educationOverview.test(previous)) return 'education projects';
     const anchor = normalize(
@@ -308,6 +328,7 @@ export function modelOverviewIds(terms: string): readonly string[] | undefined {
 export function summaryOverviewIds(
   terms: string,
 ): readonly string[] | undefined {
+  if (extendedPitch.test(terms)) return EXTENDED_PITCH_IDS;
   if (profilePitch.test(terms)) return ['portfolio-pitch'];
   if (openSourceDescription.test(terms)) return OPEN_SOURCE_IDS;
   if (englishWorkSummary.test(terms) || germanWorkSummary.test(terms))
@@ -318,6 +339,12 @@ export function summaryOverviewIds(
     .replace(/^fass(?:e)? (?:mir )?(?:bitte )?zusammen /, '');
   if (request === terms) return;
   const subject = request.replace(summaryStyleTail, '');
+  if (
+    /^(?:(?:his |your |timo s |the )?(?:cv|resume|curriculum vitae)|(?:timos |sein(?:es|en)? |der )?lebenslauf(?:s)?)$/.test(
+      subject,
+    )
+  )
+    return ['career-role-titles', 'cv-degree', 'cv-matura'];
   if (englishWorkSummary.test('summary of ' + subject))
     return WORK_EXPERIENCE_IDS;
   if (
@@ -337,7 +364,7 @@ export function summaryOverviewIds(
       subject,
     )
   )
-    return ['portfolio-project-inventory'];
+    return PROJECT_OVERVIEW_IDS;
 }
 
 function reviewedPets(terms: string): ReviewedAnswer | undefined {

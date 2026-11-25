@@ -22,7 +22,9 @@ import { t } from '../../i18n';
 import {
   documentAnswer,
   examples,
+  EXTENDED_PITCH_IDS,
   facts,
+  MAX_CLAIMS,
   PET_SOURCE_PATH,
   sourceLink,
   sources,
@@ -61,7 +63,55 @@ const digest = (value: string | Buffer) =>
   createHash('sha256').update(value).digest('hex');
 
 describe('local summary model', () => {
-  it('requests only IDs from the supplied localized facts', async () => {
+  it('maps compact pitch slots to evidence IDs and rejects unknown slots', async () => {
+    const { claims } = documentAnswer(
+      EXTENDED_PITCH_IDS.map((id) => facts.find((fact) => fact.id === id)!),
+      'answer',
+      'index',
+      'en',
+      corpusVersion,
+    );
+    const slots = claims.map((_, index) => index + 1).reverse();
+    let reply: unknown = { slots };
+    const fetchModel = vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.endsWith('/api/tags'))
+        return Response.json({
+          models: [
+            {
+              name: SUMMARY_MODEL,
+              digest:
+                '120c341e628189e9968d6e081b7dc2f94580a17a0d7f5c9f259f237d9ddd11c9',
+            },
+          ],
+        });
+      const { format, messages } = JSON.parse(String(options?.body));
+      expect(format.properties.slots.minItems).toBe(claims.length);
+      expect(JSON.parse(messages[1].content).evidence[0]).toEqual({
+        slot: 1,
+        text: claims[0].text,
+        sourceId: claims[0].sourceId,
+      });
+      return Response.json({
+        done: true,
+        done_reason: 'stop',
+        message: { content: JSON.stringify(reply) },
+      });
+    });
+    vi.stubGlobal('fetch', fetchModel);
+    try {
+      const summarize = () =>
+        summarizeWithOllama('en', claims, new AbortController().signal);
+      expect(await summarize()).toEqual({
+        ids: [...EXTENDED_PITCH_IDS].reverse(),
+      });
+      reply = { slots: [claims.length + 1] };
+      expect(await summarize()).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('requests only numbered slots from the supplied localized facts', async () => {
     const ids = ['portfolio-pitch', 'portfolio-project-inventory'];
     const candidates = ids.map((id) => facts.find((fact) => fact.id === id)!);
     const { claims } = documentAnswer(
@@ -86,13 +136,18 @@ describe('local summary model', () => {
       expect(model).toBe(SUMMARY_MODEL);
       expect(JSON.parse(messages[1].content)).toEqual({
         locale: 'de',
-        evidence: claims,
+        evidence: claims.map(({ text, sourceId }, index) => ({
+          slot: index + 1,
+          text,
+          sourceId,
+        })),
       });
-      expect(format.properties.ids.items.enum).toEqual(ids);
+      const slots = [1, 2];
+      expect(format.properties.slots.items.enum).toEqual(slots);
       return Response.json({
         done: true,
         done_reason: 'stop',
-        message: { content: JSON.stringify({ ids }) },
+        message: { content: JSON.stringify({ slots }) },
       });
     });
     vi.stubGlobal('fetch', fetchModel);
@@ -336,6 +391,44 @@ describe('curated evidence', () => {
         remaining,
       ),
     ).toBeNull();
+  });
+
+  it('accepts the approved extended pitch within a bounded response format', () => {
+    const pitch = EXTENDED_PITCH_IDS.map((id) =>
+      facts.find((fact) => fact.id === id)!,
+    );
+    const reviewed = documentAnswer(
+      pitch,
+      'answer',
+      'index',
+      'en',
+      corpusVersion,
+    );
+    expect(validateResult(reviewed, 'en', corpusVersion)).toEqual(reviewed);
+    const selected = documentAnswer(
+      [...pitch].reverse(),
+      'answer',
+      'local',
+      'en',
+      corpusVersion,
+    );
+    expect(validateResult(selected, 'en', corpusVersion)).toEqual(selected);
+    const oversized = documentAnswer(
+      pitch.slice(0, MAX_CLAIMS + 1),
+      'answer',
+      'index',
+      'en',
+      corpusVersion,
+    );
+    expect(validateResult(oversized, 'en', corpusVersion)).toBeNull();
+    const unrelated = documentAnswer(
+      [...pitch.slice(1), facts[0]],
+      'answer',
+      'local',
+      'en',
+      corpusVersion,
+    );
+    expect(validateResult(unrelated, 'en', corpusVersion)).toBeNull();
   });
 });
 

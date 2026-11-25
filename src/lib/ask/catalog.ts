@@ -20,6 +20,40 @@ export const examples = data.examples;
 export const MAX_QUESTION = 500;
 export const PET_SOURCE_PATH = '/ask-pets.txt';
 export const MAX_CLAIMS = 3;
+export const PROJECT_OVERVIEW_IDS = [
+  'spotify-rewrite',
+  'myspeed-fork',
+  'tutto-modes',
+] as const;
+export const EXTENDED_PITCH_IDS = [
+  'portfolio-pitch',
+  'career-role-titles',
+  'carini-team',
+  'hearthcoil-game',
+  'hearthcoil-contribution',
+  'spotify-rewrite',
+  'homelab-motivation',
+] as const;
+export const extendedPitchLead = {
+  en: 'Here’s a pitch of about 200 words.',
+  de: 'Hier ist ein Pitch mit rund 200 Wörtern.',
+} as const;
+
+export function hasExtendedPitchClaims(claims: readonly Pick<Fact, 'id'>[]) {
+  return (
+    claims.length === EXTENDED_PITCH_IDS.length &&
+    EXTENDED_PITCH_IDS.every((id) => claims.some((claim) => claim?.id === id))
+  );
+}
+
+export function summaryRequiresAllFacts(
+  claims: readonly Pick<Fact, 'id' | 'sourceId'>[],
+) {
+  return (
+    hasExtendedPitchClaims(claims) ||
+    claims.some(({ sourceId }) => sourceId === 'cv')
+  );
+}
 export const CLIENT_TIMEOUT = 10_000;
 export const outOfScope =
   /\b(?:ignore (?:all |previous |the )?instructions|system prompt|follow (?:this|the) link|https?|password|passwort|credentials|salary|gehalt|lohn|private (?:email|e mail|address|phone|repo)|privatadresse|privatnummer|privates repository|nach hause|private files|confidential|vertraulich)\b/;
@@ -121,7 +155,8 @@ export function validateResult(
     !['answer', 'partial', 'unknown'].includes(status) ||
     !['index', 'local'].includes(mode) ||
     !Array.isArray(claims) ||
-    claims.length > MAX_CLAIMS ||
+    (claims.length > MAX_CLAIMS &&
+      (status !== 'answer' || !hasExtendedPitchClaims(claims))) ||
     (status === 'unknown') !== (claims.length === 0) ||
     !Array.isArray(citations) ||
     'summary' in result ||

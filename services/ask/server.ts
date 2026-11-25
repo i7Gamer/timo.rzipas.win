@@ -7,6 +7,7 @@ import {
 import {
   MAX_QUESTION,
   sourceLink,
+  summaryRequiresAllFacts,
   type AskResult,
 } from '../../src/lib/ask/catalog.ts';
 import { isChatHistory } from '../../src/lib/ask/history.ts';
@@ -59,6 +60,8 @@ function reviewedSummary(
   if (
     !ids.length ||
     ids.length > fallback.claims.length ||
+    (summaryRequiresAllFacts(fallback.claims) &&
+      ids.length !== fallback.claims.length) ||
     new Set(ids).size !== ids.length
   )
     return null;

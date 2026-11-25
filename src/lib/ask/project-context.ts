@@ -1,6 +1,12 @@
-import { facts, MAX_CLAIMS, normalize, sourceLink } from './catalog.ts';
+import {
+  facts,
+  MAX_CLAIMS,
+  normalize,
+  PROJECT_OVERVIEW_IDS,
+  sourceLink,
+} from './catalog.ts';
 import type { ChatTurn } from './history.ts';
-import { moreQuestion } from './reviewed-questions.ts';
+import { moreQuestion, summaryOverviewIds } from './reviewed-questions.ts';
 
 export const PROJECTS_PATH = '/projects/';
 export const PROJECT_OVERVIEW_PATTERNS = [
@@ -12,11 +18,6 @@ export const PROJECT_OVERVIEW_PATTERNS = [
   'what have you built(?: so far)?',
   '(?:welche|was fuer) projekte (?:hat timo|hast du) (?:bisher )?(?:umgesetzt|gemacht|gebaut|entwickelt)',
   'welche projekte gibt es',
-];
-export const PROJECT_OVERVIEW_IDS = [
-  'spotify-rewrite',
-  'myspeed-fork',
-  'tutto-modes',
 ];
 const projectOverview = new RegExp(
   '^(?:' + PROJECT_OVERVIEW_PATTERNS.join('|') + ')$',
@@ -67,6 +68,8 @@ export function projectFollowUp(terms: string, history: readonly ChatTurn[]) {
   if (!root) return;
   const anchor = normalize(root.question);
   if (otherProjects.test(anchor)) return { preserveSubjects: true as const };
+  if (summaryOverviewIds(anchor) === PROJECT_OVERVIEW_IDS)
+    return { listRequested: true as const };
   const mentioned = mentionedProjects(root.answer);
   if (!projectOverview.test(anchor)) {
     const named = mentionedProjects(anchor);

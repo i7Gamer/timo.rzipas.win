@@ -1,4 +1,8 @@
-import { MAX_CLAIMS, type AskResult } from '../../src/lib/ask/catalog.ts';
+import {
+  MAX_CLAIMS,
+  summaryRequiresAllFacts,
+  type AskResult,
+} from '../../src/lib/ask/catalog.ts';
 import { localPorts, LOOPBACK } from './local-profile.ts';
 import type { SelectFacts } from './selection.ts';
 
@@ -156,26 +160,37 @@ export type SummarizeFacts = (
   signal: AbortSignal,
 ) => Promise<unknown>;
 
-export const summarizeWithOllama: SummarizeFacts = (locale, claims, signal) =>
-  chatWithOllama(
+export const summarizeWithOllama: SummarizeFacts = async (
+  locale,
+  claims,
+  signal,
+) => {
+  const keepAll = summaryRequiresAllFacts(claims);
+  const evidence = claims.map(({ text, sourceId }, index) => ({
+    slot: index + 1,
+    text,
+    sourceId,
+  }));
+  const decision = await chatWithOllama(
     [
       {
         role: 'system',
-        content:
-          'Choose and order the supplied reviewed fact IDs for a concise portfolio overview. Keep at least one fact from each source. Return IDs only.',
+        content: keepAll
+          ? 'Organize the reviewed portfolio material for a reader. Return every numbered slot exactly once in a logical order.'
+          : 'Choose and order numbered slots for a concise portfolio overview. Keep at least one fact from each source.',
       },
-      { role: 'user', content: JSON.stringify({ locale, evidence: claims }) },
+      { role: 'user', content: JSON.stringify({ locale, evidence }) },
     ],
     {
       type: 'object',
       additionalProperties: false,
-      required: ['ids'],
+      required: ['slots'],
       properties: {
-        ids: {
+        slots: {
           type: 'array',
-          minItems: 1,
+          minItems: keepAll ? claims.length : 1,
           maxItems: claims.length,
-          items: { type: 'string', enum: claims.map(({ id }) => id) },
+          items: { type: 'integer', enum: evidence.map(({ slot }) => slot) },
         },
       },
     },
@@ -183,6 +198,21 @@ export const summarizeWithOllama: SummarizeFacts = (locale, claims, signal) =>
     SUMMARY_MODEL,
     SUMMARY_DIGEST,
   );
+  if (
+    !decision ||
+    typeof decision !== 'object' ||
+    Object.keys(decision).length !== 1 ||
+    !('slots' in decision) ||
+    !Array.isArray(decision.slots)
+  )
+    return null;
+  const ids: string[] = [];
+  for (const slot of decision.slots) {
+    if (!Number.isInteger(slot) || !claims[slot - 1]) return null;
+    ids.push(claims[slot - 1].id);
+  }
+  return { ids };
+};
 
 if (import.meta.main) {
   const signal = AbortSignal.timeout(45_000);

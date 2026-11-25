@@ -1,6 +1,8 @@
 import { PROJECT_AI_NOTES } from '../../data/project-ai';
 import type { Locale } from '../../i18n';
 import {
+  EXTENDED_PITCH_IDS,
+  extendedPitchLead,
   facts,
   MAX_CLAIMS,
   missingDetails,
@@ -841,7 +843,9 @@ export function findSiteContent(
         missing: [],
         note: approved?.missing
           ? missingDetails[approved.missing][index.locale]
-          : undefined,
+          : ids === EXTENDED_PITCH_IDS && matched.length === ids.length
+            ? extendedPitchLead[index.locale]
+            : undefined,
         lead: single ? matched[0].fact.answer[index.locale] : undefined,
       };
     }
