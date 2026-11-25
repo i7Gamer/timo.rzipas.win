@@ -75,6 +75,34 @@ function index() {
 }
 
 describe('Ask public page content', () => {
+  it('uses the same reviewed project summary offline after a typo', () => {
+    const content = index();
+    content.pages.push(
+      extractPage(
+        '<main><h1>MySpeed</h1><p>Network monitoring.</p></main>',
+        '/projects/myspeed/',
+      ),
+      extractPage(
+        '<main><h1>Tutto</h1><p>A dice game.</p></main>',
+        '/projects/tutto/',
+      ),
+    );
+    const expected = findSiteContent(
+      'summarize all projects',
+      content,
+      'overview',
+    );
+    expect(expected).toMatchObject({ status: 'answer', preferModel: true });
+    expect(expected?.sources.map(({ href }) => href)).toEqual([
+      '/projects/spotify-stats-tracker/',
+      '/projects/myspeed/',
+      '/projects/tutto/',
+    ]);
+    expect(
+      findSiteContent('sumamrize all projects', content, 'overview'),
+    ).toEqual(expected);
+  });
+
   it('renders accessible toolbar contrast classes and the Spotify anchor with sticky offset', async () => {
     const container = await AstroContainer.create();
     const askHtml = await container.renderToString(AskWork, {

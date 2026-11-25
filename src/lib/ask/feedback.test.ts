@@ -72,6 +72,53 @@ afterEach(async () => {
 
 describe('portfolio Ask feedback regressions', () => {
   it.each([
+    ['en', 'sumamrize all projects', 'summarize all projects'],
+    ['en', 'sumarize all projects', 'summarize all projects'],
+    ['en', 'sumamry of his CV', 'summary of his CV'],
+    [
+      'de',
+      'Zusamenfassung von Timos Projekten',
+      'Zusammenfassung von Timos Projekten',
+    ],
+  ] as const)(
+    'routes a %s summary typo through the same model and evidence',
+    async (locale, typo, correct) => {
+      const summarize = vi.fn<SummarizeFacts>(async (_locale, claims) => ({
+        ids: claims.map(({ id }) => id),
+      }));
+      const select = vi.fn(async () => ({
+        status: 'unknown' as const,
+        slots: [],
+      }));
+      await open({ local: true, summarize, select });
+      const expected = await ask(correct, locale);
+      expect(expected.body).toMatchObject({ status: 'answer', mode: 'local' });
+      expect(await ask(typo, locale)).toEqual(expected);
+      expect(summarize).toHaveBeenCalledTimes(2);
+      expect(select).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps a typo in the original question usable as a summary follow-up anchor', async () => {
+    await open();
+    const question = 'sumamrize all projects';
+    const initial = (await ask(question)).body;
+    const followUp = await ask('longer summary please', 'en', [
+      { question, answer: initial.claims!.map(({ text }) => text).join(' ') },
+    ]);
+    expect(followUp.body).toMatchObject({ status: 'answer', mode: 'index' });
+    expect(followUp.body.claims).toEqual(
+      expect.arrayContaining([
+        ...initial.claims!,
+        expect.objectContaining({ id: 'hearthcoil-game' }),
+      ]),
+    );
+    expect(
+      (await ask('sumamrize all projects he built at NASA')).body,
+    ).toMatchObject({ status: 'unknown', claims: [] });
+  });
+
+  it.each([
     ['en', 'summary of his CV', 'longer summary please', 'abacus-workflow'],
     [
       'de',

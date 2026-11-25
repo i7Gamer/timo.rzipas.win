@@ -11,6 +11,7 @@ import {
   type MissingDetail,
 } from './catalog.ts';
 import type { ChatTurn } from './history.ts';
+import { isSingleTypo } from './spelling.ts';
 
 type ReviewedAnswer = {
   ids: readonly string[];
@@ -212,6 +213,12 @@ const inventorySummaryDe =
   /^(?:(?:gib|zeig|schreib) mir )?(?:bitte )?(?:eine )?(?:(?:kurze|knappe) )?zusammenfassung (?:von|ueber) /;
 const summaryStyleTail =
   /(?: (?:nicely|briefly|concisely|in (?:a few words|simple terms)|please|bitte|kurz|knapp))+$/;
+const summaryKeywords = [
+  'summarize',
+  'summarise',
+  'summary',
+  'zusammenfassung',
+];
 const WORK_AND_PROJECT_IDS = [
   'career-role-titles',
   'portfolio-project-inventory',
@@ -362,6 +369,22 @@ export function modelOverviewIds(terms: string): readonly string[] | undefined {
 export function summaryOverviewIds(
   terms: string,
 ): readonly string[] | undefined {
+  const exact = exactSummaryOverviewIds(terms);
+  if (exact) return exact;
+  const words = terms.split(' ');
+  for (const [index, word] of words.entries()) {
+    if (summaryKeywords.includes(word)) continue;
+    const replacement = summaryKeywords.find((keyword) =>
+      isSingleTypo(word, keyword),
+    );
+    if (!replacement) continue;
+    const corrected = words.with(index, replacement).join(' ');
+    const overview = exactSummaryOverviewIds(corrected);
+    if (overview) return overview;
+  }
+}
+
+function exactSummaryOverviewIds(terms: string): readonly string[] | undefined {
   if (Object.hasOwn(expandedSummaries, terms))
     return expandedSummaries[terms as keyof typeof expandedSummaries];
   if (extendedPitch.test(terms)) return EXTENDED_PITCH_IDS;
