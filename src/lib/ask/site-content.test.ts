@@ -1943,7 +1943,7 @@ describe('Ask public page content', () => {
         'short pitch about timo',
         'any more details?',
         'more about his work',
-        'give me a nice summary of all work and projects',
+        'nice summary of work and projects',
       ].entries()) {
         panel.querySelector('textarea')!.value = question;
         panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
@@ -1965,7 +1965,7 @@ describe('Ask public page content', () => {
           ],
         }),
         expect.objectContaining({
-          question: 'give me a nice summary of all work and projects',
+          question: 'nice summary of work and projects',
         }),
       ]);
       const [pitch, highlight, work, inventory] = replies();

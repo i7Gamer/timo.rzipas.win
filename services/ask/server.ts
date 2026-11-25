@@ -36,6 +36,7 @@ const LOCAL_ORIGINS = [localPorts.en, localPorts.de].map(
 const MAX_BYTES = 8 * 1024;
 const MINUTE = 60_000;
 const UPSTREAM_TIMEOUT = 6_000;
+const SUMMARY_TIMEOUT = 8_000;
 
 function quota(limit: number, window: number) {
   const entries: number[] = [];
@@ -105,7 +106,7 @@ export function createGateway({
   select = selectWithOllama,
   summarize = summarizeWithOllama,
   rank,
-  timeout = UPSTREAM_TIMEOUT,
+  timeout,
   local = true,
   origins = LOCAL_ORIGINS,
   privatePets,
@@ -208,9 +209,11 @@ export function createGateway({
       const disconnect = new AbortController();
       const onClose = () => disconnect.abort();
       response.once('close', onClose);
+      const modelTimeout =
+        timeout ?? (prepared.summary ? SUMMARY_TIMEOUT : UPSTREAM_TIMEOUT);
       const signal = AbortSignal.any([
         disconnect.signal,
-        AbortSignal.timeout(timeout),
+        AbortSignal.timeout(modelTimeout),
       ]);
       try {
         if (
@@ -257,7 +260,7 @@ export function createGateway({
         // Let an aborted request unwind in the inference runtime before accepting
         // more model work. Success is the only thing that resets the failure count.
         if (failures >= 2) retryAt = Date.now() + MINUTE;
-        else if (signal.aborted) retryAt = Date.now() + timeout;
+        else if (signal.aborted) retryAt = Date.now() + modelTimeout;
         unavailable(503);
       } finally {
         response.off('close', onClose);

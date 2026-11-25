@@ -193,11 +193,13 @@ const profilePitch =
 const interestingHighlight =
   /^(?:(?:(?:tell|show|give) me |what (?:is|s) )?(?:one |an? |the )?(?:most )?(?:interesting|surprising|fun) (?:detail|fact|thing)(?: about (?:timo(?: rzipa)?|him|his work|the portfolio))?(?: please)?|(?:(?:nenn|zeig) mir )?(?:ein )?(?:interessantes|spannendes|ueberraschendes) (?:detail|beispiel)(?: (?:ueber|zu) timo)?(?: bitte)?)$/;
 const workAndProjectInventory =
-  /^(?:(?:please )?(?:list|show(?: me)?|give me|what are) (?:all )?(?:(?:timo ?s|his|your|the) )?(?:(?:work(?: experience)?|jobs?|roles?) and (?:personal )?projects|projects and (?:work(?: experience)?|jobs?|roles?))(?: (?:of|by|from) timo)?(?: please)?|(?:liste|zeig(?: mir)?) (?:alle? )?(?:timos )?(?:arbeit|jobs?|stellen|berufserfahrung) und projekte[n]?(?: von timo)?(?: auf)?)$/;
+  /^(?:(?:please )?(?:list|show(?: me)?|give me|what are) (?:all (?:of )?)?(?:(?:timo ?s|his|your|the) )?(?:(?:work(?: experience)?|jobs?|roles?) and (?:personal )?projects|projects and (?:work(?: experience)?|jobs?|roles?))(?: (?:of|by|from) timo)?(?: please)?|(?:liste|zeig(?: mir)?) (?:alle? )?(?:timos )?(?:arbeit|jobs?|stellen|berufserfahrung) und projekte[n]?(?: von timo)?(?: auf)?)$/;
 const inventorySummaryEn =
-  /^(?:(?:give|show|write) me (?:a )?(?:(?:nice|short|quick|brief) )?summary (?:of|about)|(?:(?:can|could|would) you |please )?summari[sz]e) /;
+  /^(?:(?:can|could|would) you )?(?:please )?(?:summari[sz]e|sum up|(?:(?:give|show|write) me )?(?:an? )?(?:(?:nice|short|quick|brief|concise) )?summary (?:of|about)) /;
 const inventorySummaryDe =
-  /^(?:gib|zeig|schreib) mir (?:bitte )?(?:eine )?(?:(?:kurze|knappe) )?zusammenfassung (?:von|ueber) /;
+  /^(?:(?:gib|zeig|schreib) mir )?(?:bitte )?(?:eine )?(?:(?:kurze|knappe) )?zusammenfassung (?:von|ueber) /;
+const summaryStyleTail =
+  /(?: (?:nicely|briefly|concisely|in (?:a few words|simple terms)|please|bitte|kurz|knapp))+$/;
 const WORK_AND_PROJECT_IDS = [
   'career-role-titles',
   'portfolio-project-inventory',
@@ -310,11 +312,14 @@ export function summaryOverviewIds(
   if (openSourceDescription.test(terms)) return OPEN_SOURCE_IDS;
   if (englishWorkSummary.test(terms) || germanWorkSummary.test(terms))
     return WORK_EXPERIENCE_IDS;
-  const subject = terms
+  const request = terms
     .replace(inventorySummaryEn, '')
     .replace(inventorySummaryDe, '')
     .replace(/^fass(?:e)? (?:mir )?(?:bitte )?zusammen /, '');
-  if (subject === terms) return;
+  if (request === terms) return;
+  const subject = request.replace(summaryStyleTail, '');
+  if (englishWorkSummary.test('summary of ' + subject))
+    return WORK_EXPERIENCE_IDS;
   if (
     broadPortfolioSubject.test(subject) &&
     /\b(?:doing|gerade)\b/.test(subject)

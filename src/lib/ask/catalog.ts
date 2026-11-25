@@ -20,7 +20,7 @@ export const examples = data.examples;
 export const MAX_QUESTION = 500;
 export const PET_SOURCE_PATH = '/ask-pets.txt';
 export const MAX_CLAIMS = 3;
-export const CLIENT_TIMEOUT = 8_000;
+export const CLIENT_TIMEOUT = 10_000;
 export const MAX_SUMMARY_LENGTH = 420;
 export const outOfScope =
   /\b(?:ignore (?:all |previous |the )?instructions|system prompt|follow (?:this|the) link|https?|password|passwort|credentials|salary|gehalt|lohn|private (?:email|e mail|address|phone|repo)|privatadresse|privatnummer|privates repository|nach hause|private files|confidential|vertraulich)\b/;

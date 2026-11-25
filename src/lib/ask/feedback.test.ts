@@ -346,6 +346,9 @@ describe('portfolio Ask feedback regressions', () => {
 
   it.each([
     ['en', 'give me a nice summary of all work and projects'],
+    ['en', 'summarize all his work and projects nicely'],
+    ['en', 'nice summary of work and projects'],
+    ['en', 'Could you sum up all of his projects and work experience briefly?'],
     ['en', 'give me a nice summary of all timo does'],
     ['en', 'Could you summarize his projects and work experience?'],
     [
@@ -353,6 +356,7 @@ describe('portfolio Ask feedback regressions', () => {
       'Gib mir bitte eine kurze Zusammenfassung von Timos Arbeit und Projekten.',
     ],
     ['de', 'Fass bitte zusammen, was Timo alles macht.'],
+    ['de', 'Kurze Zusammenfassung von Arbeit und Projekten bitte'],
   ] as const)('writes a cited %s summary for %s', async (locale, question) => {
     const summary =
       locale === 'de'
@@ -389,6 +393,24 @@ describe('portfolio Ask feedback regressions', () => {
     expect(select).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'Summarize all his work and projects at Google nicely.',
+    'Nice summary of work and projects before 2020.',
+  ])(
+    'preserves scope and abstains on unsupported summary %s',
+    async (question) => {
+      const summarize = vi.fn(async () => 'An unrelated career summary.');
+      const select = vi.fn(async () => ({ status: 'unknown', slots: [] }));
+      await open({ local: true, select, summarize });
+      expect((await ask(question)).body).toMatchObject({
+        status: 'unknown',
+        claims: [],
+      });
+      expect(summarize).not.toHaveBeenCalled();
+      expect(select).toHaveBeenCalledOnce();
+    },
+  );
+
   it('uses the dated public update for a summary of current activity', async () => {
     const summary =
       'Timo is building document software at Abacus and playtesting Hearthcoil. (As of 24 November 2026)';
@@ -410,6 +432,30 @@ describe('portfolio Ask feedback regressions', () => {
       response.body.claims,
       expect.any(AbortSignal),
     );
+  });
+
+  it('gives summaries more time without slowing direct questions or extending selection', async () => {
+    const deadline = vi.spyOn(AbortSignal, 'timeout');
+    const summarize = vi.fn(
+      async () => 'Timo works at Abacus and builds personal projects.',
+    );
+    const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
+    try {
+      await open({ local: true, summarize, select });
+      expect((await ask('What languages does Timo speak?')).body).toMatchObject(
+        { mode: 'index' },
+      );
+      expect(deadline).not.toHaveBeenCalled();
+      expect((await ask('Which project used Flask?')).body).toMatchObject({
+        mode: 'local',
+      });
+      expect(
+        (await ask('nice summary of work and projects')).body,
+      ).toMatchObject({ mode: 'local' });
+      expect(deadline.mock.calls).toEqual([[6_000], [8_000]]);
+    } finally {
+      deadline.mockRestore();
+    }
   });
 
   it.each(['offline', 'invalid', 'late', 'index-only'] as const)(

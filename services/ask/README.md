@@ -84,8 +84,9 @@ route sends the model only reviewed facts and the answer language. The gateway
 supplies the citations. If the summary model is missing or unavailable, the
 gateway returns the reviewed facts.
 
-The gateway gives inference six seconds. Prewarm the model if a cold load on
-your machine takes longer.
+The gateway gives evidence selection six seconds and summary generation eight
+seconds. The browser and nginx allow ten seconds for the gateway response.
+Prewarm the selector if a cold load on your machine takes longer.
 
 ```sh
 node services/ask/ollama.ts
