@@ -7,6 +7,7 @@ import type { AddressInfo } from 'node:net';
 import type { Locale } from '../../src/i18n';
 import {
   CLIENT_TIMEOUT,
+  facts,
   validateResult,
   type AskResult,
 } from '../../src/lib/ask/catalog.ts';
@@ -32,24 +33,45 @@ import routing from './routing.json' with { type: 'json' };
 const LEXICAL_TIMEOUT_MS = 6_000;
 const PRIME_TIMEOUT_MS = 45_000;
 const WARM_PERCENTILE = 0.95;
-const HTTP_MAX_SAMPLES = 3;
 const HTTP_STARTUP_TIMEOUT_MS = 30_000;
 const HTTP_POLL_INTERVAL_MS = 500;
+const PACKAGED_COLD_QUESTION = 'Which project used Flask?';
+const PACKAGED_WARM_FIXTURES: Fixture[] = [
+  {
+    suite: 'packaged-warm',
+    locale: 'en',
+    question: 'Can you point me to a project where Timo used Python and Flask?',
+    status: 'answer',
+    acceptableIds: [['spotify-python']],
+    expectedMode: 'local',
+  },
+  {
+    suite: 'packaged-warm',
+    locale: 'de',
+    question: 'In welchem Projekt hat Timo Python und Flask eingesetzt?',
+    status: 'answer',
+    acceptableIds: [['spotify-python']],
+    expectedMode: 'local',
+  },
+  {
+    suite: 'packaged-abstention',
+    locale: 'en',
+    question: 'What is the capital of Canada?',
+    status: 'unknown',
+    acceptableIds: [[]],
+  },
+];
 const httpFlag = process.argv.indexOf('--http');
 const httpUrl = httpFlag < 0 ? undefined : process.argv[httpFlag + 1];
 if (httpFlag >= 0 && (!httpUrl || httpUrl.startsWith('--')))
   throw new Error('--http requires a base URL');
 const httpOrigin = httpUrl ? new URL(httpUrl).origin : undefined;
-const sampleFlag = process.argv.indexOf('--samples');
-const sampleCount =
-  sampleFlag < 0 ? HTTP_MAX_SAMPLES : Number(process.argv[sampleFlag + 1]);
-if (
-  httpOrigin &&
-  (!Number.isInteger(sampleCount) ||
-    sampleCount < 1 ||
-    sampleCount > HTTP_MAX_SAMPLES)
-)
-  throw new Error(`--samples must be an integer from 1 to ${HTTP_MAX_SAMPLES}`);
+const coldOnly = process.argv.includes('--cold-only');
+const warmOnly = process.argv.includes('--warm-only');
+if (coldOnly && warmOnly)
+  throw new Error('--cold-only and --warm-only cannot be combined');
+if ((coldOnly || warmOnly) && !httpOrigin)
+  throw new Error('--cold-only and --warm-only require --http');
 const mode = httpOrigin
   ? 'http'
   : process.argv.includes('--index')
@@ -92,6 +114,7 @@ type Fixture = {
   question: string;
   status: string;
   acceptableIds: string[][];
+  expectedMode?: AskResult['mode'];
 };
 const basicFixtures = (
   suite: string,
@@ -144,15 +167,11 @@ const allFixtures = process.argv.includes('--answers')
     });
 const fixtures =
   mode === 'http'
-    ? allFixtures
-        .filter(({ question, locale }) => {
-          if (question === 'Which project used Flask?') return false;
-          return (
-            prepareQuestion(question, locale === 'de' ? 'de' : 'en').candidates
-              .length > 0
-          );
-        })
-        .slice(0, sampleCount)
+    ? warmOnly
+      ? PACKAGED_WARM_FIXTURES
+      : coldOnly
+        ? []
+        : PACKAGED_WARM_FIXTURES
     : allFixtures;
 if (process.argv.includes('--misses') && mode !== 'http')
   assert.equal(fixtures.length, misses.size);
@@ -167,42 +186,44 @@ if (mode === 'http') {
     assert.ok(Date.now() < deadline, 'Ask gateway did not start through nginx');
     await delay(HTTP_POLL_INTERVAL_MS);
   }
-  const coldStart = performance.now();
-  try {
-    const response = await fetch(new URL('/api/ask', httpOrigin), {
-      method: 'POST',
-      headers: {
-        Origin: httpOrigin!,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        question: 'Which project used Flask?',
-        locale: 'en',
-      }),
-      signal: AbortSignal.timeout(CLIENT_TIMEOUT),
-    });
-    const body: unknown = await response.json().catch(() => null);
-    const result = validateResult(body, 'en', corpusVersion);
-    const elapsed = Math.round(performance.now() - coldStart);
-    coldProbe = {
-      httpStatus: response.status,
-      status: result?.status ?? 'outage',
-      mode: result?.mode ?? null,
-      ids: result?.claims.map(({ id }) => id) ?? [],
-      citations: result?.sources ?? [],
-      ms: elapsed,
-    };
-    console.log('cold probe', JSON.stringify(coldProbe));
-  } catch (error) {
-    coldProbe = {
-      httpStatus: null,
-      status: 'outage',
-      ids: [],
-      citations: [],
-      ms: Math.round(performance.now() - coldStart),
-      error: error instanceof Error ? error.message : String(error),
-    };
-    console.log('cold probe', JSON.stringify(coldProbe));
+  if (!warmOnly) {
+    const coldStart = performance.now();
+    try {
+      const response = await fetch(new URL('/api/ask', httpOrigin), {
+        method: 'POST',
+        headers: {
+          Origin: httpOrigin!,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: PACKAGED_COLD_QUESTION,
+          locale: 'en',
+        }),
+        signal: AbortSignal.timeout(CLIENT_TIMEOUT),
+      });
+      const body: unknown = await response.json().catch(() => null);
+      const result = validateResult(body, 'en', corpusVersion);
+      coldProbe = {
+        httpStatus: response.status,
+        status: result?.status ?? 'outage',
+        mode: result?.mode ?? null,
+        ids: result?.claims.map(({ id }) => id) ?? [],
+        citations: result?.sources ?? [],
+        ms: Math.round(performance.now() - coldStart),
+      };
+      console.log('cold probe', JSON.stringify(coldProbe));
+    } catch (error) {
+      coldProbe = {
+        httpStatus: null,
+        status: 'outage',
+        mode: null,
+        ids: [],
+        citations: [],
+        ms: Math.round(performance.now() - coldStart),
+        error: error instanceof Error ? error.message : String(error),
+      };
+      console.log('cold probe', JSON.stringify(coldProbe));
+    }
   }
 }
 
@@ -354,12 +375,21 @@ for (const fixture of fixtures) {
   if (actual) assert.ok(validateResult(actual, locale, corpusVersion));
   const ids = actual?.claims.map(({ id }) => id) ?? [];
   const match =
+    (mode !== 'http' || httpStatus === 200) &&
     actual?.status === fixture.status &&
+    (!fixture.expectedMode || actual?.mode === fixture.expectedMode) &&
     fixture.acceptableIds.some(
       (expected) =>
         expected.length === ids.length &&
         expected.every((id) => ids.includes(id)),
-    );
+    ) &&
+    (mode !== 'http' ||
+      actual?.sources.map(({ id }) => id).join() ===
+        fixture.acceptableIds[0]
+          .map((id) => facts.find((fact) => fact.id === id)?.sourceId)
+          .filter(Boolean)
+          .filter((id, index, all) => all.indexOf(id) === index)
+          .join());
   const route = graniteRan
     ? 'granite'
     : mode === 'http'
@@ -392,6 +422,9 @@ for (const fixture of fixtures) {
     resultMode: actual?.mode ?? null,
     ids,
     citations: actual?.sources ?? [],
+    expectedCitationIds: fixture.acceptableIds[0]
+      .map((id) => facts.find((fact) => fact.id === id)?.sourceId)
+      .filter((id): id is string => Boolean(id)),
     match,
     ms: Math.round(ms),
   });
@@ -454,9 +487,12 @@ if (mode === 'gateway' && rows.some(({ match }) => !match))
 if (
   mode === 'http' &&
   (rows.some(({ match }) => !match) ||
-    !coldProbe ||
-    coldProbe.httpStatus !== 200 ||
-    coldProbe.status !== 'answer' ||
-    !coldProbe.ids.includes('spotify-python'))
+    (!warmOnly &&
+      (!coldProbe ||
+        coldProbe.httpStatus !== 200 ||
+        coldProbe.status !== 'answer' ||
+        coldProbe.mode !== 'local' ||
+        coldProbe.ids.join() !== 'spotify-python' ||
+        coldProbe.citations.map(({ id }) => id).join() !== 'spotify-code')))
 )
   process.exitCode = 1;

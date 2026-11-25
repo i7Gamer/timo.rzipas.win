@@ -29,7 +29,6 @@ import {
   parseSiteContent,
   petSubject,
   resolveSiteNames,
-  SITE_CONTENT_PATH,
   type SiteAnswer,
   type SiteSubject,
 } from './site-content';
@@ -157,9 +156,6 @@ export function setupAskWork(panel: HTMLElement) {
   );
   const restore =
     windowTools?.querySelector<HTMLButtonElement>('[data-ask-restore]');
-  const expand =
-    windowTools?.querySelector<HTMLButtonElement>('[data-ask-expand]');
-  const expandLabel = expand?.getAttribute('aria-label');
   if (windowTools) {
     panel.dataset.windowControls = '';
     windowTools.hidden = false;
@@ -173,20 +169,10 @@ export function setupAskWork(panel: HTMLElement) {
     disclosure.open = open;
     updateWindowControls();
   };
-  const setExpanded = (expanded: boolean) => {
-    panel.dataset.expanded = String(expanded);
-    const label = expanded ? expand?.dataset.askRestoreSize : expandLabel;
-    expand?.setAttribute('aria-pressed', String(expanded));
-    if (label) expand?.setAttribute('aria-label', label);
-    setOpen(true);
-  };
   updateWindowControls();
   disclosure.addEventListener('toggle', updateWindowControls);
   collapse?.addEventListener('click', () => setOpen(false));
-  restore?.addEventListener('click', () => setExpanded(false));
-  expand?.addEventListener('click', () =>
-    setExpanded(!disclosure.open || panel.dataset.expanded !== 'true'),
-  );
+  restore?.addEventListener('click', () => setOpen(true));
   const submitPrompt = (question: string) => {
     if (button.disabled) return;
     setOpen(true);
@@ -574,10 +560,7 @@ export function setupAskWork(panel: HTMLElement) {
     let projectForClarification: ReturnType<typeof projectChoice>;
     try {
       // Fetch the content for this build and language. Conversation state stays in this tab.
-      const contentPath =
-        locale === siteLocale
-          ? SITE_CONTENT_PATH
-          : '/ask-content-' + locale + '.json';
+      const contentPath = '/ask-content-' + locale + '.json';
       const index = await fetch(contentPath, {
         cache: 'no-cache',
         redirect: 'error',
@@ -678,7 +661,23 @@ export function setupAskWork(panel: HTMLElement) {
             moreQuestion.test(shortFollowUp) ||
             !(index && namesSiteSubject(question, index))));
       if (projectContext && !projectContext.projectId) {
-        setSubjects([]);
+        if ('preserveSubjects' in projectContext) {
+          const visibleSubjects = transcript.at(-1)?.subjects ?? subjects;
+          if (visibleSubjects.length) {
+            pending = {
+              question: next ?? question,
+              subjects: visibleSubjects,
+            };
+            reply.textContent =
+              (locale === 'de'
+                ? 'Über welches Projekt möchtest du mehr erfahren? '
+                : 'Which project would you like to hear more about? ') +
+              visibleSubjects.map(({ label }) => label).join(', ');
+            return;
+          }
+        } else {
+          setSubjects([]);
+        }
         if (projectContext.listRequested && index)
           pageAnswer = findSiteContent(
             question,

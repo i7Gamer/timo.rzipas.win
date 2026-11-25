@@ -27,6 +27,7 @@ import {
   PET_DETAIL_IDS,
   profileHighlightIds,
   profileQuestionNote,
+  questionClauses,
   reviewedFactId,
 } from './reviewed-questions';
 import type { ChatTurn } from './history';
@@ -653,6 +654,48 @@ function rankPassages(
     .sort((a, b) => b.score - a.score);
 }
 
+function combinedLanguageAnswer(
+  index: SiteContent,
+  clauses: readonly string[],
+): SiteAnswer | null {
+  const languageClauses = clauses.map(normalize);
+  if (
+    languageClauses.length === 2 &&
+    languageClauses.some((clause) => spokenLanguageQuestion.test(clause)) &&
+    languageClauses.some((clause) => programmingLanguageQuestion.test(clause))
+  ) {
+    const about = index.pages.find(({ href }) => href === '/about/');
+    const spoken = about?.sections.find(({ heading }) =>
+      /^(?:languages|sprachen)$/.test(normalize(heading)),
+    )?.paragraphs;
+    const skills = about?.sections.find(({ heading }) =>
+      /^skills (?:languages|sprachen)$/.test(normalize(heading)),
+    )?.paragraphs;
+    if (about && spoken?.length && skills?.length) {
+      const usage = skills.findIndex((text) =>
+        /^(?:where i used it|wo ich es eingesetzt habe)$/.test(normalize(text)),
+      );
+      const programming = skills
+        .slice(0, usage === -1 ? undefined : usage)
+        .filter((text) => normalize(text) !== 'html css');
+      if (programming.length) {
+        const list = new Intl.ListFormat(index.locale);
+        return {
+          status: 'answer',
+          sources: [cite(about, [...spoken, ...programming])],
+          subjects: [subjectOf(about)],
+          missing: [],
+          lead:
+            index.locale === 'de'
+              ? `Timos Sprachkenntnisse: ${list.format(spoken)}. Als Programmiersprachen nennt sein Portfolio ${list.format(programming)}.`
+              : `Timo’s spoken languages are ${list.format(spoken)}. His portfolio lists ${list.format(programming)} for programming.`,
+        };
+      }
+    }
+  }
+  return null;
+}
+
 export function findSiteContent(
   question: string,
   index: SiteContent,
@@ -662,9 +705,15 @@ export function findSiteContent(
 ): SiteAnswer | null {
   const normalized = normalize(question).replace(/\bhome lab\b/g, 'homelab');
   if (outOfScope.test(normalized)) return null;
+  const requestedClauses = questionClauses(question);
+  const compound = requestedClauses.length > 1 || nextClause.test(question);
   const profileNote = profileQuestionNote(normalized, index.locale, question);
   if (profileNote)
     return { status: 'unknown', sources: [], missing: [], note: profileNote };
+  if (kind === 'overview' && !subject && requestedClauses.length === 2) {
+    const languages = combinedLanguageAnswer(index, requestedClauses);
+    if (languages) return languages;
+  }
   const contextualQuestion =
     subject?.href === PET_SOURCE_PATH ? normalized + ' pets' : normalized;
   const careerScope = careerFollowUpScope(contextualQuestion, history);
@@ -741,9 +790,7 @@ export function findSiteContent(
     (modelIds ? { ids: modelIds, partial: undefined } : undefined);
   if (
     (kind === 'overview' || subject) &&
-    (approved ||
-      nextClause.test(question) ||
-      !asksUnsupportedDetail(contextualQuestion))
+    (approved || compound || !asksUnsupportedDetail(contextualQuestion))
   ) {
     const ids = approved?.ids ?? [reviewedFactId(normalized)];
     const matched = ids.flatMap((id) => {
@@ -807,8 +854,7 @@ export function findSiteContent(
           ? 'Mir fehlt ein datierter öffentlicher Stand dazu, woran Timo gerade arbeitet.'
           : 'I don’t have a dated public update on what Timo is working on now.',
     };
-  if (!nextClause.test(question) && asksUnsupportedDetail(contextualQuestion))
-    return null;
+  if (!compound && asksUnsupportedDetail(contextualQuestion)) return null;
   const pets =
     index.localPets &&
     (kind === 'overview' || subject) &&
@@ -944,43 +990,6 @@ export function findSiteContent(
         };
       }
     }
-    const languageClauses = normalized.split(/\s+(?:and|und)\s+/);
-    if (
-      languageClauses.length === 2 &&
-      languageClauses.some((clause) => spokenLanguageQuestion.test(clause)) &&
-      languageClauses.some((clause) => programmingLanguageQuestion.test(clause))
-    ) {
-      const about = pages.find(({ href }) => href === '/about/');
-      const spoken = about?.sections.find(({ heading }) =>
-        /^(?:languages|sprachen)$/.test(normalize(heading)),
-      )?.paragraphs;
-      const skills = about?.sections.find(({ heading }) =>
-        /^skills (?:languages|sprachen)$/.test(normalize(heading)),
-      )?.paragraphs;
-      if (about && spoken?.length && skills?.length) {
-        const usage = skills.findIndex((text) =>
-          /^(?:where i used it|wo ich es eingesetzt habe)$/.test(
-            normalize(text),
-          ),
-        );
-        const programming = skills
-          .slice(0, usage === -1 ? undefined : usage)
-          .filter((text) => normalize(text) !== 'html css');
-        if (programming.length) {
-          const list = new Intl.ListFormat(index.locale);
-          return {
-            status: 'answer',
-            sources: [cite(about, [...spoken, ...programming])],
-            subjects: [subjectOf(about)],
-            missing: [],
-            lead:
-              index.locale === 'de'
-                ? `Timos Sprachkenntnisse: ${list.format(spoken)}. Als Programmiersprachen nennt sein Portfolio ${list.format(programming)}.`
-                : `Timo’s spoken languages are ${list.format(spoken)}. His portfolio lists ${list.format(programming)} for programming.`,
-          };
-        }
-      }
-    }
     const asksSpokenLanguages = spokenLanguageQuestion.test(normalized);
     if (asksSpokenLanguages || profileQuestion.test(normalized)) {
       const about = pages.find(({ href }) => href === '/about/');
@@ -1068,7 +1077,8 @@ export function findSiteContent(
   const chosen = new Map<SitePage, string[]>();
   const used: ReturnType<typeof searchTerms>[] = [];
   const missing: string[] = [];
-  const clauses = question.split(nextClause);
+  const clauses =
+    requestedClauses.length > 1 ? requestedClauses : question.split(nextClause);
   const subjects = new Map<string, SiteSubject>();
   let last: Pick<Passage, 'page' | 'heading'> | undefined = rememberedPage
     ? { page: rememberedPage, heading: subject?.heading }

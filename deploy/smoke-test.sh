@@ -158,6 +158,24 @@ check_status_json_is_404_without_the_mount() {
   expect_status 404 && expect_shared_headers
 }
 
+check_default_image_keeps_ask_off() {
+  local locale route
+  for locale in en de; do
+    request / -H "Cookie: lang=$locale"
+    expect_status 200 && expect_body "<html lang=\"$locale\"" || return 1
+    if grep -q 'data-ask-work' "$tmp/body"; then
+      echo "    the Ask panel is present in $locale"
+      return 1
+    fi
+    request /projects/spotify-stats-tracker/ -H "Cookie: lang=$locale"
+    expect_status 200 && expect_body 'id="contribution" class="scroll-mt-24"' || return 1
+    for route in /api/ask /ask-content.json /ask-content-en.json /ask-content-de.json; do
+      request "$route" -H "Cookie: lang=$locale"
+      expect_status 404 || return 1
+    done
+  done
+}
+
 # Hashed assets are the same bytes in every language tree, so they carry no
 # Vary: a language switch must not make browsers refetch fonts and CSS.
 check_hashed_assets_are_immutable() {
@@ -278,6 +296,7 @@ run 'directory redirect is relative' check_directory_redirect_is_relative
 run 'missing page is a localized 404 with the shared headers' check_missing_page_is_a_localized_404
 run 'direct error template returns 404 and noindex' check_direct_error_template_is_a_404
 run '/status.json is a 404 without the mount' check_status_json_is_404_without_the_mount
+run 'Ask is off and the Spotify contribution anchor is present in both languages' check_default_image_keeps_ask_off
 run 'hashed assets are immutable and carry no Vary' check_hashed_assets_are_immutable
 run 'Server header hides the nginx version' check_server_header_hides_the_version
 run 'every inline script is hashed in the page policy' check_inline_scripts_are_hashed

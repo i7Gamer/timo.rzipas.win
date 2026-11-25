@@ -67,6 +67,74 @@ afterEach(async () => {
 });
 
 describe('portfolio Ask feedback regressions', () => {
+  it.each([
+    ['en', 'Which project used Flask? Who won the World Cup?'],
+    ['de', 'Wofür hat Timo Flask eingesetzt? Wer gewann die Fussball-WM?'],
+  ] as const)(
+    'checks separate %s questions before accepting a model claim of completeness',
+    async (locale, question) => {
+      await open({
+        local: true,
+        select: async (_question, _locale, candidates) => ({
+          status: 'answer',
+          slots: [
+            candidates.findIndex(({ id }) => id === 'spotify-python') + 1,
+          ],
+        }),
+      });
+      expect((await ask(question, locale)).body).toMatchObject({
+        status: 'partial',
+        mode: 'local',
+        missing: 'additional-question',
+        claims: [{ id: 'spotify-python' }],
+      });
+    },
+  );
+  it.each([
+    [
+      'en',
+      'How is this website hosted?',
+      'What languages does Timo speak?',
+      'Who won the World Cup?',
+    ],
+    [
+      'de',
+      'Wie wird diese Website gehostet?',
+      'Welche Sprachen spricht Timo?',
+      'Wer gewann die Fussball-WM?',
+    ],
+  ] as const)(
+    'reports actual coverage of standalone clauses in %s',
+    async (locale, hosting, languages, unrelated) => {
+      await open();
+      const mixed = await ask(`${hosting} ${unrelated}`, locale);
+      expect(mixed.body).toMatchObject({
+        status: 'partial',
+        missing: 'additional-question',
+        claims: [{ id: 'portfolio-website-architecture' }],
+        sources: [{ href: '/projects/this-website/' }],
+      });
+      const both = await ask(`${hosting} ${languages}`, locale);
+      expect(both.body).toMatchObject({
+        status: 'answer',
+        claims: [
+          { id: 'portfolio-website-architecture' },
+          { id: 'portfolio-spoken-languages' },
+        ],
+        sources: [{ href: '/projects/this-website/' }, { href: '/about/' }],
+      });
+      expect(both.body).not.toHaveProperty('missing');
+      const unsupported = await ask(
+        `${unrelated} ${locale === 'de' ? 'Wie alt ist der Mond?' : 'How old is the moon?'}`,
+        locale,
+      );
+      expect(unsupported.body).toMatchObject({
+        status: 'unknown',
+        claims: [],
+        sources: [],
+      });
+    },
+  );
   it('retains the grounded employer anchor when long history is shortened', async () => {
     await open();
     const question = 'What do you work on at Abacus?';
@@ -254,7 +322,13 @@ describe('portfolio Ask feedback regressions', () => {
 
   it.each([
     ['list all timos work and projects', 'en'],
+    ['give me nice summary of all work and projects', 'en'],
+    ['Could you summarize his projects and work experience?', 'en'],
     ['Liste alle Jobs und Projekte von Timo auf', 'de'],
+    [
+      'Gib mir bitte eine kurze Zusammenfassung von Timos Arbeit und Projekten.',
+      'de',
+    ],
   ] as const)(
     'cites the full public inventory for %s',
     async (question, locale) => {
@@ -373,7 +447,7 @@ describe('portfolio Ask feedback regressions', () => {
   });
 
   it.each([
-    'What kind of cats does he have, and how old are they?',
+    'How old are Timo’s cats?',
     'Tell me all the negatives about him.',
     'What are Timo’s flaws?',
   ])(
@@ -385,6 +459,22 @@ describe('portfolio Ask feedback regressions', () => {
       expect(response.body).toMatchObject({ status: 'unknown', claims: [] });
     },
   );
+
+  it('answers the approved cat details and leaves their ages unanswered', async () => {
+    await open();
+    const response = await ask(
+      'What kind of cats does he have, and how old are they?',
+    );
+    expect(response.body).toMatchObject({
+      status: 'partial',
+      missing: 'additional-question',
+      claims: [
+        { id: 'about.cats.rudi' },
+        { id: 'about.cats.georgi' },
+        { id: 'about.cats.benji' },
+      ],
+    });
+  });
 
   it.each([
     'Negative things about Timo',

@@ -21,14 +21,14 @@ for (const locale of locales) {
 const askMode = process.env.ASK_WORK;
 if (askMode === 'local' || askMode === 'index') {
   for (const selected of locales) {
-    for (const alternate of locales.filter((locale) => locale !== selected)) {
+    for (const indexedLocale of locales) {
       copyFileSync(
         new URL(
-          `../dist/ask-${askMode}/${alternate}/ask-content.json`,
+          `../dist/ask-${askMode}/${indexedLocale}/ask-content.json`,
           import.meta.url,
         ),
         new URL(
-          `../dist/ask-${askMode}/${selected}/ask-content-${alternate}.json`,
+          `../dist/ask-${askMode}/${selected}/ask-content-${indexedLocale}.json`,
           import.meta.url,
         ),
       );

@@ -132,7 +132,12 @@ docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml confi
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml --profile setup run --rm model-setup
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml up --build -d
 mkdir -p .local-ask
-node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --samples 3 --report .local-ask/qwen-docker-eval.json
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --cold-only --report .local-ask/qwen-docker-cold.json
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml restart ask
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml exec -T ask node services/ask/ollama.ts
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --warm-only --report .local-ask/qwen-docker-warm.json
+docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml restart ask
+node services/ask/smoke.ts http://127.0.0.1:18093
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml restart ask
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml pause ollama
 node services/ask/smoke.ts http://127.0.0.1:18093 --offline
@@ -143,21 +148,27 @@ node services/ask/smoke.ts http://127.0.0.1:18093 --gateway-offline
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml down
 ```
 
-The HTTP evaluator sends the cold Flask question first, then up to three
-English/German fixtures through the built nginx proxy and packaged gateway.
-That bounded run keeps the four requests within the gateway's per-minute
-retrieval budget. `--samples` accepts 1 through 3. The report gives the cold
-probe's status/mode, IDs, citations and latency, and each fixture's HTTP/result
-status, IDs, citation links and latency. Its summary gives p95 only for
-responses actually marked `local` by the gateway, plus mismatches and outages;
-it does not infer whether Qwen ran from local candidate lists. The optional JSON
-report preserves all rows. The smoke script checks
-exact reviewed IDs and citations when answering, and logs response timing. Its
-`--offline` and `--gateway-offline` phases require a no-store 503 and log the
-outage status and latency. Thus the paused-model phase checks nginx plus a live
-gateway without inference, while the stopped-gateway phase checks nginx's
-unavailable response. Run the regular smoke after the evaluator to capture
-warm answers; the evaluator's first request is the cold-load measurement.
+The HTTP evaluator has separate `--cold-only` and `--warm-only` paths. The cold
+path sends one English Flask question before any model preload and requires an
+HTTP 200 `answer`, `mode: local`, the exact `spotify-python` claim and its
+canonical citation. Restart only `ask` afterward to clear gateway quotas; this
+leaves Ollama running and its loaded model intact. `node services/ask/ollama.ts`
+preloads the pinned model directly, without consuming gateway quota. The warm
+path then requires an English and a German Flask answer with `mode: local` and
+the exact reviewed claim and citation in each locale, plus a reviewed Canadian
+capital abstention with no claims or citations and `mode: index`. A warm failure
+does not hide the cold report, and a cold failure does not prevent a separate
+warm run. Each report records HTTP/result status, mode, claim IDs, citation
+links and latency; warm p95 includes only local results. The fixed warm set is
+three gateway requests, within the retrieval budget.
+
+Restart only `ask` again before the ordinary live smoke. It checks exact
+bilingual local answers and their citations while the same Ollama model remains
+warm. The `--offline` phase pauses Ollama and checks reviewed index answers plus
+the no-store 503 response. The `--gateway-offline` phase stops `ask` and checks
+nginx's no-store unavailable response. CI runs both startup and gateway-stopped
+smoke without pulling model weights. The optional JSON reports preserve each
+phase's results for review.
 
 The website publishes only localhost port 18093 and proxies exactly
 `/api/ask`. The gateway shares Ollama's network namespace and reaches the model

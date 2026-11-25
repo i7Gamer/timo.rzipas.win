@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { setTimeout as delay } from 'node:timers/promises';
-import { validateResult, type AskResult } from '../../src/lib/ask/catalog.ts';
+import {
+  facts,
+  validateResult,
+  type AskResult,
+} from '../../src/lib/ask/catalog.ts';
 import { corpusVersion } from '../../src/lib/ask/version.ts';
 
 const args = process.argv.slice(2);
@@ -54,6 +58,14 @@ async function expectAnswer(
   assert.deepEqual(
     result.claims.map(({ id }) => id),
     ids,
+  );
+  assert.deepEqual(
+    result.sources.map(({ id }) => id),
+    [
+      ...new Set(
+        ids.map((id) => facts.find((fact) => fact.id === id)?.sourceId),
+      ),
+    ],
   );
   const ms = Math.round(performance.now() - started);
   if (result.mode === 'local') localTimings.push(ms);

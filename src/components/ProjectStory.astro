@@ -21,10 +21,7 @@ const aiNote =
   project.slug === 'hearthcoil' ? PROJECT_AI_NOTES.hearthcoil : undefined;
 const sections = ['problem', 'contribution', 'decisions', 'outcome'] as const;
 const contributionAnchor =
-  import.meta.env.ASK_WORK_MODE !== 'off' &&
-  project.slug === 'spotify-stats-tracker'
-    ? 'contribution'
-    : undefined;
+  project.slug === 'spotify-stats-tracker' ? 'contribution' : undefined;
 const SCREENSHOT_WIDTHS = [480, 800, 1200];
 const linkScreenshots = project.slug !== 'spotify-stats-tracker';
 ---
@@ -81,6 +78,7 @@ const linkScreenshots = project.slug !== 'spotify-stats-tracker';
     {sections.map((section) => (
       <section
         id={section === contributionAnchor ? contributionAnchor : undefined}
+        class={section === contributionAnchor ? 'scroll-mt-24' : undefined}
       >
         <>
           <h2 class="text-ink font-mono text-lg font-semibold">

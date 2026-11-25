@@ -12,7 +12,6 @@ function fixture(window: Window) {
       <div data-ask-window-tools hidden>
         <button type="button" data-ask-collapse aria-label="Collapse"><span></span></button>
         <button type="button" data-ask-restore aria-label="Restore"><span></span></button>
-        <button type="button" data-ask-expand aria-label="Expand" data-ask-restore-size="Restore conversation size" aria-pressed="false"><span></span></button>
       </div>
       <details data-ask-work data-mode="index" data-version="fixture" data-messages='{"wait":"Looking..."}'>
         <summary>Ask about my work</summary>
@@ -65,21 +64,22 @@ describe('Ask about my work UI', () => {
       expect(
         details.querySelector('[data-ask-result]')?.getAttribute('aria-label'),
       ).toBe('Conversation with Ask about Timo');
-      expect(
+      const tools = Array.from(
         details.parentElement?.querySelectorAll(
-          '[data-ask-collapse], [data-ask-restore], [data-ask-expand]',
-        ),
-      ).toHaveLength(3);
-      const toolIcons = Array.from(
-        details.parentElement?.querySelectorAll(
-          '[data-ask-collapse] svg, [data-ask-restore] svg, [data-ask-expand] svg',
+          '[data-ask-window-tools] button',
         ) ?? [],
       );
-      expect(toolIcons).toHaveLength(3);
+      expect(
+        tools.map((control) => control.getAttribute('aria-label')),
+      ).toEqual(['Collapse conversation', 'Restore conversation']);
+      expect(
+        tools.every((control) => control.classList.contains('cursor-pointer')),
+      ).toBe(true);
+      const toolIcons = tools.map((control) => control.querySelector('svg')!);
       expect(
         toolIcons.every((icon) => icon.getAttribute('aria-hidden') === 'true'),
       ).toBe(true);
-      expect(new Set(toolIcons.map((icon) => icon.innerHTML)).size).toBe(3);
+      expect(new Set(toolIcons.map((icon) => icon.innerHTML)).size).toBe(2);
       expect(details.querySelector('summary button')).toBeNull();
       expect(
         details.parentElement
@@ -119,7 +119,7 @@ describe('Ask about my work UI', () => {
     }
   });
 
-  it('supports collapsing, restoring, and expanding the conversation panel', () => {
+  it('supports collapsing and restoring the conversation panel', () => {
     const window = new Window();
     try {
       const panel = fixture(window);
@@ -133,41 +133,13 @@ describe('Ask about my work UI', () => {
       const restore = tools.querySelector(
         '[data-ask-restore]',
       ) as unknown as HTMLButtonElement;
-      const expand = tools.querySelector(
-        '[data-ask-expand]',
-      ) as unknown as HTMLButtonElement;
-
-      panel.open = true;
+      expect(restore.getAttribute('aria-expanded')).toBe('false');
+      restore.click();
+      expect(panel.open).toBe(true);
+      expect(collapse.getAttribute('aria-expanded')).toBe('true');
       collapse.click();
       expect(panel.open).toBe(false);
-
-      restore.click();
-      expect(panel.open).toBe(true);
-      expand.click();
-      expect(panel.dataset.expanded).toBe('true');
-      expect(expand.getAttribute('aria-pressed')).toBe('true');
-      expect(expand.getAttribute('aria-label')).toBe(
-        'Restore conversation size',
-      );
-
-      restore.click();
-      expect(panel.open).toBe(true);
-      expect(panel.dataset.expanded).toBe('false');
-      expect(expand.getAttribute('aria-pressed')).toBe('false');
-
-      expand.click();
-      expect(panel.dataset.expanded).toBe('true');
-
-      collapse.click();
-      expect(panel.open).toBe(false);
-      expand.click();
-      expect(panel.open).toBe(true);
-      expect(panel.dataset.expanded).toBe('true');
-      expect(expand.getAttribute('aria-pressed')).toBe('true');
-
-      restore.click();
-      expect(panel.open).toBe(true);
-      expect(panel.dataset.expanded).toBe('false');
+      expect(restore.getAttribute('aria-expanded')).toBe('false');
     } finally {
       window.close();
     }
@@ -207,7 +179,7 @@ describe('Ask about my work UI', () => {
       form.dispatchEvent(new window.Event('submit') as unknown as Event);
       await vi.waitFor(() => {
         expect(fetchMock).toHaveBeenCalledWith(
-          '/ask-content.json',
+          '/ask-content-en.json',
           expect.any(Object),
         );
       });

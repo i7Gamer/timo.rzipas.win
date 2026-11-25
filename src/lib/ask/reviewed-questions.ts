@@ -157,39 +157,35 @@ const personalJudgment =
   /^(?:(?:what are |tell me )?(?:all )?(?:the )?(?:his |timo s )?(?:personal )?(?:flaws|weaknesses|weak points|negatives|negative (?:things|traits)|downsides)(?: (?:about|of) (?:hiring )?(?:him|timo(?: rzipa)?))?|(?:(?:anything else |any )?more )?negative(?:s)?|(?:was sind )?(?:seine |timos )?(?:schwaechen|negative eigenschaften|nachteile))$/;
 const maintainerReview =
   /^(?:what did (?:the |its )?maintainer (?:question|flag) (?:in|about|during) |was (?:hinterfragte|beanstandete) (?:der|die) maintainer(?:in)? (?:bei|beim|an) )/;
-const reviewClause =
-  /[?!]\s*(?=\p{L})|(?:,\s*|\s+)(?:and|also|und|ausserdem|außerdem)\s+(?=(?:who|what|which|where|how|when|why|did|does|was|any|wer|wie|wo|wann|warum|welch\p{L}*|hat|gibt|lücken)\b)/iu;
+const clauseConnector = '(?:and|also|und|sowie|ausserdem|außerdem)';
+const independentClause =
+  '(?:who|what|which|where|how|when|why|did|does|do|is|are|was|were|can|could|has|have|any (?:holes?|gaps?)|wer|wie|wo|woran|womit|wann|warum|welch\\p{L}*|hat|gibt|ist|kann|auf welchem|lücken)\\b';
+const sentenceBoundary = /[?;]\s*(?=\p{L})/u;
+const clauseBoundary = new RegExp(
+  sentenceBoundary.source +
+    '|(?:,\\s*|\\s+)' +
+    clauseConnector +
+    '\\s+(?=' +
+    independentClause +
+    ')',
+  'iu',
+);
+const leadingConnector = new RegExp(
+  '^' + clauseConnector + '\\s+(?=' + independentClause + ')',
+  'iu',
+);
 
-function projectReviewAnswer(
-  terms: string,
-  question: string,
-): ReviewedAnswer | undefined {
-  const [first, ...remaining] = question
-    .split(reviewClause)
-    .map(normalize)
-    .filter(Boolean);
-  const setback = setbacks.test(first ?? terms);
-  if (
-    !setback &&
-    (!maintainerReview.test(first) ||
-      !(spotifyTracker.test(first) || /\bupstream spotify\b/.test(first)))
-  )
-    return;
-
-  const ids = ['spotify-upstream-review'];
-  const unansweredCv =
-    (setback && cvGaps.test(first)) ||
-    remaining.some((part) => cvGaps.test(part));
-  if (unansweredCv) return { ids, partial: true, missing: 'cv-gaps' };
-  if (!remaining.length) return { ids };
-  if (remaining.length === 1) {
-    const additional = approvedAnswer(remaining[0]);
-    if (additional && !additional.partial) {
-      const combined = [...new Set([...ids, ...additional.ids])];
-      if (combined.length <= MAX_CLAIMS) return { ids: combined };
-    }
-  }
-  return { ids, partial: true, missing: 'additional-question' };
+export function questionClauses(question: string, includeConnectors = true) {
+  return question
+    .split(includeConnectors ? clauseBoundary : sentenceBoundary)
+    .map((clause, index) =>
+      index ? clause.trim().replace(leadingConnector, '') : clause.trim(),
+    )
+    .filter(
+      (clause, index) =>
+        !index ||
+        !/^(?:please|thanks|thank you|bitte|danke)$/.test(normalize(clause)),
+    );
 }
 
 const profilePitch =
@@ -197,7 +193,11 @@ const profilePitch =
 const interestingHighlight =
   /^(?:(?:(?:tell|show|give) me |what (?:is|s) )?(?:one |an? |the )?(?:most )?(?:interesting|surprising|fun) (?:detail|fact|thing)(?: about (?:timo(?: rzipa)?|him|his work|the portfolio))?(?: please)?|(?:(?:nenn|zeig) mir )?(?:ein )?(?:interessantes|spannendes|ueberraschendes) (?:detail|beispiel)(?: (?:ueber|zu) timo)?(?: bitte)?)$/;
 const workAndProjectInventory =
-  /^(?:(?:please )?(?:list|show(?: me)?|give me|what are) (?:all )?(?:(?:timo ?s|his|your|the) )?(?:(?:work(?: experience)?|jobs?|roles?) and (?:personal )?projects|projects and (?:work(?: experience)?|jobs?|roles?))(?: (?:of|by|from) timo)?(?: please)?|(?:liste|zeig(?: mir)?) (?:alle? )?(?:timos )?(?:arbeit|jobs?|stellen|berufserfahrung) und projekte(?: von timo)?(?: auf)?)$/;
+  /^(?:(?:please )?(?:list|show(?: me)?|give me|what are) (?:all )?(?:(?:timo ?s|his|your|the) )?(?:(?:work(?: experience)?|jobs?|roles?) and (?:personal )?projects|projects and (?:work(?: experience)?|jobs?|roles?))(?: (?:of|by|from) timo)?(?: please)?|(?:liste|zeig(?: mir)?) (?:alle? )?(?:timos )?(?:arbeit|jobs?|stellen|berufserfahrung) und projekte[n]?(?: von timo)?(?: auf)?)$/;
+const inventorySummaryEn =
+  /^(?:(?:give|show|write) me (?:a )?(?:(?:nice|short|quick|brief) )?summary (?:of|about)|(?:(?:can|could|would) you |please )?summari[sz]e) /;
+const inventorySummaryDe =
+  /^(?:gib|zeig|schreib) mir (?:bitte )?(?:eine )?(?:(?:kurze|knappe) )?zusammenfassung (?:von|ueber) /;
 const projectInventory =
   /^(?:(?:list|show(?: me)?) all (?:of )?(?:(?:timo ?s|his|your|the) )?projects(?: please)?|(?:liste|zeig(?: mir)?) alle (?:timos )?projekte(?: von timo)?(?: auf)?)$/;
 const workTopic = /^(?:work(?: experience)?|career|arbeit|berufserfahrung)$/;
@@ -272,7 +272,7 @@ export function profileQuestionNote(
     return locale === 'de'
       ? 'Das öffentliche Portfolio beschreibt Timos Arbeit und Projekte. Möchtest du nach einer konkreten Projektgrenze oder einem Zeitraum im Lebenslauf fragen?'
       : 'The public portfolio describes Timo’s work and projects. Would you like to ask about a specific project limitation or a period in his CV?';
-  if (cvGaps.test(terms) && !projectReviewAnswer(terms, question))
+  if (cvGaps.test(terms) && !approvedAnswer(terms, question))
     return locale === 'de'
       ? 'Welchen Zeitraum im Lebenslauf möchtest du prüfen?'
       : 'Which period in his CV would you like to check?';
@@ -345,8 +345,61 @@ export function approvedAnswer(
   terms: string,
   question = terms,
 ): ReviewedAnswer | undefined {
+  const jointlyReviewed = reviewedSpotifyRewriteAndStack(terms);
+  if (jointlyReviewed) return jointlyReviewed;
+  const clauses = questionClauses(question);
+  if (clauses.length <= 1) return approvedClause(terms);
+
+  const ids = new Set<string>();
+  let missing: MissingDetail | undefined;
+  for (const clause of clauses) {
+    const part = normalize(clause);
+    const reviewed = approvedClause(part);
+    const direct = reviewed ? undefined : reviewedFactId(part);
+    const covered = reviewed?.ids ?? (direct ? [direct] : []);
+    const combined = new Set([...ids, ...covered]);
+    if (combined.size <= MAX_CLAIMS) {
+      for (const id of covered) ids.add(id);
+    }
+    if (cvGaps.test(part) || reviewed?.missing === 'cv-gaps')
+      missing = 'cv-gaps';
+    else if (!covered.length || reviewed?.partial || combined.size > MAX_CLAIMS)
+      missing ??= 'additional-question';
+  }
+  if (ids.size)
+    return missing
+      ? { ids: [...ids], partial: true, missing }
+      : { ids: [...ids] };
+}
+
+function reviewedSpotifyRewriteAndStack(
+  terms: string,
+): ReviewedAnswer | undefined {
+  const [work, stack, extra] = terms.split(/\s+(?:and|und)\s+/);
+  if (
+    stack &&
+    extra === undefined &&
+    spotifyTracker.test(work) &&
+    /^(?:what|which|was|welche)\b/.test(work) &&
+    /\b(?:rebuild|rewrite|reimplement|neu entwickelt|neu geschrieben|umgebaut)\b/.test(
+      work,
+    ) &&
+    /^(?:(?:what|which) (?:technology|technologies|tech stack|programming language) did (?:timo|he) use|welche (?:technologien?|programmiersprachen?) hat (?:timo|er) (?:genutzt|verwendet|eingesetzt))$/.test(
+      stack,
+    )
+  )
+    return { ids: ['spotify-python'] };
+}
+
+function approvedClause(terms: string): ReviewedAnswer | undefined {
   if (profilePitch.test(terms)) return { ids: ['portfolio-pitch'] };
-  if (workAndProjectInventory.test(terms))
+  if (
+    workAndProjectInventory.test(
+      terms
+        .replace(inventorySummaryEn, 'list ')
+        .replace(inventorySummaryDe, 'liste '),
+    )
+  )
     return { ids: ['career-role-titles', 'portfolio-project-inventory'] };
   if (projectInventory.test(terms))
     return { ids: ['portfolio-project-inventory'] };
@@ -366,28 +419,15 @@ export function approvedAnswer(
   if (hiring.test(terms))
     return { ids: ['abacus-workflow', 'stadler-vpn', 'spotify-python'] };
   if (publicTimeline.test(terms)) return { ids: ['cv-2015-2016'] };
-  const projectReview = projectReviewAnswer(terms, question);
-  if (projectReview) return projectReview;
-  const [work, stack, extra] = terms.split(/\s+(?:and|und)\s+/);
+  if (setbacks.test(terms))
+    return cvGaps.test(terms)
+      ? { ids: ['spotify-upstream-review'], partial: true, missing: 'cv-gaps' }
+      : { ids: ['spotify-upstream-review'] };
   if (
-    stack &&
-    extra === undefined &&
-    spotifyTracker.test(work) &&
-    /^(?:what|which|was|welche)\b/.test(work) &&
-    /\b(?:rebuild|rewrite|reimplement|neu entwickelt|neu geschrieben|umgebaut)\b/.test(
-      work,
-    ) &&
-    /^(?:(?:what|which) (?:technology|technologies|tech stack|programming language) did (?:timo|he) use|welche (?:technologien?|programmiersprachen?) hat (?:timo|er) (?:genutzt|verwendet|eingesetzt))$/.test(
-      stack,
-    )
+    maintainerReview.test(terms) &&
+    (spotifyTracker.test(terms) || /\bupstream spotify\b/.test(terms))
   )
-    return { ids: ['spotify-python'] };
-  if (
-    /\b(?:and|und|also|ausserdem) (?:who|what|which|where|how|when|wer|was|welch\w*|wo|wie|wann)\b/.test(
-      terms,
-    )
-  )
-    return;
+    return { ids: ['spotify-upstream-review'] };
 
   if (needsDatedWorkEvidence(terms)) return { ids: ['current-work'] };
   const pets = reviewedPets(terms);

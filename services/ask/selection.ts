@@ -24,6 +24,7 @@ import {
   profileFollowUp,
   profileHighlightIds,
   profileQuestionNote,
+  questionClauses,
   reviewedFactId,
   WORK_EXPERIENCE_IDS,
 } from '../../src/lib/ask/reviewed-questions.ts';
@@ -318,9 +319,6 @@ const missingDetails = [
     patterns: [/\b(?:master(?: s)? degree|masterabschluss|masterstudium)\b/],
   },
 ];
-const asksAnotherPart =
-  /\b(?:and|und|also|ausserdem) (?:who|what|which|where|how|wer|was|welch\w*|wo|wie|bei wem)\b/;
-
 function matchingLength(terms: string, aliases: readonly string[]) {
   const haystack = ' ' + terms + ' ';
   return Math.max(
@@ -411,7 +409,7 @@ function prepareExactQuestion(
   const development = asksAboutAICoding(terms);
   if (
     needsDatedWorkEvidence(terms) ||
-    (!asksAnotherPart.test(terms) &&
+    (questionClauses(question).length <= 1 &&
       (development ||
         asksUnsupportedDetail(terms) ||
         missingDetails.some(
@@ -618,11 +616,31 @@ export async function askModel(
       clarifyProject: focus.id,
     };
   if (status === 'clarify') return null;
+  // Independent questions need their own evidence. A selector can still judge
+  // joined clauses about the same subject using the shared context it was given.
+  const sentences = questionClauses(question, false);
+  const additionalUnanswered =
+    status === 'answer' &&
+    sentences.length > 1 &&
+    !sentences.every((clause) => {
+      const bounded = prepareBoundedQuestion(clause, locale, history);
+      const eligible = new Set(
+        bounded.retrievalRequired
+          ? shortlist(clause).map(({ id }) => id)
+          : [...bounded.fallback.claims, ...bounded.candidates].map(
+              ({ id }) => id,
+            ),
+      );
+      return matches.some(({ id }) => eligible.has(id));
+    });
   return documentAnswer(
     matches,
-    matches.some((fact) => fact.partial) ? 'partial' : status,
+    additionalUnanswered || matches.some((fact) => fact.partial)
+      ? 'partial'
+      : status,
     'local',
     locale,
     corpusVersion,
+    additionalUnanswered ? 'additional-question' : undefined,
   );
 }

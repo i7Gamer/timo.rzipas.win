@@ -68,6 +68,8 @@ jobs:
           node-version-file: '.nvmrc'
       - run: docker compose -p ask-ci -f deploy/docker-compose.ask.yml up --build -d
       - run: node services/ask/smoke.ts http://127.0.0.1:18093 --startup
+      - run: docker compose -p ask-ci -f deploy/docker-compose.ask.yml stop ask
+      - run: node services/ask/smoke.ts http://127.0.0.1:18093 --gateway-offline
       - if: failure()
         run: docker compose -p ask-ci -f deploy/docker-compose.ask.yml logs
       - if: always()

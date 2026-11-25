@@ -7,6 +7,8 @@ import { Window } from 'happy-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { extractPage, writeSiteContent } from '../../../scripts/ask-content';
 import AskWork from '../../components/AskWork.astro';
+import ProjectStory from '../../components/ProjectStory.astro';
+import { PROJECTS } from '../../data/projects';
 import TimelineItem from '../../components/TimelineItem.astro';
 import { PROJECT_AI_NOTES } from '../../data/project-ai';
 import { setupAskWork } from './browser';
@@ -73,6 +75,88 @@ function index() {
 }
 
 describe('Ask public page content', () => {
+  it('renders accessible toolbar contrast classes and the Spotify anchor with sticky offset', async () => {
+    const container = await AstroContainer.create();
+    const askHtml = await container.renderToString(AskWork, {
+      props: { locale: 'en' },
+    });
+    const window = new Window();
+    try {
+      window.document.body.innerHTML = askHtml;
+      const icons = Array.from(
+        window.document.querySelectorAll('[data-ask-window-tools] svg'),
+      );
+      expect(icons).toHaveLength(2);
+      expect(icons.map((icon) => icon.getAttribute('class'))).toEqual([
+        expect.stringContaining('dark:text-red-400/90'),
+        expect.stringContaining('dark:text-emerald-400/90'),
+      ]);
+      expect(
+        window.document.querySelectorAll(
+          '[data-ask-window-tools] button[aria-label]',
+        ),
+      ).toHaveLength(2);
+
+      const spotify = PROJECTS.find(
+        ({ slug }) => slug === 'spotify-stats-tracker',
+      )!;
+      const storyHtml = await container.renderToString(ProjectStory, {
+        props: { project: spotify as Required<typeof spotify>, locale: 'en' },
+      });
+      window.document.body.innerHTML = storyHtml;
+      expect(
+        window.document.querySelector('#contribution')?.className,
+      ).toContain('scroll-mt-24');
+    } finally {
+      window.close();
+    }
+  });
+  it.each([
+    [
+      'en',
+      'How is this website hosted?',
+      'What languages does Timo speak?',
+      'Who won the World Cup?',
+    ],
+    [
+      'de',
+      'Wie wird diese Website gehostet?',
+      'Welche Sprachen spricht Timo?',
+      'Wer gewann die Fussball-WM?',
+    ],
+  ] as const)(
+    'keeps reviewed clause coverage in the offline %s index',
+    (locale, hosting, languages, unrelated) => {
+      const content = { ...index(), locale };
+      content.pages.push(
+        extractPage(
+          '<main><h1>About</h1><p>Portfolio profile.</p></main>',
+          '/about/',
+        ),
+      );
+      expect(
+        findSiteContent(`${hosting} ${unrelated}`, content, 'overview'),
+      ).toMatchObject({
+        status: 'partial',
+        note: expect.stringMatching(/unanswered|bleibt offen/),
+        sources: [{ href: '/projects/this-website/' }],
+      });
+      expect(
+        findSiteContent(`${hosting} ${languages}`, content, 'overview'),
+      ).toMatchObject({
+        status: 'answer',
+        missing: [],
+        sources: [{ href: '/projects/this-website/' }, { href: '/about/' }],
+      });
+      expect(
+        findSiteContent(
+          `${unrelated} ${locale === 'de' ? 'Wie alt ist der Mond?' : 'How old is the moon?'}`,
+          content,
+          'overview',
+        ),
+      ).toBeNull();
+    },
+  );
   const careerOverview = 'Give me a summary of his work experience';
   const abacusRole = 'What do you work on at Abacus?';
   it('recognises a German request for more in an English chat', () => {
@@ -91,7 +175,7 @@ describe('Ask public page content', () => {
         ),
       );
       const lookup = vi.fn<typeof fetch>(async (path) =>
-        path === SITE_CONTENT_PATH
+        path === '/ask-content-en.json' || path === '/ask-content-en.json'
           ? Response.json(content)
           : new Response(null, { status: 503 }),
       );
@@ -114,11 +198,20 @@ describe('Ask public page content', () => {
           ).toContain(expected),
         );
       }
-      const reply = panel.querySelector('[data-ask-reply]:last-child')!;
+      const listedReply = panel.querySelector('[data-ask-reply]:last-child')!;
       expect(
-        reply.querySelector('a[href="/projects/hearthcoil/"]'),
+        listedReply.querySelector('a[href="/projects/hearthcoil/"]'),
       ).not.toBeNull();
-      expect(reply.textContent).not.toContain('SpotifyTracker');
+      panel.querySelector('textarea')!.value = 'Tell me more';
+      panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
+      await vi.waitFor(() =>
+        expect(
+          panel.querySelector('[data-ask-reply]:last-child')?.textContent,
+        ).toContain('Hearthcoil'),
+      );
+      expect(
+        panel.querySelector('[data-ask-reply]:last-child')?.textContent,
+      ).not.toContain('SpotifyTracker');
     } finally {
       vi.unstubAllGlobals();
       window.close();
@@ -240,7 +333,7 @@ describe('Ask public page content', () => {
         );
         const requests: string[] = [];
         const lookup = vi.fn<typeof fetch>(async (path, options) => {
-          if (path === SITE_CONTENT_PATH) return Response.json(content);
+          if (path === '/ask-content-en.json') return Response.json(content);
           const { question } = JSON.parse(String(options?.body));
           requests.push(question);
           if (question === 'anything more?') {
@@ -308,7 +401,7 @@ describe('Ask public page content', () => {
         const evidence = facts.filter(({ id }) => id === 'spotify-rewrite');
         const lookup = vi.fn<typeof fetch>(async (path) => {
           if (
-            path === SITE_CONTENT_PATH ||
+            path === '/ask-content-en.json' ||
             String(path).startsWith('/ask-content-')
           ) {
             return Response.json({ ...index(), locale });
@@ -357,7 +450,9 @@ describe('Ask public page content', () => {
         );
         const reply = Promise.withResolvers<Response>();
         const lookup = vi.fn<typeof fetch>(async (path) =>
-          path === SITE_CONTENT_PATH ? Response.json(content) : reply.promise,
+          path === '/ask-content-en.json'
+            ? Response.json(content)
+            : reply.promise,
         );
         vi.stubGlobal('fetch', lookup);
         window.document.body.innerHTML =
@@ -436,7 +531,7 @@ describe('Ask public page content', () => {
         ),
       );
       const fetchContent = vi.fn<typeof fetch>(async (path) =>
-        path === SITE_CONTENT_PATH
+        path === '/ask-content-en.json'
           ? Response.json(content)
           : path === '/ask-content-de.json'
             ? Response.json({ ...content, locale: 'de' })
@@ -501,7 +596,7 @@ describe('Ask public page content', () => {
         const abacus = facts.find(({ id }) => id === 'abacus-workflow')!;
         const detail = facts.find(({ id }) => id === factId)!;
         const lookup = vi.fn<typeof fetch>(async (path, options) => {
-          if (path === SITE_CONTENT_PATH) return Response.json(content);
+          if (path === '/ask-content-en.json') return Response.json(content);
           if (path === '/ask-content-de.json')
             return Response.json({ ...content, locale: 'de' });
           const input = JSON.parse(String(options?.body));
@@ -663,7 +758,7 @@ describe('Ask public page content', () => {
         vi.stubGlobal(
           'fetch',
           vi.fn<typeof fetch>(async (path) => {
-            if (path === SITE_CONTENT_PATH)
+            if (path === '/ask-content-en.json')
               return gatewayFallback
                 ? new Response(null, { status: 503 })
                 : Response.json(index());
@@ -931,7 +1026,10 @@ describe('Ask public page content', () => {
           },
           'overview',
         ),
-      ).toBeNull();
+      ).toMatchObject({
+        status: 'partial',
+        sources: [{ href: '/about/' }],
+      });
     },
   );
   it.each([
@@ -1724,7 +1822,7 @@ describe('Ask public page content', () => {
         ),
       );
       const fetchLocal = vi.fn<typeof fetch>(async (path) =>
-        path === SITE_CONTENT_PATH
+        path === '/ask-content-en.json'
           ? Response.json(content)
           : new Response(null, { status: 503 }),
       );
@@ -1788,7 +1886,7 @@ describe('Ask public page content', () => {
       )!;
       const requests: { question: string; history?: unknown[] }[] = [];
       const lookup = vi.fn<typeof fetch>(async (path, options) => {
-        if (path === SITE_CONTENT_PATH) return Response.json(content);
+        if (path === '/ask-content-en.json') return Response.json(content);
         if (path === '/api/ask') {
           requests.push(JSON.parse(String(options?.body)));
           return new Response(null, { status: 503 });
@@ -1811,7 +1909,7 @@ describe('Ask public page content', () => {
         'short pitch about timo',
         'any more details?',
         'more about his work',
-        'list all timos work and projects',
+        'give me nice summary of all work and projects',
       ].entries()) {
         panel.querySelector('textarea')!.value = question;
         panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
@@ -1878,7 +1976,7 @@ describe('Ask public page content', () => {
         'en',
       )!;
       const lookup = vi.fn<typeof fetch>(async (path) =>
-        path === SITE_CONTENT_PATH
+        path === '/ask-content-en.json'
           ? Response.json(content)
           : new Response(null, { status: 503 }),
       );
@@ -1966,7 +2064,7 @@ describe('Ask public page content', () => {
         ),
       );
       const fakeFetch = vi.fn<typeof fetch>(async (path) =>
-        path === SITE_CONTENT_PATH
+        path === '/ask-content-en.json'
           ? Response.json(content)
           : new Response(null, { status: 503 }),
       );
@@ -2227,7 +2325,7 @@ describe('Ask public page content', () => {
       const marker = 'Private preview test marker.';
       let petsRequests = 0;
       const fakeFetch = vi.fn<typeof fetch>(async (path) => {
-        if (path === SITE_CONTENT_PATH) return Response.json(index());
+        if (path === '/ask-content-en.json') return Response.json(index());
         if (path === '/api/ask-local-pets') {
           petsRequests += 1;
           return petsRequests === 1
@@ -2280,56 +2378,56 @@ describe('Ask public page content', () => {
       'Thanks, which GPU does the workstation use?',
       'RTX 5090',
       200,
-      [SITE_CONTENT_PATH, '/api/ask'],
+      ['/ask-content-en.json', '/api/ask'],
       ['/homelab/'],
     ],
     [
       'usage of AI?',
       'Local language model inference at home.',
       503,
-      [SITE_CONTENT_PATH],
+      ['/ask-content-en.json'],
       ['/homelab/', '/projects/hearthcoil/'],
     ],
     [
       'Tell me about the homelab?',
       'I self-host this website',
       503,
-      [SITE_CONTENT_PATH],
+      ['/ask-content-en.json'],
       ['/homelab/'],
     ],
     [
       'How much RAM does the workstation have?',
       '32 GB DDR5',
       503,
-      [SITE_CONTENT_PATH, '/api/ask'],
+      ['/ask-content-en.json', '/api/ask'],
       ['/homelab/'],
     ],
     [
       'Which GPU does the workstation use?',
       'RTX 5090',
       200,
-      [SITE_CONTENT_PATH, '/api/ask'],
+      ['/ask-content-en.json', '/api/ask'],
       ['/homelab/'],
     ],
     [
       'How much RAM does the workstation have?',
       'Rate limited. Try again shortly.',
       429,
-      [SITE_CONTENT_PATH, '/api/ask'],
+      ['/ask-content-en.json', '/api/ask'],
       ['/homelab/'],
     ],
     [
       'How is the website built and where is the website hosted?',
       'GitHub Actions',
       503,
-      [SITE_CONTENT_PATH],
+      ['/ask-content-en.json'],
       ['/projects/this-website/', '/homelab/'],
     ],
     [
       'Which GPU does the workstation use and how much did it cost?',
       'Evidence needed for “how much did it cost?”',
       503,
-      [SITE_CONTENT_PATH],
+      ['/ask-content-en.json'],
       ['/homelab/'],
     ],
   ] as const)(
@@ -2339,7 +2437,7 @@ describe('Ask public page content', () => {
       try {
         vi.stubGlobal('document', window.document);
         const fakeFetch = vi.fn(async (path: string) => {
-          if (path === SITE_CONTENT_PATH) return Response.json(index());
+          if (path === '/ask-content-en.json') return Response.json(index());
           return apiStatus === 200
             ? Response.json(
                 documentAnswer([], 'unknown', 'index', 'en', 'fixture'),

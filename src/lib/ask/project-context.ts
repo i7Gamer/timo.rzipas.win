@@ -60,11 +60,13 @@ export function projectFollowUp(terms: string, history: readonly ChatTurn[]) {
   if (otherProjects.test(terms)) return { listRequested: true as const };
   if (!moreQuestion.test(terms)) return;
   const root = history.findLast(
-    ({ question }) => !moreQuestion.test(normalize(question)),
+    ({ question }) =>
+      otherProjects.test(normalize(question)) ||
+      !moreQuestion.test(normalize(question)),
   );
   if (!root) return;
   const anchor = normalize(root.question);
-  if (otherProjects.test(anchor)) return {};
+  if (otherProjects.test(anchor)) return { preserveSubjects: true as const };
   const mentioned = mentionedProjects(root.answer);
   if (!projectOverview.test(anchor)) {
     const named = mentionedProjects(anchor);

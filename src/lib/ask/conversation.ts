@@ -48,9 +48,20 @@ export const languageQuestion =
   /^(?:(?:programming )?lang(?:ua|au)ges?|(?:programmier)?sprachen?|(?:in )?(?:what|which) (?:programming )?lang(?:ua|au)ges?(?: (?:does (?:it )?)?use| (?:is|was) (?:it )?(?:written|built) in| was used for)?|(?:welche[nr]?|in welcher) (?:programmier)?sprachen?(?: (?:nutzt|verwendet|geschrieben|ist geschrieben)(?: es)?)?)$/;
 const countQuestion =
   /^(?:how many (?:letters? )?["'“‘]?(\p{L})["'”’]?s? (?:are |are there )?in|wie viele (?:buchstaben )?["'„]?(\p{L})["'“]? (?:sind |gibt es )?in)(?: the word| dem wort| im wort)?\s+["'“‘„]?(\p{L}+)["'”’“]?[?.!]*$/iu;
+const ambiguousShortFragment = /^[\p{L}\p{N}_-]{1,4}$/u;
 
 export function questionLocale(question: string, fallback: Locale): Locale {
   const text = normalize(question);
+  // One-word fragments are often project names, labels, or continuation prompts.
+  // Let conversation state decide unless the word itself is a clear sentence cue.
+  if (ambiguousShortFragment.test(text) && text !== 'work') return fallback;
+  const leadingGerman =
+    /^(?:wann|wozu|warum|woran|womit|wofuer|wie|wer|welche[nr]?|nutzt|verwendet|verhindert|gib|fanden|kostet|hat|macht|ist|sind|war|wird|kann|kannst)\b/u;
+  const leadingEnglish =
+    /^(?:what|which|where|when|who|why|how|can|could|did|do|does|is|are|were|would|will|has|have|tell|show|please|ignore|open)\b/u;
+  const startsGerman = leadingGerman.test(text);
+  const startsEnglish = leadingEnglish.test(text);
+  if (startsGerman !== startsEnglish) return startsGerman ? 'de' : 'en';
   if (/^was (?:the|this|that|it|he|she|there)\b/.test(text)) return 'en';
   // English past-tense questions invert the auxiliary and subject; a following
   // English article is a strong signal that "Was" is not German "what".
@@ -61,6 +72,12 @@ export function questionLocale(question: string, fallback: Locale): Locale {
     )
   )
     return 'en';
+  if (
+    /^was (?:kostet|hat|macht|nutzt|verwendet|ist|sind|war|wird|kann|kannst|bedeutet|enthaelt|zeigt|erzaehlt|verhindert)\b/.test(
+      text,
+    )
+  )
+    return 'de';
   if (text === 'was') return fallback;
   const german =
     /^war /.test(text) ||
