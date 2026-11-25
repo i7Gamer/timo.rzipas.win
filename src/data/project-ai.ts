@@ -31,12 +31,12 @@ export const PROJECT_AI_NOTES: Readonly<
 > = {
   hearthcoil: {
     development: {
-      en: 'Timo uses Claude Code and Codex to implement changes and obtain independent reviews. He reviews diffs, checks test results and playtests weekly. A supervisor, dashboard and companion app coordinate development, reviews and Unity runs.',
-      de: 'Timo nutzt Claude Code und Codex für Änderungen und unabhängige Reviews. Er prüft Diffs und Testergebnisse und spielt wöchentlich. Supervisor, Dashboard und Companion-App koordinieren Entwicklung, Reviews und Unity-Läufe.',
+      en: 'Timo uses Claude Code and Codex throughout Hearthcoil’s development to implement changes and get independent reviews. He reviews diffs, checks test results and playtests weekly. A supervisor, dashboard and companion app coordinate development, reviews and Unity runs.',
+      de: 'Timo setzt Claude Code und Codex in allen Bereichen der Entwicklung von Hearthcoil für Änderungen und unabhängige Reviews ein. Er prüft Diffs und Testergebnisse und führt wöchentliche Spieltests durch. Supervisor, Dashboard und Companion-App koordinieren Entwicklung, Reviews und Unity-Läufe.',
     },
     product: {
-      en: 'These are development tools. Use of an LLM for enemies or gameplay has not been verified.',
-      de: 'Das sind Entwicklungswerkzeuge. Ein LLM-Einsatz bei Gegnern oder im Spielablauf ist nicht verifiziert.',
+      en: 'Hearthcoil’s game mechanics run without AI or language models.',
+      de: 'Hearthcoils Spielmechanik funktioniert ohne KI oder Sprachmodelle.',
     },
   },
   tutto: {

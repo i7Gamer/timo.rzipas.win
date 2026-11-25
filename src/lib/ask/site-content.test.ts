@@ -1327,6 +1327,37 @@ describe('Ask public page content', () => {
     });
   });
 
+  it.each([
+    [
+      'en',
+      'Does Hearthcoil use an LLM for gameplay?',
+      /without AI or language models/,
+    ],
+    ['de', 'Nutzt Hearthcoil KI im Spiel?', /ohne KI oder Sprachmodelle/],
+  ] as const)(
+    'cites Hearthcoil gameplay details in %s',
+    (locale, question, excerpt) => {
+      const content: SiteContent = {
+        locale,
+        pages: [
+          extractPage(
+            '<main><h1>Hearthcoil</h1></main>',
+            '/projects/hearthcoil/',
+          ),
+        ],
+      };
+      expect(findSiteContent(question, content, 'overview')).toMatchObject({
+        status: 'answer',
+        sources: [
+          {
+            href: '/projects/hearthcoil/',
+            excerpts: [expect.stringMatching(excerpt)],
+          },
+        ],
+      });
+    },
+  );
+
   it('distinguishes development assistance from product behavior and refuses invented percentages', () => {
     const index: SiteContent = {
       locale: 'en',

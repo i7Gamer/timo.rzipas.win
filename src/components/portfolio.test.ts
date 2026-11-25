@@ -141,6 +141,11 @@ describe('portfolio components', () => {
           expect(section?.textContent).toContain(
             locale === 'en' ? 'AI use' : 'KI-Einsatz',
           );
+          expect(section?.textContent).toContain(
+            locale === 'en'
+              ? 'Hearthcoil’s game mechanics run without AI or language models.'
+              : 'Hearthcoils Spielmechanik funktioniert ohne KI oder Sprachmodelle.',
+          );
         } else {
           expect(section).toBeNull();
         }
