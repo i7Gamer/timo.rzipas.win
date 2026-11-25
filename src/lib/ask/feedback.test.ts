@@ -1,10 +1,12 @@
 import { request, type Server } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { SummarizeFacts } from '../../../services/ask/ollama';
 import { createGateway } from '../../../services/ask/server';
 import { prepareQuestion } from '../../../services/ask/selection';
 import { selectChatHistory, type ChatTurn } from './history';
-import { EXTENDED_PITCH_IDS } from './catalog';
+import { EXTENDED_PITCH_IDS, validateResult } from './catalog';
 import { careerAnchorIndex } from './career';
+import { corpusVersion } from './version';
 
 let gateway: Server | undefined;
 let port = 0;
@@ -69,6 +71,84 @@ afterEach(async () => {
 });
 
 describe('portfolio Ask feedback regressions', () => {
+  it.each([
+    ['en', 'summary of his CV', 'longer summary please', 'abacus-workflow'],
+    [
+      'de',
+      'Zusammenfassung von Timos Projekten',
+      'Eine längere Zusammenfassung bitte',
+      'hearthcoil-game',
+    ],
+    [
+      'en',
+      'summarize work experience',
+      'a more detailed summary please',
+      'tutoring',
+    ],
+    [
+      'en',
+      'give me good 200 word pitch about timo',
+      'make the summary longer',
+      'abacus-workflow',
+    ],
+  ] as const)(
+    'expands %s summary %s through the model and after the request quota',
+    async (locale, question, followUp, extra) => {
+      const summarize = vi.fn<SummarizeFacts>(async (_locale, claims) => ({
+        ids: [...claims].reverse().map(({ id }) => id),
+      }));
+      await open({ local: true, summarize });
+      const initial = (await ask(question, locale)).body.claims!;
+      const history = [
+        { question, answer: initial.map(({ text }) => text).join(' ') },
+      ];
+      const expanded = (await ask(followUp, locale, history)).body;
+      expect(expanded).toMatchObject({ status: 'answer', mode: 'local' });
+      expect(validateResult(expanded, locale, corpusVersion)).toEqual(expanded);
+      expect(expanded.claims!.length).toBeGreaterThan(initial.length);
+      expect(expanded.claims).toEqual(
+        expect.arrayContaining([
+          ...initial,
+          expect.objectContaining({ id: extra }),
+        ]),
+      );
+      for (let index = 0; index < 4; index++) await ask('where is timo based');
+      const limited = await ask(followUp, locale, history);
+      expect(limited.status).toBe(200);
+      expect(limited.body).toMatchObject({ status: 'answer', mode: 'index' });
+      expect(limited.body.claims).toEqual(
+        expect.arrayContaining(expanded.claims!),
+      );
+      expect(summarize).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('preserves the full expansion when the summarizer drops a claim', async () => {
+    await open({
+      local: true,
+      summarize: async (_locale, claims) => ({
+        ids: claims.slice(0, -1).map(({ id }) => id),
+      }),
+    });
+    const { body } = await ask('longer summary please', 'en', [
+      { question: 'summary of projects', answer: 'Earlier project summary' },
+    ]);
+    expect(body).toMatchObject({ status: 'answer', mode: 'index' });
+    expect(body.claims?.at(-1)?.id).toBe('portfolio-website-architecture');
+  });
+
+  it('does not revive an earlier summary after a topic switch', async () => {
+    await open();
+    expect(
+      (
+        await ask('longer summary please', 'en', [
+          { question: 'summary of his CV', answer: 'Earlier CV summary' },
+          { question: 'pets?', answer: 'Timo has three cats.' },
+        ])
+      ).body,
+    ).toMatchObject({ status: 'unknown', claims: [] });
+  });
+
   it.each([true, false])(
     'only accepts a model-led pitch with all approved paragraphs (%s)',
     async (complete) => {

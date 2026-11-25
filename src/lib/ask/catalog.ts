@@ -25,6 +25,16 @@ export const PROJECT_OVERVIEW_IDS = [
   'myspeed-fork',
   'tutto-modes',
 ] as const;
+export const CV_OVERVIEW_IDS = [
+  'career-role-titles',
+  'cv-degree',
+  'cv-matura',
+] as const;
+export const WORK_EXPERIENCE_IDS = [
+  'abacus-workflow',
+  'stadler-vpn',
+  'stadler-plugins',
+] as const;
 export const EXTENDED_PITCH_IDS = [
   'portfolio-pitch',
   'career-role-titles',
@@ -34,15 +44,57 @@ export const EXTENDED_PITCH_IDS = [
   'spotify-rewrite',
   'homelab-motivation',
 ] as const;
+export const expandedSummaries = {
+  'longer summary of his cv': [
+    ...CV_OVERVIEW_IDS,
+    ...WORK_EXPERIENCE_IDS,
+    'tutoring',
+  ],
+  'longer summary of his work experience': [
+    ...WORK_EXPERIENCE_IDS,
+    'tutoring',
+    'early-stadler',
+    'carini-team',
+  ],
+  'longer summary of his projects': [
+    ...PROJECT_OVERVIEW_IDS,
+    'hearthcoil-game',
+    'bachelor-contribution',
+    'carini-team',
+    'portfolio-website-architecture',
+  ],
+  'longer summary of timo': [
+    ...EXTENDED_PITCH_IDS,
+    'portfolio-project-inventory',
+    'abacus-workflow',
+    'stadler-vpn',
+  ],
+} as const;
 export const extendedPitchLead = {
   en: 'Here’s a pitch of about 200 words.',
   de: 'Hier ist ein Pitch mit rund 200 Wörtern.',
 } as const;
 
-export function hasExtendedPitchClaims(claims: readonly Pick<Fact, 'id'>[]) {
+function includesExactClaims(
+  claims: readonly Pick<Fact, 'id'>[],
+  ids: readonly string[],
+) {
   return (
-    claims.length === EXTENDED_PITCH_IDS.length &&
-    EXTENDED_PITCH_IDS.every((id) => claims.some((claim) => claim?.id === id))
+    claims.length === ids.length &&
+    ids.every((id) => claims.some((claim) => claim?.id === id))
+  );
+}
+
+export function hasExtendedPitchClaims(claims: readonly Pick<Fact, 'id'>[]) {
+  return includesExactClaims(claims, EXTENDED_PITCH_IDS);
+}
+
+function hasExtendedSummaryClaims(claims: readonly Pick<Fact, 'id'>[]) {
+  return (
+    hasExtendedPitchClaims(claims) ||
+    Object.values(expandedSummaries).some((ids) =>
+      includesExactClaims(claims, ids),
+    )
   );
 }
 
@@ -50,7 +102,7 @@ export function summaryRequiresAllFacts(
   claims: readonly Pick<Fact, 'id' | 'sourceId'>[],
 ) {
   return (
-    hasExtendedPitchClaims(claims) ||
+    hasExtendedSummaryClaims(claims) ||
     claims.some(({ sourceId }) => sourceId === 'cv')
   );
 }
@@ -156,7 +208,7 @@ export function validateResult(
     !['index', 'local'].includes(mode) ||
     !Array.isArray(claims) ||
     (claims.length > MAX_CLAIMS &&
-      (status !== 'answer' || !hasExtendedPitchClaims(claims))) ||
+      (status !== 'answer' || !hasExtendedSummaryClaims(claims))) ||
     (status === 'unknown') !== (claims.length === 0) ||
     !Array.isArray(citations) ||
     'summary' in result ||

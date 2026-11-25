@@ -1,10 +1,13 @@
 import type { Locale } from '../../i18n';
 import {
+  CV_OVERVIEW_IDS,
+  expandedSummaries,
   facts,
   EXTENDED_PITCH_IDS,
   MAX_CLAIMS,
   normalize,
   PROJECT_OVERVIEW_IDS,
+  WORK_EXPERIENCE_IDS,
   type MissingDetail,
 } from './catalog.ts';
 import type { ChatTurn } from './history.ts';
@@ -105,11 +108,7 @@ export const PET_DETAIL_IDS = [
   'about.cats.benji',
 ] as const;
 
-export const WORK_EXPERIENCE_IDS = [
-  'abacus-workflow',
-  'stadler-vpn',
-  'stadler-plugins',
-] as const;
+export { WORK_EXPERIENCE_IDS };
 
 export function asksAboutOtherCats(terms: string) {
   return /^(?:(?:what (?:are|about) )?(?:(?:colou?rs?|coats?|breeds?) (?:of )?)?(?:the )?other (?:two|2)(?: (?:cats|pets))?|(?:(?:welche )?(?:farben?|fellfarben?|rassen?) (?:haben |der )?)?(?:die )?anderen (?:zwei|2)(?: katzen)?)$/.test(
@@ -201,6 +200,8 @@ const extendedPitch =
   /^(?:(?:(?:give|write|show) me )?(?:a )?(?:(?:good|nice|clear) )?(?:200 word (?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)|(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?) (?:in|of) (?:about |around )?200 words)|(?:schreib(?:e)? mir )?(?:einen? )?(?:guten? )?(?:pitch|kurzprofil|vorstellung) (?:ueber|zu|von) timo (?:in|mit) (?:etwa |rund )?200 woerter[n]?)$/;
 const pitchLengthCorrection =
   /^(?:(?:this|that|it) (?:is not|isn t|was not|wasn t) (?:about )?200 words|(?:das|es) (?:sind|waren) keine 200 woerter)$/;
+const longerSummary =
+  /^(?:(?:(?:(?:can|could) you )?(?:give|write) me )?(?:please )?(?:a )?(?:longer|more detailed) (?:summary|overview)(?: please)?|(?:(?:can|could) you )?make (?:the (?:summary|pitch)|it|that) (?:a bit |a little )?longer(?: please)?|(?:bitte )?(?:eine )?(?:laengere|ausfuehrlichere) (?:zusammenfassung|uebersicht)(?: bitte)?|(?:bitte )?etwas ausfuehrlicher(?: bitte)?)$/;
 const interestingHighlight =
   /^(?:(?:(?:tell|show|give) me |what (?:is|s) )?(?:one |an? |the )?(?:most )?(?:interesting|surprising|fun) (?:detail|fact|thing)(?: about (?:timo(?: rzipa)?|him|his work|the portfolio))?(?: please)?|(?:(?:nenn|zeig) mir )?(?:ein )?(?:interessantes|spannendes|ueberraschendes) (?:detail|beispiel)(?: (?:ueber|zu) timo)?(?: bitte)?)$/;
 const workAndProjectInventory =
@@ -256,6 +257,35 @@ export function profileHighlightIds(
 
 export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
   const previous = normalize(history.at(-1)?.question ?? '');
+  if (longerSummary.test(terms)) {
+    const anchor = normalize(
+      history.findLast(({ question }) => {
+        const prior = normalize(question);
+        return (
+          !longerSummary.test(prior) &&
+          !pitchLengthCorrection.test(prior) &&
+          !moreQuestion.test(prior)
+        );
+      })?.question ?? '',
+    );
+    const overview = summaryOverviewIds(anchor);
+    if (overview === CV_OVERVIEW_IDS) return 'longer summary of his cv';
+    if (overview === WORK_EXPERIENCE_IDS || workTopic.test(anchor))
+      return 'longer summary of his work experience';
+    if (
+      overview === PROJECT_OVERVIEW_IDS ||
+      /^(?:projects|projekte)$/.test(anchor) ||
+      projectInventory.test(anchor)
+    )
+      return 'longer summary of his projects';
+    if (
+      overview === EXTENDED_PITCH_IDS ||
+      overview?.includes('portfolio-pitch') ||
+      workAndProjectInventory.test(anchor)
+    )
+      return 'longer summary of timo';
+    return anchor && Object.hasOwn(expandedSummaries, anchor) ? anchor : terms;
+  }
   if (pitchLengthCorrection.test(terms)) {
     const previousPitch = normalize(
       history.findLast(
@@ -296,6 +326,10 @@ export function profileQuestionNote(
   locale: Locale,
   question = terms,
 ) {
+  if (longerSummary.test(terms))
+    return locale === 'de'
+      ? 'Möchtest du eine längere Zusammenfassung von Timos Lebenslauf, seiner Berufserfahrung oder seinen Projekten?'
+      : 'Would you like a longer summary of Timo’s CV, work experience, or projects?';
   if (personalJudgment.test(terms))
     return locale === 'de'
       ? 'Das öffentliche Portfolio beschreibt Timos Arbeit und Projekte. Möchtest du nach einer konkreten Projektgrenze oder einem Zeitraum im Lebenslauf fragen?'
@@ -328,6 +362,8 @@ export function modelOverviewIds(terms: string): readonly string[] | undefined {
 export function summaryOverviewIds(
   terms: string,
 ): readonly string[] | undefined {
+  if (Object.hasOwn(expandedSummaries, terms))
+    return expandedSummaries[terms as keyof typeof expandedSummaries];
   if (extendedPitch.test(terms)) return EXTENDED_PITCH_IDS;
   if (profilePitch.test(terms)) return ['portfolio-pitch'];
   if (openSourceDescription.test(terms)) return OPEN_SOURCE_IDS;
@@ -344,7 +380,7 @@ export function summaryOverviewIds(
       subject,
     )
   )
-    return ['career-role-titles', 'cv-degree', 'cv-matura'];
+    return CV_OVERVIEW_IDS;
   if (englishWorkSummary.test('summary of ' + subject))
     return WORK_EXPERIENCE_IDS;
   if (

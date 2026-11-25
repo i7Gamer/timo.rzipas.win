@@ -27,6 +27,7 @@ import {
   modelOverviewIds,
   needsDatedWorkEvidence,
   PET_DETAIL_IDS,
+  profileFollowUp,
   profileHighlightIds,
   profileQuestionNote,
   questionClauses,
@@ -705,7 +706,10 @@ export function findSiteContent(
   subject?: SiteSubject,
   history: readonly ChatTurn[] = [],
 ): SiteAnswer | null {
-  const normalized = normalize(question).replace(/\bhome lab\b/g, 'homelab');
+  const normalized = profileFollowUp(normalize(question), history).replace(
+    /\bhome lab\b/g,
+    'homelab',
+  );
   if (outOfScope.test(normalized)) return null;
   const requestedClauses = questionClauses(question);
   const compound = requestedClauses.length > 1 || nextClause.test(question);

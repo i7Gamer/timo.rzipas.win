@@ -1987,6 +1987,8 @@ describe('Ask public page content', () => {
         'any more details?',
         'more about his work',
         'nice summary of work and projects',
+        'summary of his CV',
+        'longer summary please',
       ].entries()) {
         panel.querySelector('textarea')!.value = question;
         panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
@@ -2010,11 +2012,18 @@ describe('Ask public page content', () => {
         expect.objectContaining({
           question: 'nice summary of work and projects',
         }),
+        expect.objectContaining({ question: 'summary of his CV' }),
+        expect.objectContaining({ question: 'longer summary of his cv' }),
       ]);
-      const [pitch, highlight, work, inventory] = replies();
+      const [pitch, highlight, work, inventory, cv, expandedCv] = replies();
       expect(pitch.textContent).toMatch(/Abacus.*Stadler/s);
       expect(highlight.textContent).toMatch(/Hearthcoil.*launcher/is);
       expect(work.textContent).toMatch(/Abacus.*Stadler/s);
+      expect(cv.textContent).toContain('HTL Dornbirn');
+      expect(expandedCv.textContent).toContain('HTL Dornbirn');
+      expect(expandedCv.textContent).toContain('Java/Vaadin');
+      expect(expandedCv.textContent).toContain('VPN certificates');
+      expect(expandedCv.querySelector('a[href="/about/"]')).not.toBeNull();
       for (const project of [
         'SpotifyTracker',
         'Tutto',

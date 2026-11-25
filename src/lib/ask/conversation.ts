@@ -85,7 +85,7 @@ export function questionLocale(question: string, fallback: Locale): Locale {
     /^was (?:kostet|hat|macht|nutzt|verwendet|ist|sind|war|wird|kann|kannst|bedeutet|enthaelt|zeigt|erzaehlt)\b/.test(
       text,
     ) ||
-    /\b(?:wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses|ausbildung|freizeit|schwaechen|lebenslauf|spannendes|interessantes|kurzprofil|projekte|arbeit)\b/.test(
+    /\b(?:wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses|ausbildung|freizeit|schwaechen|lebenslauf|spannendes|interessantes|kurzprofil|projekte|arbeit|zusammenfassung|ausfuehrlicher)\b/.test(
       text,
     );
   const english =
