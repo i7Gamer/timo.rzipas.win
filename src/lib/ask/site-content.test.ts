@@ -101,6 +101,9 @@ describe('Ask public page content', () => {
     expect(
       findSiteContent('sumamrize all projects', content, 'overview'),
     ).toEqual(expected);
+    expect(
+      findSiteContent('sumamrize all proejcts', content, 'overview'),
+    ).toEqual(expected);
   });
 
   it('renders accessible toolbar contrast classes and the Spotify anchor with sticky offset', async () => {
@@ -380,6 +383,10 @@ describe('Ask public page content', () => {
     expect(questionLocale('Arbeit', 'en')).toBe('de');
     expect(questionLocale('Mehr über die Arbeit', 'en')).toBe('de');
     expect(questionLocale('Work', 'de')).toBe('en');
+    expect(questionLocale('Länger bitte', 'en')).toBe('de');
+    expect(questionLocale('Longer', 'de')).toBe('en');
+    expect(questionLocale('sumamrize all proejcts', 'de')).toBe('en');
+    expect(questionLocale('Zusamenfassung seiner Projetke', 'en')).toBe('de');
   });
 
   it.each([
@@ -1864,6 +1871,17 @@ describe('Ask public page content', () => {
   it('corrects small, unambiguous spelling errors in project names', () => {
     expect(resolveSiteNames('Tell me about heathcoul?', index())).toEqual({
       question: 'Tell me about Hearthcoil?',
+      alternatives: [],
+    });
+    const content = index();
+    content.pages.push(
+      extractPage(
+        '<main><h1>Tutto</h1><p>A dice game.</p></main>',
+        '/projects/tutto/',
+      ),
+    );
+    expect(resolveSiteNames('Tell me about Tutot?', content)).toEqual({
+      question: 'Tell me about Tutto?',
       alternatives: [],
     });
     expect(

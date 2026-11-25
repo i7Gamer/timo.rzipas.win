@@ -10,7 +10,7 @@ import {
   WORK_EXPERIENCE_IDS,
   type MissingDetail,
 } from './catalog.ts';
-import type { ChatTurn } from './history.ts';
+import { acknowledgement, type ChatTurn } from './history.ts';
 import { isSingleTypo } from './spelling.ts';
 
 type ReviewedAnswer = {
@@ -33,8 +33,13 @@ const genreCount =
   /\b(?:how many genres|number of genres|wie viele genres|anzahl der genres)\b/;
 const kniffel = /\bkniffel\b/;
 
-export const moreQuestion =
+const plainMoreQuestion =
   /^(?:(?:that ?s the same(?: again)?|you already said that|das hast du schon gesagt) )?(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|erzaehl mir mehr|(?:und )?sonst noch|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
+const shortExpansion =
+  /^(?:(?:please )?(?:a bit |a little )?(?:longer|more detail(?:ed)?)(?: please)?|(?:bitte )?(?:etwas )?(?:laenger|ausfuehrlicher)(?: bitte)?)$/;
+export const moreQuestion = new RegExp(
+  plainMoreQuestion.source + '|' + shortExpansion.source,
+);
 
 export function asksAboutAICoding(terms: string) {
   return (
@@ -166,7 +171,7 @@ const maintainerReview =
   /^(?:what did (?:the |its )?maintainer (?:question|flag) (?:in|about|during) |was (?:hinterfragte|beanstandete) (?:der|die) maintainer(?:in)? (?:bei|beim|an) )/;
 const clauseConnector = '(?:and|also|und|sowie|ausserdem|außerdem)';
 const independentClause =
-  '(?:who|what|which|where|how|when|why|did|does|do|is|are|was|were|can|could|has|have|any (?:holes?|gaps?)|wer|wie|wo|woran|womit|wann|warum|welch\\p{L}*|hat|gibt|ist|kann|auf welchem|lücken)\\b';
+  '(?:who|what|which|where|how|when|why|did|does|do|is|are|was|were|can|could|has|have|any (?:holes?|gaps?)|explain|summari[sz]e|(?:tell|show|give) me|wer|wie|wo|woran|womit|wann|warum|welch\\p{L}*|hat|gibt|ist|kann|auf welchem|lücken|erkl(?:ä|ae)r(?:e)?|(?:gib|zeig|erzähl) mir)\\b';
 const sentenceBoundary = /[?;]\s*(?=\p{L})/u;
 const clauseBoundary = new RegExp(
   sentenceBoundary.source +
@@ -202,23 +207,91 @@ const extendedPitch =
 const pitchLengthCorrection =
   /^(?:(?:this|that|it) (?:is not|isn t|was not|wasn t) (?:about )?200 words|(?:das|es) (?:sind|waren) keine 200 woerter)$/;
 const longerSummary =
-  /^(?:(?:(?:(?:can|could) you )?(?:give|write) me )?(?:please )?(?:a )?(?:longer|more detailed) (?:summary|overview)(?: please)?|(?:(?:can|could) you )?make (?:the (?:summary|pitch)|it|that) (?:a bit |a little )?longer(?: please)?|(?:bitte )?(?:eine )?(?:laengere|ausfuehrlichere) (?:zusammenfassung|uebersicht)(?: bitte)?|(?:bitte )?etwas ausfuehrlicher(?: bitte)?)$/;
+  /^(?:(?:(?:(?:can|could) you )?(?:give|write) me )?(?:please )?(?:a )?(?:longer|more detailed) (?:summary|overview)(?: please)?|(?:(?:can|could) you )?make (?:the (?:summary|pitch)|it|that) (?:a bit |a little )?longer(?: please)?|(?:bitte )?(?:eine )?(?:laengere|ausfuehrlichere) (?:zusammenfassung|uebersicht)(?: bitte)?)$/;
 const interestingHighlight =
   /^(?:(?:(?:tell|show|give) me |what (?:is|s) )?(?:one |an? |the )?(?:most )?(?:interesting|surprising|fun) (?:detail|fact|thing)(?: about (?:timo(?: rzipa)?|him|his work|the portfolio))?(?: please)?|(?:(?:nenn|zeig) mir )?(?:ein )?(?:interessantes|spannendes|ueberraschendes) (?:detail|beispiel)(?: (?:ueber|zu) timo)?(?: bitte)?)$/;
-const workAndProjectInventory =
-  /^(?:(?:please )?(?:list|show(?: me)?|give me|what are) (?:all (?:of )?)?(?:(?:timo ?s|his|your|the) )?(?:(?:work(?: experience)?|jobs?|roles?) and (?:personal )?projects|projects and (?:work(?: experience)?|jobs?|roles?))(?: (?:of|by|from) timo)?(?: please)?|(?:liste|zeig(?: mir)?) (?:alle? )?(?:timos )?(?:arbeit|jobs?|stellen|berufserfahrung) und projekte[n]?(?: von timo)?(?: auf)?)$/;
+const careerInventorySubject =
+  '(?:work(?: experience)?|(?:professional )?experience|career(?: history)?|jobs?|roles?)';
+const workAndProjectInventory = new RegExp(
+  '^(?:(?:please )?(?:list|show(?: me)?|give me|what are) (?:all (?:of )?)?(?:(?:timo ?s|his|your|the) )?' +
+    '(?:' +
+    careerInventorySubject +
+    ' and (?:personal )?projects|(?:personal )?projects and ' +
+    careerInventorySubject +
+    ')' +
+    '(?: (?:of|by|from) timo)?(?: please)?|(?:liste|zeig(?: mir)?) (?:alle? )?(?:timos )?(?:arbeit|jobs?|stellen|berufserfahrung) und projekte[n]?(?: von timo)?(?: auf)?)$',
+);
 const inventorySummaryEn =
-  /^(?:(?:can|could|would) you )?(?:please )?(?:summari[sz]e|sum up|(?:(?:give|show|write) me )?(?:an? )?(?:(?:nice|short|quick|brief|concise) )?summary (?:of|about)) /;
+  /^(?:(?:can|could|would) you )?(?:please )?(?:summari[sz]e|sum up|(?:(?:give|show|write) me )?(?:an? )?(?:(?:nice|short|quick|brief|concise) )?(?:summary|(?<overview>overview)) (?:of|about)) /;
 const inventorySummaryDe =
-  /^(?:(?:gib|zeig|schreib) mir )?(?:bitte )?(?:eine )?(?:(?:kurze|knappe) )?zusammenfassung (?:von|ueber) /;
+  /^(?:(?:gib|zeig|schreib) mir )?(?:bitte )?(?:eine )?(?:(?:kurze|knappe|schoene|ausfuehrliche) )?(?:zusammenfassung|uebersicht) (?:(?:von|ueber) )?/;
+const germanSummarize =
+  /^(?:bitte )?fass(?:e)? (?:mir )?(?:bitte )?(.+) zusammen(?: bitte)?$/;
 const summaryStyleTail =
   /(?: (?:nicely|briefly|concisely|in (?:a few words|simple terms)|please|bitte|kurz|knapp))+$/;
-const summaryKeywords = [
+const MAX_SUMMARY_TYPOS = 2;
+const summaryWords = [
   'summarize',
-  'summarise',
   'summary',
+  'overview',
+  'longer',
+  'detailed',
+  'work',
+  'experience',
+  'career',
+  'projects',
   'zusammenfassung',
+  'uebersicht',
+  'zusammen',
+  'laenger',
+  'laengere',
+  'ausfuehrlichere',
+  'ausfuehrlicher',
+  'projekte',
+  'projekten',
+  'lebenslauf',
+  'berufserfahrung',
 ];
+const literalSummaryWords = new Set([
+  ...summaryWords,
+  'summarise',
+  'project',
+  'projekt',
+  'works',
+  'word',
+]);
+
+function repairSummarySpelling(terms: string) {
+  let fixes = 0;
+  const repaired = terms.split(' ').map((word) => {
+    if (literalSummaryWords.has(word)) return word;
+    const matches = summaryWords.filter(
+      (expected) =>
+        isSingleTypo(word, expected) ||
+        (expected === 'summarize' && isSingleTypo(word, 'summarise')),
+    );
+    if (matches.length !== 1) return word;
+    fixes++;
+    return matches[0];
+  });
+  return fixes > 0 && fixes <= MAX_SUMMARY_TYPOS ? repaired.join(' ') : terms;
+}
+
+function isSummaryExpansion(terms: string) {
+  if (longerSummary.test(terms) || shortExpansion.test(terms)) return true;
+  const repaired = repairSummarySpelling(terms);
+  return longerSummary.test(repaired) || shortExpansion.test(repaired);
+}
+
+export function repairReviewedSummaryText(terms: string) {
+  const repaired = repairSummarySpelling(terms);
+  return repaired !== terms &&
+    (exactSummaryOverviewIds(repaired) ||
+      longerSummary.test(repaired) ||
+      shortExpansion.test(repaired))
+    ? repaired
+    : terms;
+}
 const WORK_AND_PROJECT_IDS = [
   'career-role-titles',
   'portfolio-project-inventory',
@@ -264,14 +337,15 @@ export function profileHighlightIds(
 
 export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
   const previous = normalize(history.at(-1)?.question ?? '');
-  if (longerSummary.test(terms)) {
+  if (isSummaryExpansion(terms)) {
     const anchor = normalize(
       history.findLast(({ question }) => {
         const prior = normalize(question);
         return (
-          !longerSummary.test(prior) &&
+          !isSummaryExpansion(prior) &&
           !pitchLengthCorrection.test(prior) &&
-          !moreQuestion.test(prior)
+          !moreQuestion.test(prior) &&
+          !acknowledgement.test(prior)
         );
       })?.question ?? '',
     );
@@ -291,7 +365,9 @@ export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
       workAndProjectInventory.test(anchor)
     )
       return 'longer summary of timo';
-    return anchor && Object.hasOwn(expandedSummaries, anchor) ? anchor : terms;
+    if (anchor && Object.hasOwn(expandedSummaries, anchor)) return anchor;
+    if (shortExpansion.test(repairSummarySpelling(terms)))
+      terms = anchor ? 'tell me more' : 'longer summary please';
   }
   if (pitchLengthCorrection.test(terms)) {
     const previousPitch = normalize(
@@ -333,7 +409,7 @@ export function profileQuestionNote(
   locale: Locale,
   question = terms,
 ) {
-  if (longerSummary.test(terms))
+  if (isSummaryExpansion(terms))
     return locale === 'de'
       ? 'Möchtest du eine längere Zusammenfassung von Timos Lebenslauf, seiner Berufserfahrung oder seinen Projekten?'
       : 'Would you like a longer summary of Timo’s CV, work experience, or projects?';
@@ -371,17 +447,8 @@ export function summaryOverviewIds(
 ): readonly string[] | undefined {
   const exact = exactSummaryOverviewIds(terms);
   if (exact) return exact;
-  const words = terms.split(' ');
-  for (const [index, word] of words.entries()) {
-    if (summaryKeywords.includes(word)) continue;
-    const replacement = summaryKeywords.find((keyword) =>
-      isSingleTypo(word, keyword),
-    );
-    if (!replacement) continue;
-    const corrected = words.with(index, replacement).join(' ');
-    const overview = exactSummaryOverviewIds(corrected);
-    if (overview) return overview;
-  }
+  const repaired = repairSummarySpelling(terms);
+  if (repaired !== terms) return exactSummaryOverviewIds(repaired);
 }
 
 function exactSummaryOverviewIds(terms: string): readonly string[] | undefined {
@@ -392,10 +459,14 @@ function exactSummaryOverviewIds(terms: string): readonly string[] | undefined {
   if (openSourceDescription.test(terms)) return OPEN_SOURCE_IDS;
   if (englishWorkSummary.test(terms) || germanWorkSummary.test(terms))
     return WORK_EXPERIENCE_IDS;
-  const request = terms
-    .replace(inventorySummaryEn, '')
-    .replace(inventorySummaryDe, '')
-    .replace(/^fass(?:e)? (?:mir )?(?:bitte )?zusammen /, '');
+  const english = inventorySummaryEn.exec(terms);
+  const request =
+    germanSummarize.exec(terms)?.[1] ??
+    (english
+      ? terms.slice(english[0].length)
+      : terms
+          .replace(inventorySummaryDe, '')
+          .replace(/^fass(?:e)? (?:mir )?(?:bitte )?zusammen /, ''));
   if (request === terms) return;
   const subject = request.replace(summaryStyleTail, '');
   if (
@@ -411,6 +482,8 @@ function exactSummaryOverviewIds(terms: string): readonly string[] | undefined {
     /\b(?:doing|gerade)\b/.test(subject)
   )
     return ['current-work'];
+  if (english?.groups?.overview && /^what (?:he|you) do(?:es)?$/.test(subject))
+    return WORK_EXPERIENCE_IDS;
   if (
     workAndProjectInventory.test('list ' + subject) ||
     workAndProjectInventory.test('liste ' + subject) ||
@@ -419,7 +492,7 @@ function exactSummaryOverviewIds(terms: string): readonly string[] | undefined {
     return [...WORK_AND_PROJECT_IDS, 'portfolio-pitch'];
   }
   if (
-    /^(?:(?:all )?(?:his |timo s |your )?projects|(?:alle )?(?:timos |seine )?projekte[n]?)$/.test(
+    /^(?:(?:all )?(?:his |timo s |your |the )?projects|(?:alle[rn]? )?(?:timos |seine[rn]? |die |der )?projekte[n]?)$/.test(
       subject,
     )
   )

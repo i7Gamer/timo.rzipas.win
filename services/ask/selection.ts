@@ -37,12 +37,11 @@ import {
   projectFollowUp,
   PROJECT_OVERVIEW_PATTERNS,
 } from '../../src/lib/ask/project-context.ts';
-import { editDistance } from '../../src/lib/ask/spelling.ts';
+import { isSingleTypo } from '../../src/lib/ask/spelling.ts';
 import type { Locale } from '../../src/i18n';
 
 const MAX_CANDIDATES = 6;
 const MIN_SPELLING_LENGTH = 5;
-const SINGLE_EDIT = 1;
 const portfolioReference =
   /\b(?:timo|rzipa|portfolio|he|him|his|er|ihn|ihm|sein(?:e|en|er|em|es)?)\b/;
 const employerInWorkQuestion =
@@ -67,9 +66,7 @@ function recoverSpelling(terms: string) {
         return word;
       const matches = [...retrievalWords].filter(
         (candidate) =>
-          candidate[0] === word[0] &&
-          Math.abs(candidate.length - word.length) <= SINGLE_EDIT &&
-          editDistance(word, candidate) === SINGLE_EDIT,
+          candidate[0] === word[0] && isSingleTypo(word, candidate),
       );
       return matches.length === 1 ? matches[0] : word;
     })

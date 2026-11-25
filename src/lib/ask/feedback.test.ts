@@ -2,7 +2,10 @@ import { request, type Server } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SummarizeFacts } from '../../../services/ask/ollama';
 import { createGateway } from '../../../services/ask/server';
-import { prepareQuestion } from '../../../services/ask/selection';
+import {
+  prepareQuestion,
+  type SelectFacts,
+} from '../../../services/ask/selection';
 import { selectChatHistory, type ChatTurn } from './history';
 import { EXTENDED_PITCH_IDS, validateResult } from './catalog';
 import { careerAnchorIndex } from './career';
@@ -74,30 +77,150 @@ describe('portfolio Ask feedback regressions', () => {
   it.each([
     ['en', 'sumamrize all projects', 'summarize all projects'],
     ['en', 'sumarize all projects', 'summarize all projects'],
+    ['en', 'summarize all proejcts', 'summarize all projects'],
+    ['en', 'sumamrize all proejcts', 'summarize all projects'],
+    [
+      'en',
+      'summarize all worl and projects',
+      'summarize all work and projects',
+    ],
     ['en', 'sumamry of his CV', 'summary of his CV'],
+    ['en', 'summarize his work expereince', 'summarize his work experience'],
+    [
+      'de',
+      'Zusammenfassung von Timos Projetken',
+      'Zusammenfassung von Timos Projekten',
+    ],
     [
       'de',
       'Zusamenfassung von Timos Projekten',
       'Zusammenfassung von Timos Projekten',
     ],
+    [
+      'en',
+      'can you give me an overview of his projects?',
+      'summarize all projects',
+    ],
+    [
+      'de',
+      'Fass Timos Projekte zusammen',
+      'Zusammenfassung von Timos Projekten',
+    ],
+    [
+      'de',
+      'Zusammenfassung seiner Projekte',
+      'Zusammenfassung von Timos Projekten',
+    ],
+    [
+      'en',
+      'summarize his projects and experience',
+      'summarize his work and projects',
+    ],
+    [
+      'de',
+      'Gib mir eine schöne Zusammenfassung von Arbeit und Projekten',
+      'Zusammenfassung von Timos Arbeit und Projekten',
+    ],
   ] as const)(
-    'routes a %s summary typo through the same model and evidence',
-    async (locale, typo, correct) => {
+    'uses the same %s summary model and evidence for %s',
+    async (locale, question, baseline) => {
       const summarize = vi.fn<SummarizeFacts>(async (_locale, claims) => ({
         ids: claims.map(({ id }) => id),
       }));
-      const select = vi.fn(async () => ({
-        status: 'unknown' as const,
+      const select = vi.fn<SelectFacts>(async () => ({
+        status: 'unknown',
         slots: [],
       }));
       await open({ local: true, summarize, select });
-      const expected = await ask(correct, locale);
+      const expected = await ask(baseline, locale);
       expect(expected.body).toMatchObject({ status: 'answer', mode: 'local' });
-      expect(await ask(typo, locale)).toEqual(expected);
+      expect(await ask(question, locale)).toEqual(expected);
       expect(summarize).toHaveBeenCalledTimes(2);
       expect(select).not.toHaveBeenCalled();
     },
   );
+
+  it.each([
+    ['en', 'summary of his CV', 'longer please'],
+    ['en', 'summary of his CV', 'A bit more detail'],
+    ['de', 'Zusammenfassung von Timos Lebenslauf', 'länger bitte'],
+    ['de', 'Zusammenfassung von Timos Lebenslauf', 'bitte ausführlicher'],
+  ] as const)(
+    'expands an existing %s summary for a short request',
+    async (locale, question, more) => {
+      await open();
+      const { body } = await ask(more, locale, [
+        { question, answer: 'Previous summary' },
+      ]);
+      expect(body).toMatchObject({ status: 'answer', mode: 'index' });
+      expect(body.claims?.map(({ id }) => id)).toContain('abacus-workflow');
+    },
+  );
+
+  it('recovers transposed project names on the gateway retrieval route', async () => {
+    const select = vi.fn<SelectFacts>(
+      async (_question, _locale, candidates) => ({
+        status: 'answer' as const,
+        slots: [candidates.findIndex(({ id }) => id === 'spotify-rewrite') + 1],
+      }),
+    );
+    await open({ local: true, select });
+    const correct = await ask('Was SpotifyTracker a rewrite?');
+    expect(correct.body).toMatchObject({
+      status: 'answer',
+      claims: [{ id: 'spotify-rewrite' }],
+    });
+    expect(await ask('Was SpoitfyTracker a rewrite?')).toEqual(correct);
+  });
+
+  it.each(['more detail', 'a bit more detail', 'longer please'])(
+    'keeps %s on a named employer when the previous turn was not a summary',
+    async (followUp) => {
+      await open();
+      const question = 'What do you work on at Abacus?';
+      const initial = (await ask(question)).body;
+      const history = [
+        { question, answer: initial.claims!.map(({ text }) => text).join(' ') },
+      ];
+      expect((await ask(followUp, 'en', history)).body).toMatchObject({
+        status: 'answer',
+        claims: [{ id: 'abacus-tests' }],
+      });
+    },
+  );
+
+  it('uses the previous summary after an acknowledgement and a typo in the expansion request', async () => {
+    await open();
+    const question = 'summary of his CV';
+    const initial = (await ask(question)).body;
+    const expanded = await ask('longer sumamry please', 'en', [
+      { question, answer: initial.claims!.map(({ text }) => text).join(' ') },
+      { question: 'thanks', answer: 'You’re welcome!' },
+    ]);
+    expect(expanded.body).toMatchObject({ status: 'answer', mode: 'index' });
+    expect(expanded.body.claims).toEqual(
+      expect.arrayContaining([
+        ...initial.claims!,
+        expect.objectContaining({ id: 'abacus-workflow' }),
+      ]),
+    );
+  });
+
+  it('keeps a supported summary and marks an unsupported second request partial', async () => {
+    await open();
+    const { body } = await ask(
+      'sumamrize all proejcts and explain his net worth',
+    );
+    expect(body).toMatchObject({
+      status: 'partial',
+      missing: 'additional-question',
+      claims: [
+        { id: 'spotify-rewrite' },
+        { id: 'myspeed-fork' },
+        { id: 'tutto-modes' },
+      ],
+    });
+  });
 
   it('keeps a typo in the original question usable as a summary follow-up anchor', async () => {
     await open();
@@ -721,6 +844,8 @@ describe('portfolio Ask feedback regressions', () => {
   it.each([
     'Summarize all his work and projects at Google nicely.',
     'Nice summary of work and projects before 2020.',
+    'Sumamrize all worl and projects at Google.',
+    'Summarize project.',
   ])(
     'preserves scope and abstains on unsupported summary %s',
     async (question) => {

@@ -38,7 +38,7 @@ import {
 import type { ChatTurn } from './history';
 import type { LocalPets } from './local-pets';
 import { answerPets } from './pets';
-import { editDistance } from './spelling';
+import { editDistance, isSingleTypo } from './spelling';
 
 export const SITE_CONTENT_PATH = '/ask-content.json';
 const MAX_EXCERPT_LENGTH = 420;
@@ -530,7 +530,9 @@ export function resolveSiteNames(
           Math.abs(token.length - name.length) > limit
         )
           return [];
-        const distance = editDistance(token, name);
+        const distance = isSingleTypo(token, name)
+          ? 1
+          : editDistance(token, name);
         return distance <= limit ? [{ title, distance }] : [];
       })
       .sort((a, b) => a.distance - b.distance);

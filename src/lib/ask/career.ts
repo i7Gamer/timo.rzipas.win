@@ -1,5 +1,5 @@
 import { facts, MAX_CLAIMS, normalize, type Fact } from './catalog.ts';
-import type { ChatTurn } from './history.ts';
+import { acknowledgement, type ChatTurn } from './history.ts';
 import {
   modelOverviewIds,
   moreQuestion,
@@ -50,9 +50,6 @@ function includesFact(text: string, fact: Fact) {
     text.includes(normalize(answer)),
   );
 }
-
-const acknowledgement =
-  /^(?:thanks|thank you|danke|ok(?:ay)?|got it|nice|great|verstanden|gern)$/;
 
 export function careerAnchorIndex(history: readonly ChatTurn[]) {
   return history.findLastIndex(({ question }) => {

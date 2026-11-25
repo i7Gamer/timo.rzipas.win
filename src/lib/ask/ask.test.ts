@@ -968,7 +968,7 @@ describe('gateway', () => {
     ['en', 'summarize work excperience'],
     ['de', 'Fass Timos Berufserfarung zusammen'],
   ] as const)(
-    'lets Qwen decide how to answer a misspelled %s summary',
+    'uses the same reviewed %s summary after a typo with the summary model disabled',
     async (locale, question) => {
       const select = vi.fn(async () => ({
         status: 'answer',
@@ -982,18 +982,12 @@ describe('gateway', () => {
       ).resolves.toMatchObject({
         status: 200,
         body: {
-          mode: 'local',
+          mode: 'index',
           status: 'answer',
           claims: ids.map((id) => ({ id })),
         },
       });
-      expect(select).toHaveBeenCalledWith(
-        question,
-        locale,
-        ids.map((id) => facts.find((fact) => fact.id === id)),
-        expect.any(AbortSignal),
-        undefined,
-      );
+      expect(select).not.toHaveBeenCalled();
       expect(rank).not.toHaveBeenCalled();
     },
   );

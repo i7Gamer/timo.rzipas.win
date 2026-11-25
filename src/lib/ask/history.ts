@@ -15,6 +15,9 @@ export interface ChatTurn {
   answer: string;
 }
 
+export const acknowledgement =
+  /^(?:thanks|thank you|danke|ok(?:ay)?|got it|nice|great|verstanden|gern)$/;
+
 interface TaggedTurn extends ChatTurn {
   subjects?: readonly { label: string }[];
   evidence?: readonly string[];

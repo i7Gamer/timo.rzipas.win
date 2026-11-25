@@ -1,7 +1,11 @@
 import type { Locale } from '../../i18n';
 import { normalize } from './catalog';
 import { PROJECTS_PATH } from './project-context';
-import { modelOverviewIds, moreQuestion } from './reviewed-questions';
+import {
+  modelOverviewIds,
+  moreQuestion,
+  repairReviewedSummaryText,
+} from './reviewed-questions';
 import type { SiteSubject } from './site-content';
 
 const copy = {
@@ -80,6 +84,8 @@ export function questionLocale(question: string, fallback: Locale): Locale {
   )
     return 'de';
   if (text === 'was') return fallback;
+  if (/^(?:bitte )?laenger(?: bitte)?$/.test(text)) return 'de';
+  if (text === 'longer') return 'en';
   const german =
     /^war /.test(text) ||
     /^was (?:kostet|hat|macht|nutzt|verwendet|ist|sind|war|wird|kann|kannst|bedeutet|enthaelt|zeigt|erzaehlt)\b/.test(
@@ -93,7 +99,10 @@ export function questionLocale(question: string, fallback: Locale): Locale {
     /\b(?:(?:short|quick|brief) (?:pitch|intro|bio)|what|whats|which|where|when|who|why|how|does|tell|show|have|are|please|thanks|thank|hello|called|languages?|langauges?|cats?|pets?|his|any|more|summary|summari[sz]e|experience|colou?rs?|male|female|gender|other|different|education|leisure|hobbies|downsides|perks|interesting|projects)\b/.test(
       text,
     );
-  if (german === english) return fallback;
+  if (german === english) {
+    const repaired = repairReviewedSummaryText(text);
+    return repaired === text ? fallback : questionLocale(repaired, fallback);
+  }
   return german ? 'de' : 'en';
 }
 
