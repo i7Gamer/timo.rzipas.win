@@ -60,7 +60,8 @@ export function questionLocale(question: string, fallback: Locale): Locale {
   const leadingEnglish =
     /^(?:what|which|where|when|who|why|how|can|could|did|do|does|is|are|were|would|will|has|have|tell|show|please|ignore|open)\b/u;
   const startsGerman = leadingGerman.test(text);
-  const startsEnglish = leadingEnglish.test(text);
+  const startsEnglish =
+    leadingEnglish.test(text) && !/^open source\b/.test(text);
   if (startsGerman !== startsEnglish) return startsGerman ? 'de' : 'en';
   if (/^was (?:the|this|that|it|he|she|there)\b/.test(text)) return 'en';
   // English past-tense questions invert the auxiliary and subject; a following

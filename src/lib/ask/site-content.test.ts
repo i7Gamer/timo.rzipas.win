@@ -157,6 +157,49 @@ describe('Ask public page content', () => {
       ).toBeNull();
     },
   );
+
+  it.each([
+    ['en', 'Which project used Flask and who won the World Cup?'],
+    ['en', 'Which project used Flask? Did Timo invent Flask?'],
+    ['de', 'Welches Projekt nutzte Flask und wer gewann die Fussball-WM?'],
+    ['de', 'Wofür hat Timo Flask eingesetzt? Hat er Flask erfunden?'],
+  ] as const)(
+    'keeps only the supported Flask clause in the offline index for %s',
+    (locale, question) => {
+      const answer = findSiteContent(
+        question,
+        { ...index(), locale },
+        'overview',
+      );
+      expect(answer).toMatchObject({
+        status: 'partial',
+        note: expect.stringMatching(/unanswered|bleibt offen/),
+        sources: [{ href: '/projects/spotify-stats-tracker/#contribution' }],
+      });
+    },
+  );
+
+  it.each([
+    ['en', 'How is this website hosted? What do you work on at Abacus?'],
+    [
+      'de',
+      'Wie wird diese Website gehostet und woran arbeitet Timo bei Abacus?',
+    ],
+  ] as const)(
+    'combines both supported offline clauses in %s',
+    (locale, question) => {
+      const content = { ...index(), locale };
+      content.pages.push(extractPage('<main><h1>About</h1></main>', '/about/'));
+      expect(findSiteContent(question, content, 'overview')).toMatchObject({
+        status: 'answer',
+        missing: [],
+        sources: [
+          { href: '/projects/this-website/' },
+          { href: '/about/#abacus' },
+        ],
+      });
+    },
+  );
   const careerOverview = 'Give me a summary of his work experience';
   const abacusRole = 'What do you work on at Abacus?';
   it('recognises a German request for more in an English chat', () => {
@@ -1334,9 +1377,9 @@ describe('Ask public page content', () => {
     [
       'en',
       'Does Hearthcoil use an LLM for gameplay?',
-      /without AI or language models/,
+      /gameplay runs without language models/,
     ],
-    ['de', 'Nutzt Hearthcoil KI im Spiel?', /ohne KI oder Sprachmodelle/],
+    ['de', 'Nutzt Hearthcoil KI im Spiel?', /im Spiel keine Sprachmodelle/],
   ] as const)(
     'cites Hearthcoil gameplay details in %s',
     (locale, question, excerpt) => {

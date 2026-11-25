@@ -78,11 +78,13 @@ All callers share a six-per-minute request quota, a separate 60-per-hour
 model budget and one in-flight inference. Reviewed answers can still be
 served when inference is limited or unavailable.
 
-Recognized summary requests use the pinned local
-`LiquidAI/lfm2.5-1.2b-instruct:q4_k_m` model to write a short paragraph. This
-route sends the model only reviewed facts and the answer language. The gateway
-supplies the citations. If the summary model is missing or unavailable, the
-gateway returns the reviewed facts.
+Recognized summary requests return reviewed facts by default. Set
+`ASK_SUMMARIES=on` in a native gateway or preview environment to let the pinned
+local `LiquidAI/lfm2.5-1.2b-instruct:q4_k_m` select and order approved fact IDs.
+The gateway renders the corresponding reviewed text and citations. This route
+has its own inference budget. It returns the reviewed fallback if the model is
+unavailable or returns an invalid selection. The packaged Qwen profile sets
+`ASK_SUMMARIES=off`.
 
 The gateway gives evidence selection six seconds and summary generation eight
 seconds. The browser and nginx allow ten seconds for the gateway response.
@@ -163,7 +165,7 @@ leaves Ollama running and its loaded model intact. `node services/ask/ollama.ts`
 preloads the pinned model directly, without consuming gateway quota. The warm
 path then requires an English and a German Flask answer with `mode: local` and
 the exact reviewed claim and citation in each locale, plus a reviewed Canadian
-capital abstention with no claims or citations and `mode: index`. A warm failure
+capital abstention with no claims or citations and `mode: local`. A warm failure
 does not hide the cold report, and a cold failure does not prevent a separate
 warm run. Each report records HTTP/result status, mode, claim IDs, citation
 links and latency; warm p95 includes only local results. The fixed warm set is
@@ -194,13 +196,17 @@ nginx proxy and bilingual reviewed replies without downloading model weights.
 pnpm exec vitest run src/lib/ask/ask.test.ts
 python -B -m unittest tests.ask.test_granite_worker
 node tests/ask/evaluate.ts --index
-node tests/ask/evaluate.ts
+node tests/ask/evaluate.ts --lexical
+$env:ASK_GRANITE = 'local'
+node tests/ask/evaluate.ts --rank-port 4535
+Remove-Item Env:ASK_GRANITE
 ```
 
-Prewarm the model before running the live fixtures. The small smoke set compares
-approved answer IDs and abstention status in both languages. It runs against the
-selector without consuming the browser quota. Separate gateway tests exercise
-the request contract and timeout.
+`--index` needs no inference service. `--lexical` uses the pinned Ollama model
+with lexical retrieval. The final command runs the native HTTP gateway with the
+optional Granite ranker on port 4535. Start and prewarm the relevant local
+services before either live run. The fixtures compare approved evidence IDs and
+abstention in both languages.
 
 On the Windows workstation, Ollama 0.40.16 ran the pinned Qwen model on CPU and
 passed all 32 fixtures. The 23 warm selector responses took 1.22 seconds at

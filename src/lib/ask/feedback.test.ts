@@ -70,7 +70,11 @@ afterEach(async () => {
 describe('portfolio Ask feedback regressions', () => {
   it.each([
     ['en', 'Which project used Flask? Who won the World Cup?'],
+    ['en', 'Which project used Flask and who won the World Cup?'],
+    ['en', 'Which project used Flask? Did Timo invent Flask?'],
     ['de', 'Wofür hat Timo Flask eingesetzt? Wer gewann die Fussball-WM?'],
+    ['de', 'Welches Projekt nutzte Flask und wer gewann die Fussball-WM?'],
+    ['de', 'Wofür hat Timo Flask eingesetzt? Hat er Flask erfunden?'],
   ] as const)(
     'checks separate %s questions before accepting a model claim of completeness',
     async (locale, question) => {
@@ -89,6 +93,60 @@ describe('portfolio Ask feedback regressions', () => {
         missing: 'additional-question',
         claims: [{ id: 'spotify-python' }],
       });
+    },
+  );
+
+  it.each([
+    ['en', 'How is this website hosted? What do you work on at Abacus?'],
+    [
+      'de',
+      'Wie wird diese Website gehostet und woran arbeitet Timo bei Abacus?',
+    ],
+  ] as const)(
+    'combines both exact reviewed clauses in %s',
+    async (locale, question) => {
+      const select = vi.fn();
+      await open({ local: true, select });
+      expect((await ask(question, locale)).body).toMatchObject({
+        status: 'answer',
+        mode: 'index',
+        claims: [
+          { id: 'portfolio-website-architecture' },
+          { id: 'abacus-workflow' },
+        ],
+        sources: [
+          { href: '/projects/this-website/' },
+          { href: '/about/#abacus' },
+        ],
+      });
+      expect(select).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['en', 'de'] as const)(
+    'rejects invented %s summary prose with valid claim IDs',
+    async (locale) => {
+      const summarize = vi.fn(async () => ({
+        ids: ['portfolio-pitch', 'portfolio-project-inventory'],
+        summary: 'Timo invented Flask.',
+      }));
+      await open({ local: true, summarize });
+      const question =
+        locale === 'en'
+          ? 'Give me a nice summary of all Timo does'
+          : 'Fass bitte zusammen, was Timo alles macht.';
+      const response = await ask(question, locale);
+      expect(response.body).toMatchObject({
+        status: 'answer',
+        mode: 'index',
+        claims: [
+          { id: 'career-role-titles' },
+          { id: 'portfolio-project-inventory' },
+          { id: 'portfolio-pitch' },
+        ],
+      });
+      expect(response.body).not.toHaveProperty('summary');
+      expect(summarize).toHaveBeenCalledOnce();
     },
   );
   it.each([
@@ -240,6 +298,24 @@ describe('portfolio Ask feedback regressions', () => {
     },
   );
 
+  it('abstains when the selected topic supports neither of two claims', async () => {
+    await open({
+      local: true,
+      select: async (_question, _locale, candidates) => ({
+        status: 'answer',
+        slots: [candidates.findIndex(({ id }) => id === 'spotify-python') + 1],
+      }),
+    });
+    expect(
+      (await ask('Did Timo invent Flask and who won the World Cup?')).body,
+    ).toMatchObject({
+      status: 'unknown',
+      mode: 'local',
+      claims: [],
+      sources: [],
+    });
+  });
+
   it.each([
     [
       'en',
@@ -357,41 +433,34 @@ describe('portfolio Ask feedback regressions', () => {
     ],
     ['de', 'Fass bitte zusammen, was Timo alles macht.'],
     ['de', 'Kurze Zusammenfassung von Arbeit und Projekten bitte'],
-  ] as const)('writes a cited %s summary for %s', async (locale, question) => {
-    const summary =
-      locale === 'de'
-        ? 'Bei Abacus arbeitet Timo an der Belegverarbeitung. In seinem Portfolio stellt er unter anderem Hearthcoil und MySpeed vor.'
-        : 'Timo works on document processing at Abacus. His portfolio also covers projects such as Hearthcoil and MySpeed.';
-    const summarize = vi.fn(async () => summary);
-    const select = vi.fn();
-    await open({ local: true, select, summarize });
-    const response = await ask(question, locale);
-    expect(response).toMatchObject({
-      status: 200,
-      body: {
-        mode: 'local',
-        status: 'answer',
-        summary,
-        sources: expect.arrayContaining(
-          [{ href: '/about/' }, { href: '/projects/' }].map((source) =>
-            expect.objectContaining(source),
-          ),
+  ] as const)(
+    'uses reviewed wording in a %s summary for %s',
+    async (locale, question) => {
+      const ids = ['portfolio-project-inventory', 'portfolio-pitch'];
+      const summarize = vi.fn(async () => ({ ids }));
+      const select = vi.fn();
+      await open({ local: true, select, summarize });
+      const response = await ask(question, locale);
+      expect(response).toMatchObject({
+        status: 200,
+        body: {
+          mode: 'local',
+          status: 'answer',
+          sources: [{ href: '/projects/' }, { href: '/about/' }],
+        },
+      });
+      expect(response.body.claims?.map(({ id }) => id)).toEqual(ids);
+      expect(response.body).not.toHaveProperty('summary');
+      expect(summarize).toHaveBeenCalledExactlyOnceWith(
+        locale,
+        expect.arrayContaining(
+          ids.map((id) => expect.objectContaining({ id })),
         ),
-      },
-    });
-    expect(response.body.claims?.map(({ id }) => id)).toEqual(
-      expect.arrayContaining([
-        'career-role-titles',
-        'portfolio-project-inventory',
-      ]),
-    );
-    expect(summarize).toHaveBeenCalledExactlyOnceWith(
-      locale,
-      response.body.claims,
-      expect.any(AbortSignal),
-    );
-    expect(select).not.toHaveBeenCalled();
-  });
+        expect.any(AbortSignal),
+      );
+      expect(select).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([
     'Summarize all his work and projects at Google nicely.',
@@ -412,9 +481,7 @@ describe('portfolio Ask feedback regressions', () => {
   );
 
   it('uses the dated public update for a summary of current activity', async () => {
-    const summary =
-      'Timo is building document software at Abacus and playtesting Hearthcoil. (As of 24 November 2026)';
-    const summarize = vi.fn(async () => summary);
+    const summarize = vi.fn(async () => ({ ids: ['current-work'] }));
     await open({ local: true, summarize });
     const response = await ask('give me a nice summary of all timo is doing');
     expect(response).toMatchObject({
@@ -422,7 +489,6 @@ describe('portfolio Ask feedback regressions', () => {
       body: {
         mode: 'local',
         status: 'answer',
-        summary,
         claims: [{ id: 'current-work' }],
         sources: [{ href: '/about/#current-work' }],
       },
@@ -436,9 +502,9 @@ describe('portfolio Ask feedback regressions', () => {
 
   it('gives summaries more time without slowing direct questions or extending selection', async () => {
     const deadline = vi.spyOn(AbortSignal, 'timeout');
-    const summarize = vi.fn(
-      async () => 'Timo works at Abacus and builds personal projects.',
-    );
+    const summarize = vi.fn(async () => ({
+      ids: ['portfolio-pitch', 'portfolio-project-inventory'],
+    }));
     const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
     try {
       await open({ local: true, summarize, select });
@@ -465,9 +531,9 @@ describe('portfolio Ask feedback regressions', () => {
         if (kind === 'offline') throw new Error('Model unavailable');
         if (kind === 'late') {
           await new Promise((resolve) => setTimeout(resolve, 20));
-          return 'A late summary.';
+          return { ids: ['portfolio-pitch', 'portfolio-project-inventory'] };
         }
-        return '<a href="https://example.org">An invalid summary.</a>';
+        return { ids: ['portfolio-pitch'] };
       });
       await open({ local: kind !== 'index-only', summarize, timeout: 5 });
       const response = await ask('give me a nice summary of all timo does');
@@ -493,14 +559,15 @@ describe('portfolio Ask feedback regressions', () => {
   ] as const)(
     'offers both open-source contributions to the model in %s',
     async (locale, question) => {
-      const summarize = vi.fn(async () => 'MySpeed and SpotifyStatsTracker.');
+      const summarize = vi.fn(async () => ({
+        ids: ['myspeed-fork', 'spotify-upstream-review'],
+      }));
       await open({ local: true, summarize });
       const response = await ask(question, locale);
       expect(response).toMatchObject({
         status: 200,
         body: {
           mode: 'local',
-          summary: 'MySpeed and SpotifyStatsTracker.',
           claims: [{ id: 'myspeed-fork' }, { id: 'spotify-upstream-review' }],
         },
       });
@@ -508,26 +575,38 @@ describe('portfolio Ask feedback regressions', () => {
     },
   );
 
-  it('keeps evidence selection available after repeated summary failures', async () => {
+  it('keeps evidence selection available after the optional writer exhausts its budget', async () => {
     const summarize = vi.fn(async () => null);
     const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
     await open({ local: true, summarize, select });
-    await ask('Give me a nice summary of all Timo does');
-    await ask('Give me a nice summary of all Timo does');
-    const response = await ask('Which project used Flask?');
-    expect(response.body).toMatchObject({
-      status: 'answer',
-      mode: 'local',
-      claims: [{ id: 'spotify-python' }],
-    });
-    expect(summarize).toHaveBeenCalledTimes(2);
-    expect(select).toHaveBeenCalledOnce();
+    const budget = 60;
+    const interval = 31_000;
+    let now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockImplementation(() => now);
+    try {
+      for (let attempt = 0; attempt <= budget; attempt += 1) {
+        expect(
+          (await ask('Give me a nice summary of all Timo does')).body,
+        ).toMatchObject({ mode: 'index', status: 'answer' });
+        now += interval;
+      }
+      const response = await ask('Which project used Flask?');
+      expect(response.body).toMatchObject({
+        status: 'answer',
+        mode: 'local',
+        claims: [{ id: 'spotify-python' }],
+      });
+      expect(summarize).toHaveBeenCalledTimes(budget);
+      expect(select).toHaveBeenCalledOnce();
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it('keeps summaries available during evidence selector cooldown', async () => {
-    const summary =
-      'Timo builds software at Abacus and his portfolio includes Hearthcoil.';
-    const summarize = vi.fn(async () => summary);
+    const summarize = vi.fn(async () => ({
+      ids: ['portfolio-pitch', 'portfolio-project-inventory'],
+    }));
     await open({
       local: true,
       summarize,
@@ -539,7 +618,29 @@ describe('portfolio Ask feedback regressions', () => {
       expect((await ask('Which project used Flask?')).status).toBe(503);
     expect(
       (await ask('Give me a nice summary of all Timo does')).body,
-    ).toMatchObject({ mode: 'local', summary });
+    ).toMatchObject({
+      mode: 'local',
+      claims: [
+        { id: 'portfolio-pitch' },
+        { id: 'portfolio-project-inventory' },
+      ],
+    });
+  });
+
+  it('does not contact Ollama for a reviewed summary when the writer is off', async () => {
+    const modelFetch = vi.fn();
+    vi.stubEnv('ASK_SUMMARIES', 'off');
+    vi.stubGlobal('fetch', modelFetch);
+    try {
+      await open({ local: true });
+      expect(
+        (await ask('Nice summary of work and projects')).body,
+      ).toMatchObject({ mode: 'index', status: 'answer' });
+      expect(modelFetch).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
   });
 
   it('excludes highlights already shown after a broad profile question', async () => {

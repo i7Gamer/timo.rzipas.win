@@ -21,7 +21,6 @@ export const MAX_QUESTION = 500;
 export const PET_SOURCE_PATH = '/ask-pets.txt';
 export const MAX_CLAIMS = 3;
 export const CLIENT_TIMEOUT = 10_000;
-export const MAX_SUMMARY_LENGTH = 420;
 export const outOfScope =
   /\b(?:ignore (?:all |previous |the )?instructions|system prompt|follow (?:this|the) link|https?|password|passwort|credentials|salary|gehalt|lohn|private (?:email|e mail|address|phone|repo)|privatadresse|privatnummer|privates repository|nach hause|private files|confidential|vertraulich)\b/;
 
@@ -45,23 +44,12 @@ export interface AskResult {
   corpusVersion: string;
   clarifyProject?: string;
   missing?: MissingDetail;
-  summary?: string;
   claims: { id: string; text: string; sourceId: SourceId }[];
   sources: { id: SourceId; label: string; href: string }[];
 }
 
 export function isPortfolioPageHref(href: string) {
   return /^\/(?:[a-z0-9-]+\/)*(?:#[a-z0-9-]+)?$/i.test(href);
-}
-
-export function isSummaryText(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    value.length > 0 &&
-    value.length <= MAX_SUMMARY_LENGTH &&
-    value === value.trim() &&
-    !/[<>\p{C}]|\b(?:https?:\/\/|www\.)/iu.test(value)
-  );
 }
 
 export function sourceLink(id: SourceId, locale: Locale) {
@@ -136,6 +124,7 @@ export function validateResult(
     claims.length > MAX_CLAIMS ||
     (status === 'unknown') !== (claims.length === 0) ||
     !Array.isArray(citations) ||
+    'summary' in result ||
     ('missing' in result &&
       (status !== 'partial' ||
         typeof result.missing !== 'string' ||
@@ -164,15 +153,6 @@ export function validateResult(
     version,
     result.missing,
   );
-  if ('summary' in result) {
-    if (
-      mode !== 'local' ||
-      status !== 'answer' ||
-      !isSummaryText(result.summary)
-    )
-      return null;
-    canonical.summary = result.summary;
-  }
   if ('clarifyProject' in result) {
     const candidate = activeFacts.find(
       ({ id }) => id === result.clarifyProject,

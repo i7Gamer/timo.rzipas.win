@@ -35,8 +35,8 @@ export const PROJECT_AI_NOTES: Readonly<
       de: 'Timo setzt Claude Code und Codex in allen Bereichen der Entwicklung von Hearthcoil für Änderungen und unabhängige Reviews ein. Er prüft Diffs und Testergebnisse und führt wöchentliche Spieltests durch. Supervisor, Dashboard und Companion-App koordinieren Entwicklung, Reviews und Unity-Läufe.',
     },
     product: {
-      en: 'Hearthcoil’s game mechanics run without AI or language models.',
-      de: 'Hearthcoils Spielmechanik funktioniert ohne KI oder Sprachmodelle.',
+      en: 'Hearthcoil’s gameplay runs without language models.',
+      de: 'Hearthcoil verwendet im Spiel keine Sprachmodelle.',
     },
   },
   tutto: {

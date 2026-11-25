@@ -24,6 +24,7 @@ services:
     network_mode: service:ollama
     environment:
       ASK_ORIGIN: http://127.0.0.1:18093
+      ASK_SUMMARIES: 'off'
     read_only: true
     cap_drop:
       - ALL

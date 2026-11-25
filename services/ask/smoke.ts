@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
+  CLIENT_TIMEOUT,
   facts,
   validateResult,
   type AskResult,
@@ -22,7 +23,7 @@ function request(path: string, options?: RequestInit) {
   return fetch(new URL(path, origin), {
     ...options,
     redirect: 'manual',
-    signal: AbortSignal.timeout(9_000),
+    signal: AbortSignal.timeout(CLIENT_TIMEOUT),
   });
 }
 
@@ -94,8 +95,9 @@ if (!gatewayOffline) {
 
 assert.equal((await request('/healthz')).status, 200);
 for (const locale of ['en', 'de']) {
+  const headers = { Cookie: 'lang=' + locale };
   const response = await request('/', {
-    headers: { Cookie: 'lang=' + locale },
+    headers,
   });
   assert.equal(response.status, 200);
   const html = await response.text();
@@ -107,6 +109,13 @@ for (const locale of ['en', 'de']) {
     new RegExp('/downloads/timo-rzipa-cv-' + locale + '\\.pdf'),
   );
   assert.match(html, /\/projects\/spotify-stats-tracker\/#contribution/);
+  for (const indexLocale of ['en', 'de']) {
+    const path = '/ask-content-' + indexLocale + '.json';
+    const index = await request(path, { headers });
+    const label = path + ' with lang=' + locale;
+    assert.equal(index.status, 200, label);
+    assert.equal((await index.json()).locale, indexLocale, label);
+  }
 }
 
 assert.equal((await request('/api/tags')).status, 404);
@@ -147,7 +156,11 @@ if (offline || gatewayOffline) {
   const projects = ['spotify-rewrite', 'myspeed-fork', 'tutto-modes'];
   await expectAnswer('Tell me about your projects.', 'en', projects, 'index');
   await expectAnswer('Welche Projekte gibt es?', 'de', projects, 'index');
-  if (!startup) {
+  if (startup) {
+    const work = ['abacus-workflow', 'stadler-vpn', 'stadler-plugins'];
+    await expectAnswer('Summarize work', 'en', work, 'index');
+    await expectAnswer('Fass Timos Arbeit zusammen', 'de', work, 'index');
+  } else {
     await expectAnswer(germanFlask, 'de', ['spotify-python'], 'local');
     await expectAnswer(englishFlask, 'en', ['spotify-python'], 'local');
     await expectAnswer('Who won the 2002 World Cup?', 'en', []);

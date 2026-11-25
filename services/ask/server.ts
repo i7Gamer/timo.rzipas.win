@@ -4,7 +4,11 @@ import {
   type IncomingMessage,
   type ServerResponse,
 } from 'node:http';
-import { isSummaryText, MAX_QUESTION } from '../../src/lib/ask/catalog.ts';
+import {
+  MAX_QUESTION,
+  sourceLink,
+  type AskResult,
+} from '../../src/lib/ask/catalog.ts';
 import { isChatHistory } from '../../src/lib/ask/history.ts';
 import {
   LOCAL_PETS_PATH,
@@ -37,6 +41,39 @@ const MAX_BYTES = 8 * 1024;
 const MINUTE = 60_000;
 const UPSTREAM_TIMEOUT = 6_000;
 const SUMMARY_TIMEOUT = 8_000;
+const INFERENCE_LIMIT = 60;
+
+function reviewedSummary(
+  fallback: AskResult,
+  selection: unknown,
+): AskResult | null {
+  if (
+    !selection ||
+    typeof selection !== 'object' ||
+    Object.keys(selection).length !== 1 ||
+    !('ids' in selection) ||
+    !Array.isArray(selection.ids)
+  )
+    return null;
+  const ids: unknown[] = selection.ids;
+  if (
+    !ids.length ||
+    ids.length > fallback.claims.length ||
+    new Set(ids).size !== ids.length
+  )
+    return null;
+  const claims = [];
+  for (const id of ids) {
+    const claim = fallback.claims.find((candidate) => candidate.id === id);
+    if (!claim) return null;
+    claims.push(claim);
+  }
+  const sources = [...new Set(claims.map(({ sourceId }) => sourceId))].map(
+    (sourceId) => sourceLink(sourceId, fallback.locale),
+  );
+  if (sources.length !== fallback.sources.length) return null;
+  return { ...fallback, mode: 'local', claims, sources };
+}
 
 function quota(limit: number, window: number) {
   const entries: number[] = [];
@@ -104,7 +141,9 @@ async function readQuestion(request: IncomingMessage) {
 
 export function createGateway({
   select = selectWithOllama,
-  summarize = summarizeWithOllama,
+  summarize = process.env.ASK_SUMMARIES === 'on'
+    ? summarizeWithOllama
+    : undefined,
   rank,
   timeout,
   local = true,
@@ -135,7 +174,8 @@ export function createGateway({
   // identities cannot split the quota or grow a table of client identifiers.
   const checkRequestQuota = quota(6, MINUTE);
   const checkRetrievalQuota = quota(4, MINUTE);
-  const checkModelQuota = quota(60, 60 * MINUTE);
+  const checkModelQuota = quota(INFERENCE_LIMIT, 60 * MINUTE);
+  const checkSummaryQuota = quota(INFERENCE_LIMIT, 60 * MINUTE);
   let running = false;
   let retryAt = 0;
   let failures = 0;
@@ -186,6 +226,7 @@ export function createGateway({
       if (requestWait) return unavailable(429, requestWait);
       if (
         !local ||
+        (bounded.summary && !summarize) ||
         (!bounded.retrievalRequired &&
           !bounded.summary &&
           bounded.fallback.status !== 'unknown' &&
@@ -202,7 +243,9 @@ export function createGateway({
       if (running || (!prepared.summary && Date.now() < retryAt)) {
         return unavailable(503);
       }
-      const modelWait = checkModelQuota();
+      const modelWait = prepared.summary
+        ? checkSummaryQuota()
+        : checkModelQuota();
       if (modelWait) return unavailable(429, modelWait);
 
       running = true;
@@ -218,13 +261,17 @@ export function createGateway({
       try {
         if (
           prepared.summary &&
+          summarize &&
           fallback.status === 'answer' &&
           fallback.claims.length
         ) {
-          const summary = await summarize(locale, fallback.claims, signal);
-          if (!isSummaryText(summary) || signal.aborted)
+          const summary = reviewedSummary(
+            fallback,
+            await summarize(locale, fallback.claims, signal),
+          );
+          if (!summary || signal.aborted)
             throw new Error('Invalid summary result');
-          return reply(response, 200, { ...fallback, mode: 'local', summary });
+          return reply(response, 200, summary);
         }
         const pool =
           allowBroadSearch && !semanticPool.length

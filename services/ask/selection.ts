@@ -25,6 +25,7 @@ import {
   profileHighlightIds,
   profileQuestionNote,
   questionClauses,
+  reviewedCompoundFactIds,
   reviewedFactId,
   summaryOverviewIds,
   WORK_EXPERIENCE_IDS,
@@ -613,30 +614,36 @@ export async function askModel(
     Boolean(focus),
   );
   if (!decision) return null;
-  const { matches, status } = decision;
+  const { status } = decision;
+  let { matches } = decision;
   if (status === 'clarify' && focus)
     return {
       ...documentAnswer([], 'unknown', 'local', locale, corpusVersion),
       clarifyProject: focus.id,
     };
   if (status === 'clarify') return null;
-  // Independent questions need their own evidence. A selector can still judge
-  // joined clauses about the same subject using the shared context it was given.
-  const sentences = questionClauses(question, false);
-  const additionalUnanswered =
-    status === 'answer' &&
-    sentences.length > 1 &&
-    !sentences.every((clause) => {
-      const bounded = prepareBoundedQuestion(clause, locale, history);
-      const eligible = new Set(
-        bounded.retrievalRequired
-          ? shortlist(clause).map(({ id }) => id)
-          : [...bounded.fallback.claims, ...bounded.candidates].map(
-              ({ id }) => id,
-            ),
-      );
-      return matches.some(({ id }) => eligible.has(id));
-    });
+  const clauses = questionClauses(question);
+  let additionalUnanswered = false;
+  if (matches.length && clauses.length > 1) {
+    const scope = normalize(question);
+    const covered = clauses.map(
+      (clause) =>
+        new Set([
+          ...prepareBoundedQuestion(
+            clause,
+            locale,
+            history,
+          ).fallback.claims.map(({ id }) => id),
+          ...reviewedCompoundFactIds(normalize(clause), scope),
+        ]),
+    );
+    matches = matches.filter(({ id }) => covered.some((ids) => ids.has(id)));
+    if (!matches.length)
+      return documentAnswer([], 'unknown', 'local', locale, corpusVersion);
+    additionalUnanswered = covered.some(
+      (ids) => !matches.some(({ id, partial }) => ids.has(id) && !partial),
+    );
+  }
   return documentAnswer(
     matches,
     additionalUnanswered || matches.some((fact) => fact.partial)

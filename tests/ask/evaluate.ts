@@ -59,6 +59,7 @@ const PACKAGED_WARM_FIXTURES: Fixture[] = [
     question: 'What is the capital of Canada?',
     status: 'unknown',
     acceptableIds: [[]],
+    expectedMode: 'local',
   },
 ];
 const httpFlag = process.argv.indexOf('--http');

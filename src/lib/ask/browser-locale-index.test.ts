@@ -1,16 +1,18 @@
 import { Window } from 'happy-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setupAskWork } from './browser';
+import { langCookie } from '../../i18n/cookie';
 
 describe('language-specific offline index paths', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('uses the question language fixed index when a shared locale cookie is stale', async () => {
-    const window = new Window();
+    const window = new Window({ url: 'http://127.0.0.1:18093/' });
     try {
       vi.stubGlobal('document', window.document);
       window.document.documentElement.lang = 'en';
-      window.document.cookie = 'locale=de';
+      window.document.cookie = langCookie('de', 'http:');
+      expect(window.document.cookie).toContain('lang=de');
       const fetchMock = vi.fn<typeof fetch>(async (input) => {
         const path = String(input);
         if (path === '/ask-content-en.json')

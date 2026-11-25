@@ -143,8 +143,8 @@ describe('portfolio components', () => {
           );
           expect(section?.textContent).toContain(
             locale === 'en'
-              ? 'Hearthcoil’s game mechanics run without AI or language models.'
-              : 'Hearthcoils Spielmechanik funktioniert ohne KI oder Sprachmodelle.',
+              ? 'Hearthcoil’s gameplay runs without language models.'
+              : 'Hearthcoil verwendet im Spiel keine Sprachmodelle.',
           );
         } else {
           expect(section).toBeNull();

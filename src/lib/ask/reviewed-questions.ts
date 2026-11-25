@@ -175,9 +175,9 @@ const leadingConnector = new RegExp(
   'iu',
 );
 
-export function questionClauses(question: string, includeConnectors = true) {
+export function questionClauses(question: string) {
   return question
-    .split(includeConnectors ? clauseBoundary : sentenceBoundary)
+    .split(clauseBoundary)
     .map((clause, index) =>
       index ? clause.trim().replace(leadingConnector, '') : clause.trim(),
     )
@@ -390,6 +390,7 @@ export function needsDatedWorkEvidence(terms: string) {
 export function approvedAnswer(
   terms: string,
   question = terms,
+  includeModelEvidence = false,
 ): ReviewedAnswer | undefined {
   const jointlyReviewed = reviewedSpotifyRewriteAndStack(terms);
   if (jointlyReviewed) return jointlyReviewed;
@@ -401,7 +402,13 @@ export function approvedAnswer(
   for (const clause of clauses) {
     const part = normalize(clause);
     const reviewed = approvedClause(part);
-    const direct = reviewed ? undefined : reviewedFactId(part);
+    const direct = reviewed
+      ? undefined
+      : (reviewedFactId(part) ??
+        (abacusRoleQuestion.test(part) ? 'abacus-workflow' : undefined) ??
+        (includeModelEvidence
+          ? reviewedCompoundFactIds(part, terms)[0]
+          : undefined));
     const covered = reviewed?.ids ?? (direct ? [direct] : []);
     const combined = new Set([...ids, ...covered]);
     if (combined.size <= MAX_CLAIMS) {
@@ -416,6 +423,67 @@ export function approvedAnswer(
     return missing
       ? { ids: [...ids], partial: true, missing }
       : { ids: [...ids] };
+}
+
+export const abacusRoleQuestion =
+  /^(?:(?:what (?:does timo|do you) (?:do|work on)|what does he do) at abacus|was macht (?:timo|er) bei abacus|was machst du bei abacus|woran arbeitet timo bei abacus)$/;
+
+// These are positive coverage rules, separate from likelihood scores used to
+// retrieve candidates for standalone model questions.
+const compoundCoverage = [
+  {
+    ids: ['spotify-python'],
+    question:
+      /^(?:(?:which|what) project (?:used|uses) (?:python and )?flask|(?:where|what project) did timo use (?:python and )?flask|welch\w* projekt (?:nutzt|nutzte|verwendet|verwendete) (?:python und )?flask|wofuer hat timo (?:python und )?flask eingesetzt)$/,
+  },
+  {
+    ids: ['carini-team'],
+    scope: carini,
+    question:
+      /^(?:was carini (?:an? )?team (?:diploma )?project|what technical work did (?:timo|he) do|war carini (?:eine? )?(?:teamarbeit|teamprojekt)|was hat (?:timo|er) technisch umgesetzt)$/,
+  },
+  {
+    ids: ['spotify-rewrite'],
+    scope: spotifyTracker,
+    question:
+      /^(?:was spotify ?tracker (?:originally )?a fork|war spotify ?tracker (?:urspruenglich )?ein fork|what was rebuilt|was wurde neu entwickelt)$/,
+  },
+  {
+    ids: ['spotify-recovery'],
+    scope: spotifyTracker,
+    question:
+      /^(?:how does spotify ?tracker (?:recover|backfill) missed (?:plays|playbacks)|wie traegt spotify ?tracker verpasste wiedergaben nach|which live connection (?:can|does) it use(?: for that)?|welche live verbindung kann es (?:dafuer )?nutzen)$/,
+  },
+  {
+    ids: ['abacus-workflow', 'abacus-recognition'],
+    scope: /\babacus\b/,
+    question:
+      /^(?:what work does timo do downstream (?:in|at) abacus|which abacus document workflow does timo handle|welchen (?:erp|beleg) workflow betreut timo bei abacus)$/,
+  },
+  {
+    ids: ['abacus-tests'],
+    scope: /\babacus\b/,
+    question:
+      /^(?:did (?:timo|he) write automated tests for (?:it|that)|hat (?:timo|er) dafuer automatisierte tests geschrieben)$/,
+  },
+  {
+    ids: ['abacus-recognition'],
+    scope: /\babacus\b/,
+    question:
+      /^(?:who developed the (?:ocr )?recognition(?: upstream)?|does the evidence name the person who built recognition|wer entwickelte die (?:vorgelagerte )?(?:ocr )?erkennung)$/,
+  },
+];
+
+export function reviewedCompoundFactIds(
+  clause: string,
+  scope: string,
+): readonly string[] {
+  return (
+    compoundCoverage.find(
+      ({ question, scope: topic }) =>
+        (!topic || topic.test(scope)) && question.test(clause),
+    )?.ids ?? []
+  );
 }
 
 function reviewedSpotifyRewriteAndStack(

@@ -28,6 +28,7 @@ import {
   profileHighlightIds,
   profileQuestionNote,
   questionClauses,
+  abacusRoleQuestion,
   summaryOverviewIds,
   reviewedFactId,
 } from './reviewed-questions';
@@ -312,8 +313,6 @@ const spokenLanguageQuestion =
   /^(?:(?:what|which) (?:spoken )?languages (?:does (?:timo|he) speak|do you speak)|welche sprachen spricht (?:timo|er)|welche sprachen sprichst du)$/;
 const programmingLanguageQuestion =
   /^(?:(?:what|which) programming languages (?:does (?:timo|he) use|do you use)|welche programmiersprachen (?:nutzt (?:timo|er)|nutzt du|verwendet (?:timo|er)))$/;
-const abacusRoleQuestion =
-  /^(?:(?:what (?:does timo|do you) (?:do|work on)|what does he do) at abacus|was macht (?:timo|er) bei abacus|was machst du bei abacus|woran arbeitet timo bei abacus)$/;
 const stackQuestion =
   /^(?:tech ?stack|technology stack|what (?:tech )?stack(?: powers| does use)?|technologie ?stack|welcher tech ?stack(?: laeuft dahinter)?)$/;
 const databaseQuestion =
@@ -784,7 +783,7 @@ export function findSiteContent(
           partial: undefined,
         }
       : undefined) ??
-    approvedAnswer(normalized, question) ??
+    approvedAnswer(normalized, question, true) ??
     (contextualQuestion !== normalized
       ? approvedAnswer(contextualQuestion)
       : undefined) ??

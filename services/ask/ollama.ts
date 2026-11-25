@@ -1,10 +1,4 @@
-import {
-  MAX_CLAIMS,
-  MAX_SUMMARY_LENGTH,
-  isSummaryText,
-  sourceLink,
-  type AskResult,
-} from '../../src/lib/ask/catalog.ts';
+import { MAX_CLAIMS, type AskResult } from '../../src/lib/ask/catalog.ts';
 import { localPorts, LOOPBACK } from './local-profile.ts';
 import type { SelectFacts } from './selection.ts';
 
@@ -160,107 +154,35 @@ export type SummarizeFacts = (
   locale: AskResult['locale'],
   claims: AskResult['claims'],
   signal: AbortSignal,
-) => Promise<string | null>;
+) => Promise<unknown>;
 
-const SUMMARY_PROJECT_NAMES: Partial<Record<string, string>> = {
-  'myspeed-fork': 'MySpeed',
-  'spotify-upstream-review': 'SpotifyStatsTracker',
-};
-
-export const summarizeWithOllama: SummarizeFacts = async (
-  locale,
-  claims,
-  signal,
-) => {
-  const language = locale === 'de' ? 'Swiss Standard German' : 'English';
-  const projects = claims.filter(({ sourceId }) =>
-    sourceLink(sourceId, locale).href.startsWith('/projects/'),
-  );
-  const work = claims.filter((claim) => !projects.includes(claim));
-  const profile = work.find(
-    ({ id }) => id === 'current-work' || id === 'portfolio-pitch',
-  );
-  const workText = profile?.text ?? work.map(({ text }) => text).join(' ');
-  const dated = profile?.id === 'current-work';
-  const snapshot = dated
-    ? /^(?:As of |Stand )(\d{1,2}\.? \p{L}+ \d{4})[, ]*/u.exec(workText)
-    : null;
-  const sections = [
-    ...(work.length
-      ? [
-          {
-            text: workText.slice(snapshot?.[0].length ?? 0),
-            name: undefined,
-            focus: dated
-              ? 'Cover his work at Abacus and what he is building outside work.'
-              : 'Name an employer and explain what Timo worked on.',
-          },
-        ]
-      : []),
-    ...projects.map(({ id, text }) => ({
-      name: SUMMARY_PROJECT_NAMES[id],
-      text:
-        id === 'spotify-upstream-review'
-          ? text
-              .split(/(?<=[.!?])\s+/)
-              .slice(0, 2)
-              .join(' ')
-          : text,
-      focus:
-        id === 'portfolio-project-inventory'
-          ? 'Name at least two projects as examples from the portfolio.'
-          : id === 'myspeed-fork'
-            ? 'Name MySpeed, say Timo extended his fork, and give one example.'
-            : 'Name the project and say what Timo changed.',
-    })),
-  ];
-  const sentences = [];
-  for (const { text, focus, name } of sections) {
-    const result = await chatWithOllama(
-      [
-        {
-          role: 'system',
-          content: `Write one concise sentence in ${language} using only the input facts. ${focus} No links.`,
-        },
-        { role: 'user', content: text },
-      ],
+export const summarizeWithOllama: SummarizeFacts = (locale, claims, signal) =>
+  chatWithOllama(
+    [
       {
-        type: 'object',
-        additionalProperties: false,
-        required: ['summary'],
-        properties: {
-          summary: {
-            type: 'string',
-            minLength: 1,
-            maxLength: MAX_SUMMARY_LENGTH,
-          },
+        role: 'system',
+        content:
+          'Choose and order the supplied reviewed fact IDs for a concise portfolio overview. Keep at least one fact from each source. Return IDs only.',
+      },
+      { role: 'user', content: JSON.stringify({ locale, evidence: claims }) },
+    ],
+    {
+      type: 'object',
+      additionalProperties: false,
+      required: ['ids'],
+      properties: {
+        ids: {
+          type: 'array',
+          minItems: 1,
+          maxItems: claims.length,
+          items: { type: 'string', enum: claims.map(({ id }) => id) },
         },
       },
-      signal,
-      SUMMARY_MODEL,
-      SUMMARY_DIGEST,
-    );
-    if (
-      !result ||
-      typeof result !== 'object' ||
-      Object.keys(result).length !== 1 ||
-      !('summary' in result) ||
-      !isSummaryText(result.summary)
-    )
-      return null;
-    const summary = result.summary;
-    sentences.push(
-      name && !summary.toLowerCase().includes(name.toLowerCase())
-        ? `${name} · ${summary}`
-        : summary,
-    );
-  }
-  if (snapshot)
-    sentences.push(
-      locale === 'de' ? `(Stand ${snapshot[1]})` : `(As of ${snapshot[1]})`,
-    );
-  return sentences.length ? sentences.join(' ') : null;
-};
+    },
+    signal,
+    SUMMARY_MODEL,
+    SUMMARY_DIGEST,
+  );
 
 if (import.meta.main) {
   const signal = AbortSignal.timeout(45_000);

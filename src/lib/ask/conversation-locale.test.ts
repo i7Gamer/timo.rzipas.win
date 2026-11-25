@@ -46,6 +46,12 @@ describe('questionLocale', () => {
     ['Was ist SpotifyTracker?', 'en', 'de'],
     ['Was?', 'de', 'de'],
     ['Was?', 'en', 'en'],
+    ['Open Source Beiträge', 'en', 'de'],
+    ['Open Source Projekte', 'en', 'de'],
+    ['Open Source projects', 'de', 'en'],
+    ['Open Source', 'de', 'de'],
+    ['Open Source', 'en', 'en'],
+    ['Open the portfolio', 'de', 'en'],
   ] as const)('detects the locale of %j', (question, fallback, expected) => {
     expect(questionLocale(question, fallback)).toBe(expected);
   });
