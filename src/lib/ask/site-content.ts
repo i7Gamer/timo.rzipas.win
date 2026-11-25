@@ -28,6 +28,7 @@ import {
   profileHighlightIds,
   profileQuestionNote,
   questionClauses,
+  summaryOverviewIds,
   reviewedFactId,
 } from './reviewed-questions';
 import type { ChatTurn } from './history';
@@ -833,7 +834,9 @@ export function findSiteContent(
           matched.some(({ fact }) => fact.partial)
             ? 'partial'
             : 'answer',
-        ...(modelIds ? { preferModel: true } : {}),
+        ...(modelIds || summaryOverviewIds(normalized)
+          ? { preferModel: true }
+          : {}),
         sources: [...sources.values()],
         subjects: [...subjects.values()],
         missing: [],
@@ -1069,6 +1072,7 @@ export function findSiteContent(
     if (sources.length === scope.length)
       return {
         status: 'answer',
+        preferModel: true,
         sources,
         missing: [],
         subjects: scope.map((page) => subjectOf(page)),
@@ -1172,6 +1176,7 @@ export function findSiteContent(
   if (!chosen.size && !suggested.length) return null;
   return {
     status: !chosen.size ? 'unknown' : missing.length ? 'partial' : 'answer',
+    ...(chosen.size ? { preferModel: true } : {}),
     sources: chosen.size
       ? [...chosen].map(([page, paragraphs]) => cite(page, paragraphs))
       : suggested.slice(0, MAX_CLAIMS).map((page) => cite(page, [])),

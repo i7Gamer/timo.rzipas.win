@@ -4,7 +4,7 @@ import {
   type IncomingMessage,
   type ServerResponse,
 } from 'node:http';
-import { MAX_QUESTION } from '../../src/lib/ask/catalog.ts';
+import { isSummaryText, MAX_QUESTION } from '../../src/lib/ask/catalog.ts';
 import { isChatHistory } from '../../src/lib/ask/history.ts';
 import {
   LOCAL_PETS_PATH,
@@ -17,7 +17,11 @@ import {
   type RankFacts,
 } from './granite.ts';
 import { graniteLocal, localPorts, LOOPBACK } from './local-profile.ts';
-import { selectWithOllama } from './ollama.ts';
+import {
+  selectWithOllama,
+  summarizeWithOllama,
+  type SummarizeFacts,
+} from './ollama.ts';
 import {
   askModel,
   broadEvidencePool,
@@ -99,6 +103,7 @@ async function readQuestion(request: IncomingMessage) {
 
 export function createGateway({
   select = selectWithOllama,
+  summarize = summarizeWithOllama,
   rank,
   timeout = UPSTREAM_TIMEOUT,
   local = true,
@@ -106,6 +111,7 @@ export function createGateway({
   privatePets,
 }: {
   select?: SelectFacts;
+  summarize?: SummarizeFacts;
   rank?: RankFacts;
   timeout?: number;
   local?: boolean;
@@ -180,6 +186,7 @@ export function createGateway({
       if (
         !local ||
         (!bounded.retrievalRequired &&
+          !bounded.summary &&
           bounded.fallback.status !== 'unknown' &&
           !bounded.candidates.length)
       ) {
@@ -191,7 +198,7 @@ export function createGateway({
         prepared = prepareQuestion(question, locale, history);
       }
       const { fallback, candidates, semanticPool, allowBroadSearch } = prepared;
-      if (running || Date.now() < retryAt) {
+      if (running || (!prepared.summary && Date.now() < retryAt)) {
         return unavailable(503);
       }
       const modelWait = checkModelQuota();
@@ -206,6 +213,16 @@ export function createGateway({
         AbortSignal.timeout(timeout),
       ]);
       try {
+        if (
+          prepared.summary &&
+          fallback.status === 'answer' &&
+          fallback.claims.length
+        ) {
+          const summary = await summarize(locale, fallback.claims, signal);
+          if (!isSummaryText(summary) || signal.aborted)
+            throw new Error('Invalid summary result');
+          return reply(response, 200, { ...fallback, mode: 'local', summary });
+        }
         const pool =
           allowBroadSearch && !semanticPool.length
             ? broadEvidencePool(question)
@@ -234,6 +251,8 @@ export function createGateway({
         );
       } catch {
         if (disconnect.signal.aborted || response.destroyed) return;
+        // The optional summary model can be unavailable while selection works.
+        if (prepared.summary) return unavailable(503);
         failures += 1;
         // Let an aborted request unwind in the inference runtime before accepting
         // more model work. Success is the only thing that resets the failure count.

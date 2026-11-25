@@ -198,6 +198,12 @@ const inventorySummaryEn =
   /^(?:(?:give|show|write) me (?:a )?(?:(?:nice|short|quick|brief) )?summary (?:of|about)|(?:(?:can|could|would) you |please )?summari[sz]e) /;
 const inventorySummaryDe =
   /^(?:gib|zeig|schreib) mir (?:bitte )?(?:eine )?(?:(?:kurze|knappe) )?zusammenfassung (?:von|ueber) /;
+const WORK_AND_PROJECT_IDS = [
+  'career-role-titles',
+  'portfolio-project-inventory',
+] as const;
+const broadPortfolioSubject =
+  /^(?:(?:all|everything|what) (?:that )?(?:timo|he|you) (?:does|do|(?:is|are) (?:currently )?doing)|(?:was )?timo (?:alles )?(?:gerade )?macht)$/;
 const projectInventory =
   /^(?:(?:list|show(?: me)?) all (?:of )?(?:(?:timo ?s|his|your|the) )?projects(?: please)?|(?:liste|zeig(?: mir)?) alle (?:timos )?projekte(?: von timo)?(?: auf)?)$/;
 const workTopic = /^(?:work(?: experience)?|career|arbeit|berufserfahrung)$/;
@@ -297,6 +303,38 @@ export function modelOverviewIds(terms: string): readonly string[] | undefined {
     return WORK_EXPERIENCE_IDS;
 }
 
+export function summaryOverviewIds(
+  terms: string,
+): readonly string[] | undefined {
+  if (profilePitch.test(terms)) return ['portfolio-pitch'];
+  if (openSourceDescription.test(terms)) return OPEN_SOURCE_IDS;
+  if (englishWorkSummary.test(terms) || germanWorkSummary.test(terms))
+    return WORK_EXPERIENCE_IDS;
+  const subject = terms
+    .replace(inventorySummaryEn, '')
+    .replace(inventorySummaryDe, '')
+    .replace(/^fass(?:e)? (?:mir )?(?:bitte )?zusammen /, '');
+  if (subject === terms) return;
+  if (
+    broadPortfolioSubject.test(subject) &&
+    /\b(?:doing|gerade)\b/.test(subject)
+  )
+    return ['current-work'];
+  if (
+    workAndProjectInventory.test('list ' + subject) ||
+    workAndProjectInventory.test('liste ' + subject) ||
+    broadPortfolioSubject.test(subject)
+  ) {
+    return [...WORK_AND_PROJECT_IDS, 'portfolio-pitch'];
+  }
+  if (
+    /^(?:(?:all )?(?:his |timo s |your )?projects|(?:alle )?(?:timos |seine )?projekte[n]?)$/.test(
+      subject,
+    )
+  )
+    return ['portfolio-project-inventory'];
+}
+
 function reviewedPets(terms: string): ReviewedAnswer | undefined {
   const name = catName.exec(terms)?.[0];
   if ((!name && !petTopic.test(terms)) || unsupportedPetDetail.test(terms))
@@ -330,7 +368,10 @@ function reviewedPets(terms: string): ReviewedAnswer | undefined {
 const currentActivityQuestion =
   /^(?:what (?:is (?:timo(?: rzipa)?|he)|are you) (?:currently doing|doing (?:now|right now|at the moment|these days))|(?:what (?:is|s)|whats) (?:timo(?: rzipa)?|he) up to(?: (?:now|right now|at the moment|these days|lately))?|was (?:macht (?:timo(?: rzipa)?|er)|machst du) (?:gerade|aktuell|zurzeit|im moment))$/;
 const openSourceOverview =
-  /^(?:open ?source(?: (?:work|projects|contributions|arbeit|projekte|beitraege))?|(?:tell me about|show me) (?:timo s |his |your )?open ?source(?: (?:work|projects|contributions))?|(?:what|which) open ?source projects (?:has (?:timo|he) contributed to|has (?:timo|he) worked on|have you contributed to)|(?:welche (?:open ?source|quelloffenen) projekte hat timo (?:unterstuetzt|entwickelt)|wo hat timo zu open ?source beigetragen))$/;
+  /^(?:open ?source(?: (?:work|projects|contributions|arbeit|projekte|beitraege))?|show me (?:timo s |his |your )?open ?source(?: (?:work|projects|contributions))?|(?:what|which) open ?source projects (?:has (?:timo|he) contributed to|has (?:timo|he) worked on|have you contributed to)|(?:welche (?:open ?source|quelloffenen) projekte hat timo (?:unterstuetzt|entwickelt)|wo hat timo zu open ?source beigetragen))$/;
+const openSourceDescription =
+  /^(?:(?:(?:can|could|would) you )?(?:please )?tell me (?:something )?about (?:timo s |his |your )?open ?source(?: (?:work|projects|contributions))?|(?:kannst du mir (?:bitte )?(?:(?:et)?was )?(?:ueber|zu) open ?source(?: (?:arbeit|projekte|beitraege))? (?:sagen|erzaehlen)|erzaehl(?:e)? mir (?:bitte )?(?:(?:et)?was )?(?:ueber|zu) open ?source(?: (?:arbeit|projekte|beitraege))?))$/;
+const OPEN_SOURCE_IDS = ['myspeed-fork', 'spotify-upstream-review'] as const;
 
 export function needsDatedWorkEvidence(terms: string) {
   return (
@@ -392,15 +433,9 @@ function reviewedSpotifyRewriteAndStack(
 }
 
 function approvedClause(terms: string): ReviewedAnswer | undefined {
-  if (profilePitch.test(terms)) return { ids: ['portfolio-pitch'] };
-  if (
-    workAndProjectInventory.test(
-      terms
-        .replace(inventorySummaryEn, 'list ')
-        .replace(inventorySummaryDe, 'liste '),
-    )
-  )
-    return { ids: ['career-role-titles', 'portfolio-project-inventory'] };
+  const summary = summaryOverviewIds(terms);
+  if (summary) return { ids: summary };
+  if (workAndProjectInventory.test(terms)) return { ids: WORK_AND_PROJECT_IDS };
   if (projectInventory.test(terms))
     return { ids: ['portfolio-project-inventory'] };
   const stadlerRole = stadlerOverview.exec(terms);
@@ -433,8 +468,7 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
   const pets = reviewedPets(terms);
   if (pets) return pets;
 
-  if (openSourceOverview.test(terms))
-    return { ids: ['myspeed-fork', 'spotify-upstream-review'] };
+  if (openSourceOverview.test(terms)) return { ids: OPEN_SOURCE_IDS };
 
   if (
     /^(?:where (?:is timo based|does timo live)|wo (?:ist timo ansaessig|wohnt timo|lebt timo))$/.test(

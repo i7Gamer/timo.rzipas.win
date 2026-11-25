@@ -78,6 +78,12 @@ All callers share a six-per-minute request quota, a separate 60-per-hour
 model budget and one in-flight inference. Reviewed answers can still be
 served when inference is limited or unavailable.
 
+Recognized summary requests use the pinned local
+`LiquidAI/lfm2.5-1.2b-instruct:q4_k_m` model to write a short paragraph. This
+route sends the model only reviewed facts and the answer language. The gateway
+supplies the citations. If the summary model is missing or unavailable, the
+gateway returns the reviewed facts.
+
 The gateway gives inference six seconds. Prewarm the model if a cold load on
 your machine takes longer.
 

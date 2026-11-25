@@ -868,7 +868,10 @@ describe('Ask public page content', () => {
 
   it.each([
     ['en', 'opensource'],
+    ['en', 'tell me about opensource'],
+    ['en', 'can you tell me about opensource?'],
     ['de', 'Open-Source-Beiträge'],
+    ['de', 'kannst du mir was über opensource sagen?'],
   ] as const)(
     'renders both %s open-source contributions for %s',
     (locale, question) => {
@@ -1940,7 +1943,7 @@ describe('Ask public page content', () => {
         'short pitch about timo',
         'any more details?',
         'more about his work',
-        'give me nice summary of all work and projects',
+        'give me a nice summary of all work and projects',
       ].entries()) {
         panel.querySelector('textarea')!.value = question;
         panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
@@ -1951,6 +1954,7 @@ describe('Ask public page content', () => {
       }
 
       expect(requests).toEqual([
+        expect.objectContaining({ question: 'short pitch about timo' }),
         expect.objectContaining({
           question: 'portfolio highlights',
           history: [
@@ -1959,6 +1963,9 @@ describe('Ask public page content', () => {
               answer: expect.stringContaining('Abacus'),
             }),
           ],
+        }),
+        expect.objectContaining({
+          question: 'give me a nice summary of all work and projects',
         }),
       ]);
       const [pitch, highlight, work, inventory] = replies();
@@ -2451,14 +2458,14 @@ describe('Ask public page content', () => {
       'How is the website built and where is the website hosted?',
       'GitHub Actions',
       503,
-      ['/ask-content-en.json'],
+      ['/ask-content-en.json', '/api/ask'],
       ['/projects/this-website/', '/homelab/'],
     ],
     [
       'Which GPU does the workstation use and how much did it cost?',
       'Evidence needed for “how much did it cost?”',
       503,
-      ['/ask-content-en.json'],
+      ['/ask-content-en.json', '/api/ask'],
       ['/homelab/'],
     ],
   ] as const)(

@@ -311,11 +311,13 @@ export function setupAskWork(panel: HTMLElement) {
     }
     reply.textContent =
       result.status === 'partial' && !result.missing ? messages.partial : '';
+    if (result.summary) addParagraph(reply, result.summary);
     for (const source of result.sources) {
-      for (const { text } of result.claims.filter(
-        ({ sourceId }) => sourceId === source.id,
-      ))
-        addParagraph(reply, text);
+      if (!result.summary)
+        for (const { text } of result.claims.filter(
+          ({ sourceId }) => sourceId === source.id,
+        ))
+          addParagraph(reply, text);
       reply.append(citation(source.href, source.label));
     }
     if (result.missing)

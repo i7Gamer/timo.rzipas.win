@@ -4,6 +4,10 @@ import { request, type Server } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createGateway } from '../../../services/ask/server';
 import {
+  SUMMARY_MODEL,
+  summarizeWithOllama,
+} from '../../../services/ask/ollama';
+import {
   askModel,
   prepareQuestion,
   shortlist,
@@ -55,6 +59,61 @@ const publicCopy = {
 };
 const digest = (value: string | Buffer) =>
   createHash('sha256').update(value).digest('hex');
+
+describe('local summary model', () => {
+  it('writes from separate reviewed work and project inputs', async () => {
+    const excerpts: string[] = [];
+    const summaries = [
+      'At Abacus, Timo works on accounting document processing.',
+      'His portfolio includes SpotifyTracker, MySpeed and Hearthcoil.',
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, options?: RequestInit) => {
+        if (url.endsWith('/api/tags'))
+          return Response.json({
+            models: [
+              {
+                name: SUMMARY_MODEL,
+                digest:
+                  '120c341e628189e9968d6e081b7dc2f94580a17a0d7f5c9f259f237d9ddd11c9',
+              },
+            ],
+          });
+        const { model, messages } = JSON.parse(String(options?.body));
+        expect(model).toBe(SUMMARY_MODEL);
+        excerpts.push(messages[1].content);
+        return Response.json({
+          done: true,
+          done_reason: 'stop',
+          message: {
+            content: JSON.stringify({
+              summary: summaries[excerpts.length - 1],
+            }),
+          },
+        });
+      }),
+    );
+    try {
+      const input = ['portfolio-pitch', 'portfolio-project-inventory'].map(
+        (id) => facts.find((fact) => fact.id === id)!,
+      );
+      const { claims } = documentAnswer(
+        input,
+        'answer',
+        'index',
+        'en',
+        corpusVersion,
+      );
+      expect(
+        await summarizeWithOllama('en', claims, new AbortController().signal),
+      ).toBe(summaries.join(' '));
+      expect(excerpts).toEqual(input.map(({ answer }) => answer.en));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
 
 describe('curated evidence', () => {
   it('pins the reviewed public fields and the published CVs', () => {
@@ -248,7 +307,15 @@ describe('curated evidence', () => {
       corpusVersion,
     );
     expect(validateResult(response, 'en', corpusVersion)).toEqual(response);
+    const summary = 'A concise overview from reviewed evidence.';
+    expect(
+      validateResult({ ...response, summary }, 'en', corpusVersion),
+    ).toEqual({ ...response, summary });
     for (const result of [
+      { ...response, mode: 'index', summary },
+      { ...response, summary: 'See https://example.org/' },
+      { ...response, summary: '<strong>Markup</strong>' },
+      { ...response, summary: '\n' },
       { ...response, corpusVersion: 'old' },
       {
         ...response,
@@ -961,11 +1028,13 @@ describe('gateway', () => {
   ] as const)(
     'offers reviewed %s work experience to the model for %s',
     async (locale, question, online) => {
-      const select = vi.fn(async () => {
+      const summarize = vi.fn(async () => {
         if (!online) throw new Error('Fixture model offline');
-        return { status: 'answer', slots: [1, 2, 3] };
+        return locale === 'de'
+          ? 'Timo entwickelte Software bei Abacus und Stadler.'
+          : 'Timo has built software at Abacus and Stadler.';
       });
-      await open({ select });
+      await open({ summarize });
       const ids = ['abacus-workflow', 'stadler-vpn', 'stadler-plugins'];
       await expect(
         send({ body: JSON.stringify({ locale, question }) }),
@@ -982,13 +1051,11 @@ describe('gateway', () => {
           ],
         },
       });
-      expect(select).toHaveBeenCalledOnce();
-      expect(select).toHaveBeenCalledWith(
-        question,
+      expect(summarize).toHaveBeenCalledOnce();
+      expect(summarize).toHaveBeenCalledWith(
         locale,
-        ids.map((id) => facts.find((fact) => fact.id === id)),
+        ids.map((id) => expect.objectContaining({ id })),
         expect.any(AbortSignal),
-        undefined,
       );
     },
   );

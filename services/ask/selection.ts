@@ -26,6 +26,7 @@ import {
   profileQuestionNote,
   questionClauses,
   reviewedFactId,
+  summaryOverviewIds,
   WORK_EXPERIENCE_IDS,
 } from '../../src/lib/ask/reviewed-questions.ts';
 import type { ChatTurn } from '../../src/lib/ask/history.ts';
@@ -405,6 +406,9 @@ function prepareExactQuestion(
       ),
       candidates: [],
       semanticPool: [],
+      ...(summaryOverviewIds(terms) && !approved.partial
+        ? { summary: true }
+        : {}),
     };
   const development = asksAboutAICoding(terms);
   if (
