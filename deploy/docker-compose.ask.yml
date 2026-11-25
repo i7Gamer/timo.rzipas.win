@@ -19,12 +19,16 @@ services:
       dockerfile: services/ask/Dockerfile
     depends_on:
       ollama:
-        condition: service_started
+        condition: service_healthy
         restart: true
     network_mode: service:ollama
     environment:
       ASK_ORIGIN: http://127.0.0.1:18093
       ASK_SUMMARIES: 'off'
+      ASK_WARMUP: ${ASK_WARMUP:-on}
+      ASK_KEEP_MODEL_WARM: ${ASK_KEEP_MODEL_WARM:-on}
+      ASK_SELECTOR_TIMEOUT_MS: ${ASK_SELECTOR_TIMEOUT_MS:-6000}
+      ASK_TIMINGS: ${ASK_TIMINGS:-off}
     read_only: true
     cap_drop:
       - ALL
@@ -41,6 +45,11 @@ services:
       OLLAMA_DEBUG_LOG_REQUESTS: 'false'
     volumes:
       - model-store:/root/.ollama
+    healthcheck:
+      test: [CMD, ollama, list]
+      interval: 5s
+      timeout: 2s
+      retries: 6
     networks:
       - inference
 

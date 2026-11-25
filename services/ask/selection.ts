@@ -338,11 +338,21 @@ function matchingLength(terms: string, aliases: readonly string[]) {
 export function shortlist(question: string) {
   const terms = normalize(question);
   const development = asksAboutAICoding(terms);
+  const thesisMethods =
+    /\b(?:thesis|bachelorarbeit|abschlussarbeit)\b/.test(terms) &&
+    /\b(?:methods?|techniques?|algorithms?|methoden?|verfahren)\b/.test(
+      terms,
+    ) &&
+    /\b(?:schedul(?:e|es|ing)|terminanalyse|terminplan\w*|netzplan\w*)\b/.test(
+      terms,
+    );
   return facts
     .filter(({ id }) => !development || id !== 'tutto-coach')
     .map((fact) => {
       const topic = matchingLength(terms, sources[fact.sourceId].topics);
-      const facet = matchingLength(terms, fact.aliases);
+      const facet =
+        matchingLength(terms, fact.aliases) ||
+        Number(fact.id === 'bachelor-methods' && thesisMethods);
       const standalone = matchingLength(terms, fact.standalone ?? []);
       const score = topic && facet ? 3 * topic + facet : standalone;
       return { fact, score };

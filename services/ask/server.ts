@@ -4,6 +4,7 @@ import {
   type IncomingMessage,
   type ServerResponse,
 } from 'node:http';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
   MAX_QUESTION,
   sourceLink,
@@ -25,6 +26,8 @@ import { graniteLocal, localPorts, LOOPBACK } from './local-profile.ts';
 import {
   selectWithOllama,
   summarizeWithOllama,
+  warmSelector,
+  WARMUP_TIMEOUT_MS,
   type SummarizeFacts,
 } from './ollama.ts';
 import {
@@ -42,6 +45,9 @@ const MAX_BYTES = 8 * 1024;
 const MINUTE = 60_000;
 const UPSTREAM_TIMEOUT = 6_000;
 const SUMMARY_TIMEOUT = 8_000;
+const EXPERIMENTAL_SELECTOR_TIMEOUT_MS = 8_000;
+const SELECTOR_SETTLE_MS = 350;
+const SETTLE_DEADLINE_DIVISOR = 4;
 const INFERENCE_LIMIT = 60;
 
 function reviewedSummary(
@@ -149,17 +155,21 @@ export function createGateway({
     : undefined,
   rank,
   timeout,
+  selectorTimeout = UPSTREAM_TIMEOUT,
   local = true,
   origins = LOCAL_ORIGINS,
   privatePets,
+  warmup,
 }: {
   select?: SelectFacts;
   summarize?: SummarizeFacts;
   rank?: RankFacts;
   timeout?: number;
+  selectorTimeout?: number;
   local?: boolean;
   origins?: readonly string[];
   privatePets?: LocalPets;
+  warmup?: (signal: AbortSignal) => Promise<void>;
 } = {}) {
   const siteOrigins = new Map(
     origins.map((origin) => {
@@ -181,9 +191,10 @@ export function createGateway({
   const checkSummaryQuota = quota(INFERENCE_LIMIT, 60 * MINUTE);
   let running = false;
   let retryAt = 0;
+  let settleUntil = 0;
   let failures = 0;
 
-  return createServer(
+  const server = createServer(
     {
       headersTimeout: 5_000,
       requestTimeout: 5_000,
@@ -256,11 +267,12 @@ export function createGateway({
       const onClose = () => disconnect.abort();
       response.once('close', onClose);
       const modelTimeout =
-        timeout ?? (prepared.summary ? SUMMARY_TIMEOUT : UPSTREAM_TIMEOUT);
+        timeout ?? (prepared.summary ? SUMMARY_TIMEOUT : selectorTimeout);
       const signal = AbortSignal.any([
         disconnect.signal,
         AbortSignal.timeout(modelTimeout),
       ]);
+      const inferenceStarted = performance.now();
       try {
         if (
           prepared.summary &&
@@ -276,6 +288,8 @@ export function createGateway({
             throw new Error('Invalid summary result');
           return reply(response, 200, summary);
         }
+        const settleTime = settleUntil - Date.now();
+        if (settleTime > 0) await delay(settleTime, undefined, { signal });
         const pool =
           allowBroadSearch && !semanticPool.length
             ? broadEvidencePool(question)
@@ -307,11 +321,27 @@ export function createGateway({
         if (disconnect.signal.aborted || response.destroyed) return;
         // The optional summary model can be unavailable while selection works.
         if (prepared.summary) return unavailable(503);
-        failures += 1;
-        // Let an aborted request unwind in the inference runtime before accepting
-        // more model work. Success is the only thing that resets the failure count.
-        if (failures >= 2) retryAt = Date.now() + MINUTE;
-        else if (signal.aborted) retryAt = Date.now() + modelTimeout;
+        if (process.env.ASK_TIMINGS === 'on') {
+          console.log(
+            JSON.stringify({
+              event: 'ask-selector-failure',
+              kind: signal.aborted ? 'deadline' : 'upstream',
+              ms: Math.round(performance.now() - inferenceStarted),
+            }),
+          );
+        }
+        if (signal.aborted) {
+          // One subsequent request can reserve the slot while Ollama unwinds.
+          // The wait uses that request's existing deadline.
+          settleUntil =
+            Date.now() +
+            Math.min(
+              SELECTOR_SETTLE_MS,
+              Math.floor(modelTimeout / SETTLE_DEADLINE_DIVISOR),
+            );
+        } else if (++failures >= 2) {
+          retryAt = Date.now() + MINUTE;
+        }
         unavailable(503);
       } finally {
         response.off('close', onClose);
@@ -319,6 +349,22 @@ export function createGateway({
       }
     },
   );
+  if (local && warmup) {
+    server.once('listening', async () => {
+      running = true;
+      try {
+        await warmup(AbortSignal.timeout(WARMUP_TIMEOUT_MS));
+        console.log('Ask chat ready');
+      } catch {
+        console.log(
+          'Ask chat warm-up failed; reviewed answers remain available',
+        );
+      } finally {
+        running = false;
+      }
+    });
+  }
+  return server;
 }
 
 if (import.meta.main) {
@@ -330,6 +376,15 @@ if (import.meta.main) {
     throw new Error('Set ASK_ORIGIN to the site origin in container mode');
   if (container && graniteLocal)
     throw new Error('The Granite profile requires a native loopback gateway');
+  const configuredTimeout = process.env.ASK_SELECTOR_TIMEOUT_MS;
+  if (
+    configuredTimeout &&
+    ![
+      String(UPSTREAM_TIMEOUT),
+      String(EXPERIMENTAL_SELECTOR_TIMEOUT_MS),
+    ].includes(configuredTimeout)
+  )
+    throw new Error('ASK_SELECTOR_TIMEOUT_MS must be 6000 or 8000');
   const bind = container ? '0.0.0.0' : LOOPBACK;
   const privatePets =
     !container && !ASK_ORIGIN && graniteLocal
@@ -344,6 +399,8 @@ if (import.meta.main) {
     origins: ASK_ORIGIN ? [ASK_ORIGIN] : LOCAL_ORIGINS,
     rank: graniteLocal ? rankWithGranite : undefined,
     privatePets: privatePets ?? undefined,
+    selectorTimeout: configuredTimeout ? Number(configuredTimeout) : undefined,
+    warmup: process.env.ASK_WARMUP === 'on' ? warmSelector : undefined,
   }).listen(localPorts.gateway, bind, () =>
     console.log('Ask gateway on http://' + bind + ':' + localPorts.gateway),
   );

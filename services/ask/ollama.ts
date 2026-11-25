@@ -1,12 +1,17 @@
 import {
+  facts,
   MAX_CLAIMS,
   summaryRequiresAllFacts,
   type AskResult,
 } from '../../src/lib/ask/catalog.ts';
 import { localPorts, LOOPBACK } from './local-profile.ts';
-import type { SelectFacts } from './selection.ts';
+import { askModel, type SelectFacts } from './selection.ts';
 
 const OLLAMA = `http://${LOOPBACK}:${localPorts.ollama}`;
+export const WARMUP_TIMEOUT_MS = 45_000;
+const WARMUP_FACT_ID = 'spotify-python';
+const WARMUP_QUESTION = 'Which project used Flask?';
+const NS_PER_MS = 1_000_000;
 export const MODEL = 'qwen3:4b-instruct-2507-q4_K_M';
 export const MODEL_DIGEST =
   '0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0';
@@ -70,7 +75,10 @@ async function chatWithOllama(
       model,
       stream: false,
       think: false,
-      keep_alive: '2m',
+      keep_alive:
+        model === MODEL && process.env.ASK_KEEP_MODEL_WARM === 'on'
+          ? '10m'
+          : '2m',
       options: { temperature: 0, seed: 23, num_ctx: 2048, num_predict: 96 },
       format,
       messages,
@@ -78,6 +86,22 @@ async function chatWithOllama(
   });
   if (!response.ok) throw new Error('Local model unavailable');
   const output = await response.json();
+  if (process.env.ASK_TIMINGS === 'on') {
+    const ms = (value: unknown) =>
+      typeof value === 'number' ? Math.round(value / NS_PER_MS) : undefined;
+    console.log(
+      JSON.stringify({
+        event: 'ask-ollama-timing',
+        model,
+        totalMs: ms(output.total_duration),
+        loadMs: ms(output.load_duration),
+        promptMs: ms(output.prompt_eval_duration),
+        generationMs: ms(output.eval_duration),
+        promptTokens: output.prompt_eval_count,
+        outputTokens: output.eval_count,
+      }),
+    );
+  }
   if (
     !output.done ||
     output.done_reason !== 'stop' ||
@@ -214,22 +238,25 @@ export const summarizeWithOllama: SummarizeFacts = async (
   return { ids };
 };
 
-if (import.meta.main) {
-  const signal = AbortSignal.timeout(45_000);
-  await checkModel(signal);
-  const response = await fetch(OLLAMA + '/api/generate', {
+export async function warmSelector(signal: AbortSignal) {
+  const evidence = facts.find(({ id }) => id === WARMUP_FACT_ID);
+  if (!evidence) throw new Error('Missing reviewed warm-up evidence');
+  const answer = await askModel(
+    selectWithOllama,
+    WARMUP_QUESTION,
+    'en',
+    [evidence],
     signal,
-    redirect: 'error',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      stream: false,
-      keep_alive: '2m',
-      options: { num_ctx: 2048 },
-    }),
-  });
-  if (!response.ok || !(await response.json()).done)
-    throw new Error('Local model did not preload');
-  console.log('Loaded ' + MODEL);
+  );
+  if (
+    signal.aborted ||
+    answer?.status !== 'answer' ||
+    answer.claims[0]?.id !== WARMUP_FACT_ID
+  )
+    throw new Error('Local chat readiness probe failed');
+}
+
+if (import.meta.main) {
+  await warmSelector(AbortSignal.timeout(WARMUP_TIMEOUT_MS));
+  console.log('Ask chat ready');
 }

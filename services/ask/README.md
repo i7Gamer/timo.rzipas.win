@@ -88,7 +88,13 @@ unavailable or returns an invalid selection. The packaged Qwen profile sets
 
 The gateway gives evidence selection six seconds and summary generation eight
 seconds. The browser and nginx allow ten seconds for the gateway response.
-Prewarm the selector if a cold load on your machine takes longer.
+After a selector deadline, one request can reserve the inference slot and let
+Ollama settle for up to 350 ms inside that request's deadline. The existing
+cooldown still applies after repeated upstream failures.
+
+Use a validated chat probe to warm the pinned selector. Set `ASK_WARMUP=on`
+to run it at gateway startup. Reviewed answers remain available during the
+probe, and the gateway logs `Ask chat ready` after a verified response.
 
 ```sh
 node services/ask/ollama.ts
@@ -144,11 +150,15 @@ Run from the repository root with Docker Compose available. Use a fresh project
 name for each run so the model volume and containers are isolated. The checked
 port, `18093`, must be free. The setup step downloads only the pinned Qwen model
 into that project's volume; it does not start the website or gateway.
+The packaged profile warms the chat path at startup and keeps Qwen resident
+for ten minutes after use. For a true cold benchmark and repeated gateway
+restarts between batches, set `ASK_WARMUP=off` in the isolated test stack
+and run the chat probe manually before warm measurements.
 
 ```sh
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml config --quiet
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml --profile setup run --rm model-setup
-docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml up --build -d
+ASK_WARMUP=off ASK_TIMINGS=on docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml up --build -d
 mkdir -p .local-ask
 node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --cold-only --report .local-ask/qwen-docker-cold.json
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml restart ask
@@ -178,7 +188,8 @@ path sends one English Flask question before any model preload and requires an
 HTTP 200 `answer`, `mode: local`, the exact `spotify-python` claim and its
 canonical citation. Restart only `ask` afterward to clear gateway quotas; this
 leaves Ollama running and its loaded model intact. `node services/ask/ollama.ts`
-preloads the pinned model directly, without consuming gateway quota. The warm
+runs a real selection with the pinned model and validates the result without
+consuming gateway quota. The warm
 path then requires an English and a German Flask answer with `mode: local` and
 the exact reviewed claim and citation in each locale, plus a reviewed Canadian
 capital abstention with no claims or citations and `mode: local`. A warm failure
@@ -186,6 +197,12 @@ does not hide the cold report, and a cold failure does not prevent a separate
 warm run. Each report records HTTP/result status, mode, claim IDs, citation
 links and latency; warm p95 includes only local results. The fixed warm set is
 three gateway requests, within the retrieval budget.
+
+The default evidence deadline remains six seconds. To compare eight seconds,
+set `ASK_SELECTOR_TIMEOUT_MS=8000` with the same warm-up and timing settings,
+then run `docker compose up -d --no-deps ask` on the isolated test project and
+repeat the warm suite. `ASK_TIMINGS=on` logs model load, prompt processing and
+generation timings plus gateway failures without question or answer text.
 
 Full HTTP evaluation exceeds the per-process gateway quota. Add
 `--reset-compose-project <project-name>` to an HTTP suite command to restart

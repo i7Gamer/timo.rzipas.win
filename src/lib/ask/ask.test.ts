@@ -4,8 +4,11 @@ import { request, type Server } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createGateway } from '../../../services/ask/server';
 import {
+  MODEL,
+  MODEL_DIGEST,
   SUMMARY_MODEL,
   summarizeWithOllama,
+  warmSelector,
 } from '../../../services/ask/ollama';
 import {
   askModel,
@@ -940,6 +943,129 @@ afterEach(async () => {
 });
 
 describe('gateway', () => {
+  it('prewarms through the pinned chat selector and rejects an abstaining probe', async () => {
+    let slots = [1];
+    const fetchModel = vi.fn<typeof fetch>(async (url) => {
+      if (String(url).endsWith('/api/tags'))
+        return Response.json({
+          models: [{ name: MODEL, digest: MODEL_DIGEST }],
+        });
+      expect(String(url)).toMatch(/\/api\/chat$/);
+      return Response.json({
+        done: true,
+        done_reason: 'stop',
+        message: { content: JSON.stringify({ slots, incomplete: false }) },
+      });
+    });
+    vi.stubGlobal('fetch', fetchModel);
+    try {
+      const signal = new AbortController().signal;
+      await expect(warmSelector(signal)).resolves.toBeUndefined();
+      slots = [];
+      await expect(warmSelector(signal)).rejects.toThrow(/readiness probe/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps reviewed answers available while startup warms the selector', async () => {
+    const probe = Promise.withResolvers<void>();
+    const warmup = vi.fn(() => probe.promise);
+    const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
+    await open({ warmup, select });
+    await expect(send()).resolves.toMatchObject({ status: 503 });
+    const question = 'What is Hearthcoil?';
+    await expect(
+      send({ body: JSON.stringify({ question, locale: 'en' }) }),
+    ).resolves.toMatchObject({ status: 200, body: { mode: 'index' } });
+    expect(select).not.toHaveBeenCalled();
+    probe.resolve();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    await expect(send()).resolves.toMatchObject({
+      status: 200,
+      body: { mode: 'local' },
+    });
+    expect(warmup).toHaveBeenCalledOnce();
+  });
+
+  it('admits one recovery request immediately after a selector timeout', async () => {
+    const select = vi
+      .fn()
+      .mockImplementationOnce(
+        (_question, _locale, _candidates, signal: AbortSignal) =>
+          new Promise((_resolve, reject) =>
+            signal.addEventListener('abort', () => reject(signal.reason), {
+              once: true,
+            }),
+          ),
+      )
+      .mockResolvedValue({ status: 'answer', slots: [1] });
+    const deadline = 150;
+    await open({ select, timeout: deadline });
+    await expect(send()).resolves.toMatchObject({ status: 503 });
+    const responses = await Promise.all([send(), send()]);
+    expect(responses.map(({ status }) => status).sort()).toEqual([200, 503]);
+    expect(select).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(['timeout', 'unavailable'] as const)(
+    'bounds recovery after two %s failures',
+    async (kind) => {
+      const failing = (
+        _question: string,
+        _locale: string,
+        _candidates: unknown,
+        signal: AbortSignal,
+      ) =>
+        kind === 'unavailable'
+          ? Promise.reject(new Error('Unavailable'))
+          : new Promise((_resolve, reject) =>
+              signal.addEventListener('abort', () => reject(signal.reason), {
+                once: true,
+              }),
+            );
+      const select = vi
+        .fn()
+        .mockImplementationOnce(failing)
+        .mockImplementationOnce(failing)
+        .mockResolvedValue({ status: 'answer', slots: [1] });
+      const deadline = 80;
+      await open({ select, timeout: deadline });
+      expect((await send()).status).toBe(503);
+      expect((await send()).status).toBe(503);
+      expect((await send()).status).toBe(kind === 'timeout' ? 200 : 503);
+      expect(select).toHaveBeenCalledTimes(kind === 'timeout' ? 3 : 2);
+    },
+  );
+
+  it.each([
+    'Which methods can the thesis tool use to analyse a schedule?',
+    'What techniques does the bachelor thesis app use for scheduling analysis?',
+    'Welche Verfahren nutzt die Bachelorarbeit zur Terminanalyse?',
+  ])(
+    'finds the reviewed thesis methods using lexical retrieval for %s',
+    async (question) => {
+      const select = vi.fn(async () => ({ status: 'answer', slots: [1] }));
+      await open({ select });
+      await expect(
+        send({
+          body: JSON.stringify({
+            question,
+            locale: question.startsWith('Welche') ? 'de' : 'en',
+          }),
+        }),
+      ).resolves.toMatchObject({
+        status: 200,
+        body: { mode: 'local', claims: [{ id: 'bachelor-methods' }] },
+      });
+      expect(select.mock.calls).toHaveLength(1);
+      expect(
+        shortlist(
+          'Which networking methods did the thesis tool implement?',
+        ).map(({ id }) => id),
+      ).not.toContain('bachelor-methods');
+    },
+  );
   it.each([
     ['Tell me more', 'abacus-tests'],
     ['Other roles', 'tutoring'],
@@ -1449,7 +1575,7 @@ describe('gateway', () => {
   });
 
   const fallbackQuestion =
-    'Which methods can the thesis tool use to analyse a schedule?';
+    'How did the thesis tool account for uncertainty in activity durations?';
   it('passes the visitor’s recent questions and replies to the selector', async () => {
     const history = [
       {
