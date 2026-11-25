@@ -17,6 +17,7 @@ type ReviewedAnswer = {
   ids: readonly string[];
   partial?: true;
   missing?: MissingDetail;
+  preferModel?: true;
 };
 
 const spotifyTracker = /\b(?:spotify ?tracker|spotify stats tracker)\b/;
@@ -171,10 +172,19 @@ const maintainerReview =
   /^(?:what did (?:the |its )?maintainer (?:question|flag) (?:in|about|during) |was (?:hinterfragte|beanstandete) (?:der|die) maintainer(?:in)? (?:bei|beim|an) )/;
 const clauseConnector = '(?:and|also|und|sowie|ausserdem|außerdem)';
 const independentClause =
-  '(?:who|what|which|where|how|when|why|did|does|do|is|are|was|were|can|could|has|have|any (?:holes?|gaps?)|explain|summari[sz]e|(?:tell|show|give) me|wer|wie|wo|woran|womit|wann|warum|welch\\p{L}*|hat|gibt|ist|kann|auf welchem|lücken|erkl(?:ä|ae)r(?:e)?|(?:gib|zeig|erzähl) mir)\\b';
-const sentenceBoundary = /[?;]\s*(?=\p{L})/u;
+  '(?:who|what|which|where|how|when|why|did|does|do|is|are|was|were|can|could|has|have|any (?:holes?|gaps?)|explain|summari[sz]e|(?:tell|show|give) me|wer|wie|wo|woran|wofür|wofuer|womit|wann|warum|welch\\p{L}*|hat|gibt|ist|kann|auf welchem|lücken|erkl(?:ä|ae)r(?:e)?|(?:gib|zeig|erzähl|sag)(?:e)? mir)\\b';
+const sentenceBoundary = /[?!;]\s*(?=\p{L})/u;
+const periodBoundary =
+  /(?<!\b(?:e\.g|i\.e|z\.\s*b|u\.\s*a|dr|prof|mr|mrs|ms|bzw|usw|ca|etc|no))\.\s+/u;
 const clauseBoundary = new RegExp(
   sentenceBoundary.source +
+    '|' +
+    periodBoundary.source +
+    '(?=(?:' +
+    clauseConnector +
+    '\\s+)?' +
+    independentClause +
+    ')' +
     '|(?:,\\s*|\\s+)' +
     clauseConnector +
     '\\s+(?=' +
@@ -186,9 +196,11 @@ const leadingConnector = new RegExp(
   '^' + clauseConnector + '\\s+(?=' + independentClause + ')',
   'iu',
 );
+const openingContext = /^(?:in (?!which\b|what\b)|im |assuming\b|given\b)/iu;
+const embeddedRequest = new RegExp(',\\s*(?=' + independentClause + ')', 'iu');
 
 export function questionClauses(question: string) {
-  return question
+  const clauses = question
     .split(clauseBoundary)
     .map((clause, index) =>
       index ? clause.trim().replace(leadingConnector, '') : clause.trim(),
@@ -198,14 +210,54 @@ export function questionClauses(question: string) {
         !index ||
         !/^(?:please|thanks|thank you|bitte|danke)$/.test(normalize(clause)),
     );
+  const [opening, request, ...later] = clauses;
+  // The scenario in “In the test, … . What should Otto do?” qualifies the request.
+  if (
+    opening &&
+    request &&
+    openingContext.test(opening) &&
+    !embeddedRequest.test(opening) &&
+    question.trimStart().slice(opening.length).trimStart().startsWith('.')
+  )
+    return [opening + '. ' + request, ...later];
+  return clauses;
 }
 
-const profilePitch =
-  /^(?:(?:(?:give|write|show) me )?(?:a )?(?:(?:short|quick|brief) )?(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)|(?:stell(?:e)? )?timo kurz vor|(?:ein )?kurzprofil (?:zu|von|ueber) timo)$/;
-const extendedPitch =
-  /^(?:(?:(?:give|write|show) me )?(?:a )?(?:(?:good|nice|clear) )?(?:200 word (?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)|(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?) (?:in|of) (?:about |around )?200 words)|(?:schreib(?:e)? mir )?(?:einen? )?(?:guten? )?(?:pitch|kurzprofil|vorstellung) (?:ueber|zu|von) timo (?:in|mit) (?:etwa |rund )?200 woerter[n]?)$/;
-const pitchLengthCorrection =
-  /^(?:(?:this|that|it) (?:is not|isn t|was not|wasn t) (?:about )?200 words|(?:das|es) (?:sind|waren) keine 200 woerter)$/;
+const shortPitchEn =
+  /^(?:(?:give|write|show) me )?(?:an? )?(?:(?:short|quick|brief) )?(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)$/;
+const shortPitchDe =
+  /^(?:(?:stell(?:e)? )?timo kurz vor|(?:ein )?kurzprofil (?:zu|von|ueber) timo)$/;
+const extendedPitchEn =
+  /^(?:(?:give|write|show) me )?(?:a )?(?:(?:good|nice|clear) )?(?:200 word (?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?)|(?:pitch|intro(?:duction)?|bio) (?:about|on|for) (?:him|timo(?: rzipa)?) (?:in|of) (?:about |around )?200 words)$/;
+const extendedPitchDe =
+  /^(?:schreib(?:e)? mir )?(?:einen? )?(?:guten? )?(?:pitch|kurzprofil|vorstellung) (?:ueber|zu|von) timo (?:in|mit) (?:etwa |rund )?200 woerter[n]?$/;
+const pitchLengthEn =
+  /^(?:this|that|it) (?:is not|isn t|was not|wasn t) (?:about )?200 words$/;
+const pitchLengthDe = /^(?:das|es) (?:sind|waren) keine 200 woerter$/;
+const profilePitch = new RegExp(
+  shortPitchEn.source + '|' + shortPitchDe.source,
+);
+const extendedPitch = new RegExp(
+  extendedPitchEn.source + '|' + extendedPitchDe.source,
+);
+const pitchLengthCorrection = new RegExp(
+  pitchLengthEn.source + '|' + pitchLengthDe.source,
+);
+
+export function pitchQuestionLocale(terms: string): Locale | undefined {
+  if (
+    shortPitchEn.test(terms) ||
+    extendedPitchEn.test(terms) ||
+    pitchLengthEn.test(terms)
+  )
+    return 'en';
+  if (
+    shortPitchDe.test(terms) ||
+    extendedPitchDe.test(terms) ||
+    pitchLengthDe.test(terms)
+  )
+    return 'de';
+}
 const longerSummary =
   /^(?:(?:(?:(?:can|could) you )?(?:give|write) me )?(?:please )?(?:a )?(?:longer|more detailed) (?:summary|overview)(?: please)?|(?:(?:can|could) you )?make (?:the (?:summary|pitch)|it|that) (?:a bit |a little )?longer(?: please)?|(?:bitte )?(?:eine )?(?:laengere|ausfuehrlichere) (?:zusammenfassung|uebersicht)(?: bitte)?)$/;
 const interestingHighlight =
@@ -555,33 +607,74 @@ export function approvedAnswer(
   if (jointlyReviewed) return jointlyReviewed;
   const clauses = questionClauses(question);
   if (clauses.length <= 1) return approvedClause(terms);
+  const parts = reviewedCompoundClauses(clauses, terms);
+  const answer = combineReviewedClauses(
+    parts.map((part) =>
+      includeModelEvidence && needsCompoundSelection(part)
+        ? { ids: part.modelIds.slice(0, 1) }
+        : part.reviewed,
+    ),
+  );
+  return answer && includeModelEvidence && parts.some(needsCompoundSelection)
+    ? { ...answer, preferModel: true }
+    : answer;
+}
 
+export function combineReviewedClauses(
+  clauses: readonly ReviewedAnswer[],
+): ReviewedAnswer | undefined {
   const ids = new Set<string>();
   let missing: MissingDetail | undefined;
   for (const clause of clauses) {
-    const part = normalize(clause);
-    const reviewed = approvedClause(part);
-    const direct = reviewed
-      ? undefined
-      : (reviewedFactId(part) ??
-        (abacusRoleQuestion.test(part) ? 'abacus-workflow' : undefined) ??
-        (includeModelEvidence
-          ? reviewedCompoundFactIds(part, terms)[0]
-          : undefined));
-    const covered = reviewed?.ids ?? (direct ? [direct] : []);
-    const combined = new Set([...ids, ...covered]);
+    const combined = new Set([...ids, ...clause.ids]);
     if (combined.size <= MAX_CLAIMS) {
-      for (const id of covered) ids.add(id);
+      for (const id of clause.ids) ids.add(id);
     }
-    if (cvGaps.test(part) || reviewed?.missing === 'cv-gaps')
-      missing = 'cv-gaps';
-    else if (!covered.length || reviewed?.partial || combined.size > MAX_CLAIMS)
-      missing ??= 'additional-question';
+    if (clause.missing === 'cv-gaps') missing = clause.missing;
+    else if (!clause.ids.length || clause.partial || combined.size > MAX_CLAIMS)
+      missing ??= clause.missing ?? 'additional-question';
   }
   if (ids.size)
     return missing
       ? { ids: [...ids], partial: true, missing }
       : { ids: [...ids] };
+}
+
+export type ReviewedCompoundClause = {
+  question: string;
+  reviewed: ReviewedAnswer;
+  modelIds: readonly string[];
+};
+
+export function needsCompoundSelection({
+  reviewed,
+  modelIds,
+}: ReviewedCompoundClause) {
+  return !reviewed.ids.length && !reviewed.missing && modelIds.length > 0;
+}
+
+export function reviewedCompoundClauses(
+  clauses: readonly string[],
+  scope: string,
+): ReviewedCompoundClause[] {
+  const reviewed = clauses.slice(0, MAX_CLAIMS).map((question) => {
+    const terms = normalize(question);
+    const direct =
+      reviewedFactId(terms) ??
+      (abacusRoleQuestion.test(terms) ? 'abacus-workflow' : undefined);
+    const answer = approvedClause(terms) ?? { ids: direct ? [direct] : [] };
+    const reviewed: ReviewedAnswer = cvGaps.test(terms)
+      ? { ...answer, partial: true, missing: 'cv-gaps' }
+      : answer;
+    return {
+      question,
+      reviewed,
+      modelIds: reviewedCompoundFactIds(terms, scope),
+    };
+  });
+  if (clauses.length > MAX_CLAIMS)
+    reviewed.push({ question: '', reviewed: { ids: [] }, modelIds: [] });
+  return reviewed;
 }
 
 export const abacusRoleQuestion =

@@ -10,6 +10,7 @@ import { selectChatHistory, type ChatTurn } from './history';
 import { EXTENDED_PITCH_IDS, validateResult } from './catalog';
 import { careerAnchorIndex } from './career';
 import { corpusVersion } from './version';
+import { questionClauses } from './reviewed-questions';
 
 let gateway: Server | undefined;
 let port = 0;
@@ -74,6 +75,103 @@ afterEach(async () => {
 });
 
 describe('portfolio Ask feedback regressions', () => {
+  it.each([
+    [
+      'Tell me how timo.rzipas.win uses nginx 1.29. Tell me what Flask does.',
+      [
+        'Tell me how timo.rzipas.win uses nginx 1.29',
+        'Tell me what Flask does.',
+      ],
+    ],
+    [
+      'Explain how Last.fm is used, e.g. when listening. Explain Flask.',
+      ['Explain how Last.fm is used, e.g. when listening', 'Explain Flask.'],
+    ],
+    [
+      'Erklär mir, wie Last.fm das Profil ergänzt, z. B. im Tracker. Sag mir, wofür Flask genutzt wird.',
+      [
+        'Erklär mir, wie Last.fm das Profil ergänzt, z. B. im Tracker',
+        'Sag mir, wofür Flask genutzt wird.',
+      ],
+    ],
+  ])(
+    'keeps internal dots and splits substantive sentences in %s',
+    (question, clauses) => {
+      expect(questionClauses(question)).toEqual(clauses);
+    },
+  );
+
+  it.each([
+    [
+      'en',
+      'Tell me how this website is hosted. Tell me who won the World Cup.',
+      'How is this website hosted? Which project used Flask?',
+      'Which project used Flask?',
+    ],
+    [
+      'de',
+      'Erklär mir, wie diese Website gehostet wird. Sag mir, wer die Fussball-WM gewonnen hat.',
+      'Wie wird diese Website gehostet? Welches Projekt nutzte Flask?',
+      'Welches Projekt nutzte Flask?',
+    ],
+  ] as const)(
+    'keeps reviewed %s clauses while retrieving only the unresolved supported clause',
+    async (locale, mixed, supported, flask) => {
+      const select = vi.fn<SelectFacts>(
+        async (_question, _locale, candidates) => ({
+          status: 'answer',
+          slots: [
+            candidates.findIndex(({ id }) => id === 'spotify-python') + 1,
+          ],
+        }),
+      );
+      await open({ local: true, select });
+      expect((await ask(mixed, locale)).body).toMatchObject({
+        status: 'partial',
+        mode: 'index',
+        missing: 'additional-question',
+        claims: [{ id: 'portfolio-website-architecture' }],
+      });
+      expect(select).not.toHaveBeenCalled();
+      expect((await ask(supported, locale)).body).toMatchObject({
+        status: 'answer',
+        mode: 'local',
+        claims: [
+          { id: 'portfolio-website-architecture' },
+          { id: 'spotify-python' },
+        ],
+        sources: [
+          { href: '/projects/this-website/' },
+          { href: '/projects/spotify-stats-tracker/#contribution' },
+        ],
+      });
+      expect(select).toHaveBeenCalledOnce();
+      expect(select.mock.calls[0][0]).toBe(flask);
+    },
+  );
+
+  it('returns the reviewed partial compound answer when inference times out', async () => {
+    const select = vi.fn<SelectFacts>(
+      async (_question, _locale, _candidates, signal) => {
+        await new Promise((_, reject) =>
+          signal.addEventListener('abort', () => reject(signal.reason), {
+            once: true,
+          }),
+        );
+      },
+    );
+    const timeout = 30;
+    await open({ local: true, select, timeout });
+    expect(
+      (await ask('How is this website hosted? Which project used Flask?')).body,
+    ).toMatchObject({
+      status: 'partial',
+      mode: 'index',
+      missing: 'additional-question',
+      claims: [{ id: 'portfolio-website-architecture' }],
+    });
+    expect(select).toHaveBeenCalledOnce();
+  });
   it.each([
     ['en', 'sumamrize all projects', 'summarize all projects'],
     ['en', 'sumarize all projects', 'summarize all projects'],

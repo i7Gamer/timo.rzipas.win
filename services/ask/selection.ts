@@ -7,6 +7,7 @@ import {
   sources,
   MAX_CLAIMS,
   PROJECT_OVERVIEW_IDS,
+  type AskResult,
   type AskStatus,
   type Fact,
 } from '../../src/lib/ask/catalog.ts';
@@ -20,15 +21,18 @@ import {
   approvedAnswer,
   asksAboutAICoding,
   asksUnsupportedDetail,
+  combineReviewedClauses,
   modelOverviewIds,
   needsDatedWorkEvidence,
+  needsCompoundSelection,
   profileFollowUp,
   profileHighlightIds,
   profileQuestionNote,
   questionClauses,
-  reviewedCompoundFactIds,
+  reviewedCompoundClauses,
   reviewedFactId,
   summaryOverviewIds,
+  type ReviewedCompoundClause,
   WORK_EXPERIENCE_IDS,
 } from '../../src/lib/ask/reviewed-questions.ts';
 import type { ChatTurn } from '../../src/lib/ask/history.ts';
@@ -557,10 +561,13 @@ export function prepareBoundedQuestion(
   history: readonly ChatTurn[] = [],
 ) {
   const prepared = prepareExactQuestion(question, locale, history, true);
+  const compound = prepareMixedCompound(question, prepared.fallback);
   return {
     ...prepared,
     retrievalRequired:
-      'retrievalRequired' in prepared && prepared.retrievalRequired,
+      Boolean(compound) ||
+      ('retrievalRequired' in prepared && prepared.retrievalRequired),
+    compound,
   };
 }
 
@@ -570,19 +577,48 @@ export function prepareQuestion(
   history: readonly ChatTurn[] = [],
 ) {
   const exact = prepareExactQuestion(question, locale, history);
-  if (!exact.allowBroadSearch) return exact;
+  const compound = prepareMixedCompound(question, exact.fallback);
+  if (compound) {
+    const ids = new Set(
+      compound
+        .filter(needsCompoundSelection)
+        .flatMap(({ modelIds }) => modelIds),
+    );
+    return {
+      ...exact,
+      compound,
+      candidates: facts
+        .filter(({ id }) => ids.has(id))
+        .slice(0, MAX_CANDIDATES),
+    };
+  }
+  if (!exact.allowBroadSearch) return { ...exact, compound };
   const terms = normalize(question);
   const corrected = recoverSpelling(terms);
-  if (corrected === terms) return exact;
+  if (corrected === terms) return { ...exact, compound };
   const recovered = prepareExactQuestion(corrected, locale, history);
   const ids = recovered.fallback.claims.map(({ id }) => id);
   return {
     ...exact,
+    compound,
     candidates: recovered.candidates.length
       ? recovered.candidates
       : facts.filter(({ id }) => ids.includes(id)),
     semanticPool: recovered.semanticPool,
   };
+}
+
+function prepareMixedCompound(question: string, fallback: AskResult) {
+  if (
+    fallback.status !== 'partial' ||
+    !fallback.missing ||
+    fallback.claims.length >= MAX_CLAIMS
+  )
+    return;
+  const clauses = questionClauses(question);
+  if (clauses.length <= 1) return;
+  const parts = reviewedCompoundClauses(clauses, normalize(question));
+  if (parts.some(needsCompoundSelection)) return parts;
 }
 
 export async function askModel(
@@ -592,7 +628,55 @@ export async function askModel(
   candidates: Fact[],
   signal: AbortSignal,
   history?: readonly ChatTurn[],
+  compound?: readonly ReviewedCompoundClause[],
 ) {
+  if (compound) {
+    const pending = compound.filter(needsCompoundSelection);
+    const decision = verifiedDecision(
+      await select(
+        pending.map(({ question }) => question).join(' '),
+        locale,
+        candidates,
+        signal,
+        history,
+      ),
+      candidates,
+      false,
+    );
+    if (!decision) return null;
+    if (!decision.matches.length)
+      return documentAnswer([], 'unknown', 'local', locale, corpusVersion);
+    const combined = combineReviewedClauses(
+      compound.map((part) => {
+        if (!needsCompoundSelection(part)) return part.reviewed;
+        const covered = decision.matches.filter(({ id }) =>
+          part.modelIds.includes(id),
+        );
+        return {
+          ids: covered.map(({ id }) => id),
+          ...(covered.every(({ partial }) => partial)
+            ? { partial: true as const }
+            : {}),
+        };
+      }),
+    );
+    if (!combined)
+      return documentAnswer([], 'unknown', 'local', locale, corpusVersion);
+    const missing =
+      combined.missing ??
+      (decision.status === 'partial' ? 'additional-question' : undefined);
+    const matches = combined.ids.flatMap((id) =>
+      facts.filter((fact) => fact.id === id),
+    );
+    return documentAnswer(
+      matches,
+      missing || matches.some(({ partial }) => partial) ? 'partial' : 'answer',
+      'local',
+      locale,
+      corpusVersion,
+      missing,
+    );
+  }
   const projectContext = projectFollowUp(normalize(question), history ?? []);
   const focus = projectContext?.focus;
   const selectionHistory = projectContext?.overview
@@ -622,16 +706,17 @@ export async function askModel(
   const clauses = questionClauses(question);
   let additionalUnanswered = false;
   if (matches.length && clauses.length > 1) {
-    const scope = normalize(question);
-    const covered = clauses.map(
-      (clause) =>
+    const parts = reviewedCompoundClauses(clauses, normalize(question));
+    const covered = parts.map(
+      ({ question: clause, modelIds }) =>
         new Set([
-          ...prepareBoundedQuestion(
+          ...prepareExactQuestion(
             clause,
             locale,
             history,
+            true,
           ).fallback.claims.map(({ id }) => id),
-          ...reviewedCompoundFactIds(normalize(clause), scope),
+          ...modelIds,
         ]),
     );
     matches = matches.filter(({ id }) => covered.some((ids) => ids.has(id)));

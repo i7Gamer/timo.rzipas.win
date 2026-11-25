@@ -1708,6 +1708,85 @@ describe('Ask public page content', () => {
     });
   });
 
+  it.each([
+    [
+      'en',
+      'Tell me how this website is hosted. Tell me who won the World Cup.',
+      'How is this website hosted? Which project used Flask?',
+    ],
+    [
+      'de',
+      'Erklär mir, wie diese Website gehostet wird. Sag mir, wer die Fussball-WM gewonnen hat.',
+      'Wie wird diese Website gehostet? Welches Projekt nutzte Flask?',
+    ],
+  ] as const)(
+    'preserves per-clause coverage on the %s browser fallback',
+    async (locale, mixed, supported) => {
+      const content = { ...index(), locale };
+      const first = findSiteContent(mixed, content, 'overview');
+      expect(first).toMatchObject({
+        status: 'partial',
+        note: expect.stringMatching(
+          locale === 'de' ? /bleibt offen/ : /still unanswered/,
+        ),
+        sources: [{ href: '/projects/this-website/' }],
+      });
+      expect(findSiteContent(supported, content, 'overview')).toMatchObject({
+        status: 'answer',
+        preferModel: true,
+        missing: [],
+        sources: [
+          { href: '/projects/this-website/' },
+          { href: '/projects/spotify-stats-tracker/#contribution' },
+        ],
+      });
+      const window = new Window();
+      try {
+        vi.stubGlobal('document', window.document);
+        window.document.documentElement.lang = locale;
+        const lookup = vi.fn<typeof fetch>(async (path) =>
+          path === `/ask-content-${locale}.json`
+            ? Response.json(content)
+            : new Response(null, { status: 503 }),
+        );
+        vi.stubGlobal('fetch', lookup);
+        window.document.body.innerHTML =
+          '<section data-mode="local" data-version="fixture"><div data-ask-result></div><form><textarea></textarea><button type="submit">Ask</button></form></section>';
+        const panel = window.document.querySelector('section')!;
+        panel.dataset.messages = JSON.stringify({ wait: 'Looking…' });
+        setupAskWork(panel as unknown as HTMLElement);
+        for (const question of [mixed, supported]) {
+          panel.querySelector('textarea')!.value = question;
+          panel
+            .querySelector('form')!
+            .dispatchEvent(new window.Event('submit'));
+          await vi.waitFor(() =>
+            expect(panel.querySelector('button')?.disabled).toBe(false),
+          );
+        }
+        const [partial, full] = panel.querySelectorAll('[data-ask-reply]');
+        expect(partial.textContent).toMatch(
+          locale === 'de' ? /bleibt offen/ : /still unanswered/,
+        );
+        expect(partial.querySelectorAll('a')).toHaveLength(1);
+        expect(
+          Array.from(full.querySelectorAll('a'), (link) =>
+            link.getAttribute('href'),
+          ),
+        ).toEqual([
+          '/projects/this-website/',
+          '/projects/spotify-stats-tracker/#contribution',
+        ]);
+        expect(
+          lookup.mock.calls.filter(([path]) => path === '/api/ask'),
+        ).toHaveLength(1);
+      } finally {
+        vi.unstubAllGlobals();
+        window.close();
+      }
+    },
+  );
+
   it('keeps an unnamed follow-up with the project it refers to', () => {
     expect(
       findSiteContent(

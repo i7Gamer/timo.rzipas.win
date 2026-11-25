@@ -841,7 +841,7 @@ export function findSiteContent(
           matched.some(({ fact }) => fact.partial)
             ? 'partial'
             : 'answer',
-        ...(modelIds || summaryOverviewIds(normalized)
+        ...(approved?.preferModel || modelIds || summaryOverviewIds(normalized)
           ? { preferModel: true }
           : {}),
         sources: [...sources.values()],

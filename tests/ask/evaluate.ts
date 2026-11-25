@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { writeFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
 import { request } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Locale } from '../../src/i18n';
@@ -29,12 +31,15 @@ import heldOut from './held-out.json' with { type: 'json' };
 import paraphrases from './paraphrases.json' with { type: 'json' };
 import questions from './questions.json' with { type: 'json' };
 import routing from './routing.json' with { type: 'json' };
+import { assertRoutingExpectations } from '../../src/lib/ask/routing-gate.ts';
 
 const LEXICAL_TIMEOUT_MS = 6_000;
 const PRIME_TIMEOUT_MS = 45_000;
 const WARM_PERCENTILE = 0.95;
 const HTTP_STARTUP_TIMEOUT_MS = 30_000;
 const HTTP_POLL_INTERVAL_MS = 500;
+const PACKAGED_RETRIEVAL_QUOTA = 4;
+const execFileAsync = promisify(execFile);
 const PACKAGED_COLD_QUESTION = 'Which project used Flask?';
 const PACKAGED_WARM_FIXTURES: Fixture[] = [
   {
@@ -67,12 +72,33 @@ const httpUrl = httpFlag < 0 ? undefined : process.argv[httpFlag + 1];
 if (httpFlag >= 0 && (!httpUrl || httpUrl.startsWith('--')))
   throw new Error('--http requires a base URL');
 const httpOrigin = httpUrl ? new URL(httpUrl).origin : undefined;
+const resetProjectFlag = process.argv.indexOf('--reset-compose-project');
+const resetProject =
+  resetProjectFlag < 0 ? undefined : process.argv[resetProjectFlag + 1];
+const COMPOSE_PROJECT_PATTERN = /^[a-z0-9][a-z0-9_-]{0,62}$/i;
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+if (resetProjectFlag >= 0) {
+  if (
+    !resetProject ||
+    resetProject.startsWith('--') ||
+    !COMPOSE_PROJECT_PATTERN.test(resetProject)
+  )
+    throw new Error(
+      '--reset-compose-project requires a valid Compose project name',
+    );
+  if (!httpOrigin || !LOOPBACK_HOSTS.has(new URL(httpOrigin).hostname))
+    throw new Error(
+      '--reset-compose-project is limited to loopback --http URLs',
+    );
+}
 const coldOnly = process.argv.includes('--cold-only');
 const warmOnly = process.argv.includes('--warm-only');
-if (coldOnly && warmOnly)
-  throw new Error('--cold-only and --warm-only cannot be combined');
-if ((coldOnly || warmOnly) && !httpOrigin)
-  throw new Error('--cold-only and --warm-only require --http');
+const suiteOnly = process.argv.includes('--suite-only');
+if ([coldOnly, warmOnly, suiteOnly].filter(Boolean).length > 1)
+  throw new Error('Choose one of --cold-only, --warm-only, or --suite-only');
+if ((coldOnly || warmOnly || suiteOnly) && !httpOrigin)
+  throw new Error('The packaged check options require --http');
+const checkCold = !warmOnly && !suiteOnly;
 const mode = httpOrigin
   ? 'http'
   : process.argv.includes('--index')
@@ -80,6 +106,9 @@ const mode = httpOrigin
     : process.argv.includes('--lexical')
       ? 'lexical'
       : 'gateway';
+const usesHttp = mode === 'http' || mode === 'gateway';
+const baseline = process.argv.includes('--baseline');
+const expectationsVersion = baseline ? 'baseline-v1' : 'approved-v2';
 const reportFlag = process.argv.indexOf('--report');
 const reportPath = reportFlag < 0 ? undefined : process.argv[reportFlag + 1];
 if (reportFlag >= 0 && (!reportPath || reportPath.startsWith('--')))
@@ -155,7 +184,7 @@ const baselineFixtures = process.argv.includes('--routing')
 const allFixtures = process.argv.includes('--answers')
   ? basicFixtures('approved-answers', approvedAnswers)
   : baselineFixtures.map((fixture) => {
-      const update = process.argv.includes('--baseline')
+      const update = baseline
         ? undefined
         : approvedExpectation(fixture.suite, fixture);
       return update
@@ -166,13 +195,19 @@ const allFixtures = process.argv.includes('--answers')
           }
         : fixture;
     });
+const routingExpectations = allFixtures.filter(
+  ({ suite }) => suite === 'routing',
+);
+if (routingExpectations.length && !baseline) {
+  assertRoutingExpectations(routingExpectations);
+}
 const fixtures =
   mode === 'http'
     ? warmOnly
       ? PACKAGED_WARM_FIXTURES
       : coldOnly
         ? []
-        : PACKAGED_WARM_FIXTURES
+        : allFixtures
     : allFixtures;
 if (process.argv.includes('--misses') && mode !== 'http')
   assert.equal(fixtures.length, misses.size);
@@ -187,7 +222,7 @@ if (mode === 'http') {
     assert.ok(Date.now() < deadline, 'Ask gateway did not start through nginx');
     await delay(HTTP_POLL_INTERVAL_MS);
   }
-  if (!warmOnly) {
+  if (checkCold) {
     const coldStart = performance.now();
     try {
       const response = await fetch(new URL('/api/ask', httpOrigin), {
@@ -225,6 +260,31 @@ if (mode === 'http') {
       };
       console.log('cold probe', JSON.stringify(coldProbe));
     }
+  }
+}
+
+async function resetPackagedGateway() {
+  if (!resetProject) return;
+  await execFileAsync('docker', [
+    'compose',
+    '-p',
+    resetProject,
+    '-f',
+    'deploy/docker-compose.ask.yml',
+    'restart',
+    'ask',
+  ]);
+  const deadline = Date.now() + HTTP_STARTUP_TIMEOUT_MS;
+  for (;;) {
+    const ready = await fetch(new URL('/api/ask', httpOrigin!), {
+      signal: AbortSignal.timeout(2_000),
+    }).catch(() => undefined);
+    if (ready?.status === 405) return;
+    assert.ok(
+      Date.now() < deadline,
+      'Ask gateway did not restart through nginx',
+    );
+    await delay(HTTP_POLL_INTERVAL_MS);
   }
 }
 
@@ -313,10 +373,14 @@ async function runGateway(question: string, locale: Locale) {
 }
 
 const rows = [];
+let packagedRequestsSinceReset = 0;
+if (mode === 'http' && resetProject && fixtures.length) {
+  await resetPackagedGateway();
+}
 for (const fixture of fixtures) {
   const { question } = fixture;
   const locale = fixture.locale === 'de' ? 'de' : 'en';
-  const { fallback, candidates, semanticPool } = prepareQuestion(
+  const { fallback, candidates, semanticPool, compound } = prepareQuestion(
     question,
     locale,
   );
@@ -328,6 +392,14 @@ for (const fixture of fixtures) {
   const start = performance.now();
   let ms;
   if (mode === 'http') {
+    if (
+      resetProject &&
+      packagedRequestsSinceReset >= PACKAGED_RETRIEVAL_QUOTA
+    ) {
+      await resetPackagedGateway();
+      packagedRequestsSinceReset = 0;
+    }
+    if (resetProject) packagedRequestsSinceReset += 1;
     const started = performance.now();
     try {
       const response = await fetch(new URL('/api/ask', httpOrigin!), {
@@ -369,28 +441,24 @@ for (const fixture of fixtures) {
         locale,
         candidates,
         AbortSignal.timeout(LEXICAL_TIMEOUT_MS),
+        undefined,
+        compound,
       ).catch(() => null);
     }
     ms = performance.now() - start;
   }
   if (actual) assert.ok(validateResult(actual, locale, corpusVersion));
   const ids = actual?.claims.map(({ id }) => id) ?? [];
+  const matchingIds = fixture.acceptableIds.find(
+    (expected) =>
+      expected.length === ids.length &&
+      expected.every((id) => ids.includes(id)),
+  );
   const match =
     (mode !== 'http' || httpStatus === 200) &&
     actual?.status === fixture.status &&
     (!fixture.expectedMode || actual?.mode === fixture.expectedMode) &&
-    fixture.acceptableIds.some(
-      (expected) =>
-        expected.length === ids.length &&
-        expected.every((id) => ids.includes(id)),
-    ) &&
-    (mode !== 'http' ||
-      actual?.sources.map(({ id }) => id).join() ===
-        fixture.acceptableIds[0]
-          .map((id) => facts.find((fact) => fact.id === id)?.sourceId)
-          .filter(Boolean)
-          .filter((id, index, all) => all.indexOf(id) === index)
-          .join());
+    Boolean(matchingIds);
   const route = graniteRan
     ? 'granite'
     : mode === 'http'
@@ -423,9 +491,13 @@ for (const fixture of fixtures) {
     resultMode: actual?.mode ?? null,
     ids,
     citations: actual?.sources ?? [],
-    expectedCitationIds: fixture.acceptableIds[0]
-      .map((id) => facts.find((fact) => fact.id === id)?.sourceId)
-      .filter((id): id is string => Boolean(id)),
+    expectedCitationIds: [
+      ...new Set(
+        (matchingIds ?? fixture.acceptableIds[0])
+          .map((id) => facts.find((fact) => fact.id === id)?.sourceId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ],
     match,
     ms: Math.round(ms),
   });
@@ -446,9 +518,11 @@ const summary = [...new Set(rows.map(({ route }) => route))].map((route) => {
     total: group.length,
     passed: group.filter(({ match }) => match).length,
     errors: group.filter(({ status }) => status === 'error').length,
-    outages: group.filter(
-      ({ httpStatus }) => httpStatus === null || httpStatus !== 200,
-    ).length,
+    outages: usesHttp
+      ? group.filter(
+          ({ httpStatus }) => httpStatus === null || httpStatus !== 200,
+        ).length
+      : null,
     p95Ms: times.length
       ? times[Math.ceil(times.length * WARM_PERCENTILE) - 1]
       : null,
@@ -456,6 +530,7 @@ const summary = [...new Set(rows.map(({ route }) => route))].map((route) => {
 });
 console.log(
   mode,
+  expectationsVersion,
   corpusVersion,
   rows.filter(({ match }) => match).length + '/' + rows.length,
 );
@@ -480,15 +555,26 @@ if (process.argv.includes('--misses')) {
 if (reportPath)
   await writeFile(
     reportPath,
-    JSON.stringify({ mode, corpusVersion, coldProbe, summary, rows }, null, 2) +
-      '\n',
+    JSON.stringify(
+      {
+        mode,
+        usesHttp,
+        expectationsVersion,
+        corpusVersion,
+        coldProbe,
+        summary,
+        rows,
+      },
+      null,
+      2,
+    ) + '\n',
   );
 if (mode === 'gateway' && rows.some(({ match }) => !match))
   process.exitCode = 1;
 if (
   mode === 'http' &&
   (rows.some(({ match }) => !match) ||
-    (!warmOnly &&
+    (checkCold &&
       (!coldProbe ||
         coldProbe.httpStatus !== 200 ||
         coldProbe.status !== 'answer' ||

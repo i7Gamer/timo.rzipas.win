@@ -117,7 +117,16 @@ python -m pip install onnxruntime==1.32.0 tokenizers==0.23.3 numpy==2.5.5
 python -B services/ask/granite.py C:/path/to/granite
 ```
 
-The worker binds to `127.0.0.1:4515`. It ranks facts only when a question mentions
+Wait until the worker prints its listening line, then send a rank request.
+Expect a `corpusVersion` and a ranked list drawn from the requested IDs.
+The ranker benchmark below exercises the same worker through the gateway.
+
+```powershell
+$rankRequest = '{"question":"How did SpotifyTracker recover missed plays?","locale":"en","ids":["spotify-recovery","spotify-python"]}'
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:4515/rank -ContentType application/json -Body $rankRequest
+```
+
+The worker binds to `127.0.0.1:4515` by default. It ranks facts only when a question mentions
 a catalogue topic and keyword matching comes up empty. Qwen sees at most two
 ranked facts on this path, under the same six-second gateway deadline. When the
 ranker is unavailable or its catalogue version differs, the gateway returns the
@@ -157,7 +166,14 @@ node services/ask/smoke.ts http://127.0.0.1:18093 --gateway-offline
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml down
 ```
 
-The HTTP evaluator has separate `--cold-only` and `--warm-only` paths. The cold
+The HTTP evaluator runs the full fixture suite selected by its flags:
+`--routing` runs the routing gate, `--answers` runs approved-answer fixtures,
+and no suite flag runs the full baseline, paraphrase and held-out set. These
+HTTP suites use the same expectations as the in-process evaluator. Reports label
+the approved expectations `approved-v2` and the historical `--baseline`
+expectations `baseline-v1`. Run `--suite-only` after preloading to measure the
+selected suite separately from a cold probe. The evaluator also has
+`--cold-only` and `--warm-only` smoke paths. The cold
 path sends one English Flask question before any model preload and requires an
 HTTP 200 `answer`, `mode: local`, the exact `spotify-python` claim and its
 canonical citation. Restart only `ask` afterward to clear gateway quotas; this
@@ -170,6 +186,23 @@ does not hide the cold report, and a cold failure does not prevent a separate
 warm run. Each report records HTTP/result status, mode, claim IDs, citation
 links and latency; warm p95 includes only local results. The fixed warm set is
 three gateway requests, within the retrieval budget.
+
+Full HTTP evaluation exceeds the per-process gateway quota. Add
+`--reset-compose-project <project-name>` to an HTTP suite command to restart
+only that Compose project's `ask` service after each four fixture requests.
+The flag is restricted to loopback URLs and a validated project name; it keeps
+Ollama and its loaded model running. Do not use it for a service outside the
+dedicated evaluation Compose project.
+
+From the repository root, preload the pinned model and run each packaged suite
+against the dedicated target host. Replace the project name and URL with the
+values for that run.
+
+```sh
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --suite-only --routing --reset-compose-project ask-qwen-check-20261124 --report .local-ask/routing.json
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --suite-only --answers --reset-compose-project ask-qwen-check-20261124 --report .local-ask/approved.json
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --suite-only --reset-compose-project ask-qwen-check-20261124 --report .local-ask/full.json
+```
 
 Restart only `ask` again before the ordinary live smoke. It checks exact
 bilingual local answers and their citations while the same Ollama model remains
@@ -198,15 +231,19 @@ python -B -m unittest tests.ask.test_granite_worker
 node tests/ask/evaluate.ts --index
 node tests/ask/evaluate.ts --lexical
 $env:ASK_GRANITE = 'local'
-node tests/ask/evaluate.ts --rank-port 4535
+node tests/ask/evaluate.ts --rank-port 4515
 Remove-Item Env:ASK_GRANITE
 ```
 
 `--index` needs no inference service. `--lexical` uses the pinned Ollama model
-with lexical retrieval. The final command runs the native HTTP gateway with the
-optional Granite ranker on port 4535. Start and prewarm the relevant local
-services before either live run. The fixtures compare approved evidence IDs and
-abstention in both languages.
+with lexical retrieval. Start Granite with its default port 4515, then run the
+final command with `ASK_GRANITE=local`; it checks real fixture requests through
+the gateway. The worker loads and embeds the pinned model before binding, so a
+successful connection and `/rank` GET response of `405` confirm ranker
+readiness. A fallback response by itself does not. Index and lexical modes are
+diagnostic local modes and report no HTTP outages because they do not contact
+the gateway. The fixtures compare approved evidence IDs and abstention in both
+languages.
 
 On the Windows workstation, Ollama 0.40.16 ran the pinned Qwen model on CPU and
 passed all 32 fixtures. The 23 warm selector responses took 1.22 seconds at

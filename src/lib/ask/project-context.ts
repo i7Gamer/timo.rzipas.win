@@ -5,7 +5,7 @@ import {
   PROJECT_OVERVIEW_IDS,
   sourceLink,
 } from './catalog.ts';
-import type { ChatTurn } from './history.ts';
+import { acknowledgement, type ChatTurn } from './history.ts';
 import { moreQuestion, summaryOverviewIds } from './reviewed-questions.ts';
 
 export const PROJECTS_PATH = '/projects/';
@@ -62,8 +62,9 @@ export function projectFollowUp(terms: string, history: readonly ChatTurn[]) {
   if (!moreQuestion.test(terms)) return;
   const root = history.findLast(
     ({ question }) =>
-      otherProjects.test(normalize(question)) ||
-      !moreQuestion.test(normalize(question)),
+      !acknowledgement.test(normalize(question)) &&
+      (otherProjects.test(normalize(question)) ||
+        !moreQuestion.test(normalize(question))),
   );
   if (!root) return;
   const anchor = normalize(root.question);

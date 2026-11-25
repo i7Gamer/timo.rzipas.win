@@ -35,6 +35,7 @@ import {
   type SiteSubject,
 } from './site-content';
 import {
+  acknowledgement,
   findEarlierTurn,
   recallChat,
   selectChatHistory,
@@ -235,6 +236,7 @@ export function setupAskWork(panel: HTMLElement) {
         },
       ],
     };
+    rememberSubjects(reply, pending.subjects);
     reply.textContent =
       locale === 'de'
         ? `Möchtest du mehr über ${project.label} erfahren oder über andere Projekte?`
@@ -315,12 +317,30 @@ export function setupAskWork(panel: HTMLElement) {
       result.status === 'partial' && !result.missing ? messages.partial : '';
     if (hasExtendedPitchClaims(result.claims))
       addParagraph(reply, extendedPitchLead[result.locale]);
+    const sources = new Map(
+      result.sources.map((source) => [source.id, source]),
+    );
+    const lastClaimBySource = new Map(
+      result.claims.map(({ sourceId }, index) => [sourceId, index]),
+    );
+    const citedSources = new Set<string>();
+    result.claims.forEach(({ sourceId, text }, index) => {
+      addParagraph(reply, text);
+      const source = sources.get(sourceId);
+      if (
+        source &&
+        lastClaimBySource.get(sourceId) === index &&
+        !citedSources.has(sourceId)
+      ) {
+        reply.append(citation(source.href, source.label));
+        citedSources.add(sourceId);
+      }
+    });
     for (const source of result.sources) {
-      for (const { text } of result.claims.filter(
-        ({ sourceId }) => sourceId === source.id,
-      ))
-        addParagraph(reply, text);
-      reply.append(citation(source.href, source.label));
+      if (!citedSources.has(source.id)) {
+        reply.append(citation(source.href, source.label));
+        citedSources.add(source.id);
+      }
     }
     if (result.missing)
       addParagraph(
@@ -666,12 +686,18 @@ export function setupAskWork(panel: HTMLElement) {
             !(index && namesSiteSubject(question, index))));
       if (projectContext && !projectContext.projectId) {
         if ('preserveSubjects' in projectContext) {
-          const visibleSubjects = transcript.at(-1)?.subjects ?? subjects;
+          const visibleSubjects =
+            transcript.findLast(
+              ({ question, subjects: prior }) =>
+                !acknowledgement.test(normalize(question)) &&
+                prior.some(({ href }) => href.startsWith(PROJECTS_PATH)),
+            )?.subjects ?? subjects;
           if (visibleSubjects.length) {
             pending = {
               question: next ?? question,
               subjects: visibleSubjects,
             };
+            rememberSubjects(reply, visibleSubjects);
             reply.textContent =
               (locale === 'de'
                 ? 'Über welches Projekt möchtest du mehr erfahren? '
@@ -701,8 +727,10 @@ export function setupAskWork(panel: HTMLElement) {
               ? earlier.subjects
               : subjects;
         if (options.length !== 1) {
-          if (options.length)
+          if (options.length) {
             pending = { question: next ?? question, subjects: options };
+            rememberSubjects(reply, options);
+          }
           reply.textContent = clarification(
             locale,
             options.map(({ label }) => label),

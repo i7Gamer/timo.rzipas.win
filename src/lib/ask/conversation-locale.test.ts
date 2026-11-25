@@ -34,6 +34,13 @@ describe('questionLocale', () => {
     ).toEqual([]);
   });
   it.each([
+    ['Pitch about Timo', 'de', 'en'],
+    ['Write me an introduction about Timo', 'de', 'en'],
+    ['Stell Timo kurz vor', 'en', 'de'],
+    ['Give me a good 200 word pitch about Timo', 'de', 'en'],
+    ['Schreib mir einen Pitch über Timo in etwa 200 Wörtern', 'en', 'de'],
+    ['This is not about 200 words', 'de', 'en'],
+    ['Das sind keine 200 Wörter', 'en', 'de'],
     ['Was SpotifyTracker a rewrite?', 'en', 'en'],
     ['Was Hearthcoil built in Unity?', 'de', 'en'],
     ['Was SpotifyTracker?', 'en', 'en'],
@@ -61,4 +68,8 @@ describe('questionLocale', () => {
       expect(questionLocale(question, 'de')).toBe('de');
     },
   );
+  it('keeps a bare pitch on the conversation locale', () => {
+    expect(questionLocale('Pitch', 'de')).toBe('de');
+    expect(questionLocale('Pitch', 'en')).toBe('en');
+  });
 });

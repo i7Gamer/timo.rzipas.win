@@ -2,9 +2,10 @@ import { Window } from 'happy-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import AskWork from '../../components/AskWork.astro';
+import { documentAnswer, facts } from './catalog';
 import { setupAskWork } from './browser';
 
-function fixture(window: Window) {
+function fixture(window: Window, mode: 'index' | 'local' = 'index') {
   vi.stubGlobal('document', window.document);
   window.document.documentElement.lang = 'en';
   window.document.body.innerHTML = `
@@ -13,7 +14,7 @@ function fixture(window: Window) {
         <button type="button" data-ask-collapse aria-label="Collapse"><span></span></button>
         <button type="button" data-ask-restore aria-label="Restore"><span></span></button>
       </div>
-      <details data-ask-work data-mode="index" data-version="fixture" data-messages='{"wait":"Looking..."}'>
+      <details data-ask-work data-mode="${mode}" data-version="fixture" data-messages='{"wait":"Looking..."}'>
         <summary>Ask about my work</summary>
         <div id="ask-work-body" data-ask-body>
           <div data-ask-result></div>
@@ -186,6 +187,55 @@ describe('Ask about my work UI', () => {
       expect(
         panel.querySelectorAll('[data-ask-user]')[1]?.getAttribute('lang'),
       ).toBe('en');
+    } finally {
+      window.close();
+    }
+  });
+
+  it('keeps validated claim order and cites each source once', async () => {
+    const window = new Window();
+    try {
+      const panel = fixture(window, 'local');
+      const ids = ['spotify-rewrite', 'myspeed-fork', 'spotify-accounts'];
+      const matches = ids.map((id) => facts.find((fact) => fact.id === id)!);
+      const answer = documentAnswer(
+        matches,
+        'answer',
+        'index',
+        'en',
+        'fixture',
+      );
+      const fetchMock = vi.fn(async (path: string | URL | Request) =>
+        String(path) === '/ask-content-en.json'
+          ? { ok: false, status: 404 }
+          : { ok: true, status: 200, json: async () => answer },
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      panel.querySelector('textarea')!.value = 'Tell me about your projects';
+      panel
+        .querySelector('form')!
+        .dispatchEvent(new window.Event('submit') as unknown as Event);
+
+      await vi.waitFor(() =>
+        expect(
+          fetchMock.mock.calls.some(([path]) => String(path) === '/api/ask'),
+        ).toBe(true),
+      );
+      await vi.waitFor(() =>
+        expect(panel.querySelectorAll('[data-ask-reply] p').length).toBe(
+          matches.length,
+        ),
+      );
+      const reply = panel.querySelector('[data-ask-reply]')!;
+      const rendered = Array.from(reply.querySelectorAll('p')).map(
+        ({ textContent }) => textContent,
+      );
+      expect(rendered).toEqual(matches.map(({ answer }) => answer.en));
+      expect(
+        Array.from(reply.querySelectorAll('a')).map(
+          ({ textContent }) => textContent,
+        ),
+      ).toEqual(['MySpeed case study', 'SpotifyTracker case study']);
     } finally {
       window.close();
     }

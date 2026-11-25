@@ -4,6 +4,7 @@ import { PROJECTS_PATH } from './project-context';
 import {
   modelOverviewIds,
   moreQuestion,
+  pitchQuestionLocale,
   repairReviewedSummaryText,
 } from './reviewed-questions';
 import type { SiteSubject } from './site-content';
@@ -56,6 +57,8 @@ const ambiguousShortFragment = /^[\p{L}\p{N}_-]{1,4}$/u;
 
 export function questionLocale(question: string, fallback: Locale): Locale {
   const text = normalize(question);
+  const pitchLocale = pitchQuestionLocale(text);
+  if (pitchLocale) return pitchLocale;
   // One-word fragments are often project names, labels, or continuation prompts.
   // Let conversation state decide unless the word itself is a clear sentence cue.
   if (ambiguousShortFragment.test(text) && text !== 'work') return fallback;

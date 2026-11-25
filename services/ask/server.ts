@@ -291,6 +291,7 @@ export function createGateway({
           selected,
           signal,
           history,
+          prepared.compound,
         );
         if (!result || signal.aborted)
           throw new Error('Invalid selector result');
