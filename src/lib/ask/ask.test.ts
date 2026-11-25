@@ -61,58 +61,70 @@ const digest = (value: string | Buffer) =>
   createHash('sha256').update(value).digest('hex');
 
 describe('local summary model', () => {
-  it('writes from separate reviewed work and project inputs', async () => {
-    const excerpts: string[] = [];
-    const summaries = [
-      'At Abacus, Timo works on accounting document processing.',
-      'His portfolio includes SpotifyTracker, MySpeed and Hearthcoil.',
-    ];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string, options?: RequestInit) => {
-        if (url.endsWith('/api/tags'))
+  it.each([
+    {
+      ids: ['portfolio-pitch', 'portfolio-project-inventory'],
+      summaries: [
+        'At Abacus, Timo works on accounting document processing.',
+        'His portfolio includes SpotifyTracker, MySpeed and Hearthcoil.',
+      ],
+      expected:
+        'At Abacus, Timo works on accounting document processing. His portfolio includes SpotifyTracker, MySpeed and Hearthcoil.',
+    },
+    {
+      ids: ['myspeed-fork'],
+      summaries: ['Timo added test providers to his fork.'],
+      expected: 'MySpeed · Timo added test providers to his fork.',
+    },
+  ])(
+    'writes from the reviewed inputs for $ids',
+    async ({ ids, summaries, expected }) => {
+      const excerpts: string[] = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (url: string, options?: RequestInit) => {
+          if (url.endsWith('/api/tags'))
+            return Response.json({
+              models: [
+                {
+                  name: SUMMARY_MODEL,
+                  digest:
+                    '120c341e628189e9968d6e081b7dc2f94580a17a0d7f5c9f259f237d9ddd11c9',
+                },
+              ],
+            });
+          const { model, messages } = JSON.parse(String(options?.body));
+          expect(model).toBe(SUMMARY_MODEL);
+          excerpts.push(messages[1].content);
           return Response.json({
-            models: [
-              {
-                name: SUMMARY_MODEL,
-                digest:
-                  '120c341e628189e9968d6e081b7dc2f94580a17a0d7f5c9f259f237d9ddd11c9',
-              },
-            ],
+            done: true,
+            done_reason: 'stop',
+            message: {
+              content: JSON.stringify({
+                summary: summaries[excerpts.length - 1],
+              }),
+            },
           });
-        const { model, messages } = JSON.parse(String(options?.body));
-        expect(model).toBe(SUMMARY_MODEL);
-        excerpts.push(messages[1].content);
-        return Response.json({
-          done: true,
-          done_reason: 'stop',
-          message: {
-            content: JSON.stringify({
-              summary: summaries[excerpts.length - 1],
-            }),
-          },
-        });
-      }),
-    );
-    try {
-      const input = ['portfolio-pitch', 'portfolio-project-inventory'].map(
-        (id) => facts.find((fact) => fact.id === id)!,
+        }),
       );
-      const { claims } = documentAnswer(
-        input,
-        'answer',
-        'index',
-        'en',
-        corpusVersion,
-      );
-      expect(
-        await summarizeWithOllama('en', claims, new AbortController().signal),
-      ).toBe(summaries.join(' '));
-      expect(excerpts).toEqual(input.map(({ answer }) => answer.en));
-    } finally {
-      vi.unstubAllGlobals();
-    }
-  });
+      try {
+        const input = ids.map((id) => facts.find((fact) => fact.id === id)!);
+        const { claims } = documentAnswer(
+          input,
+          'answer',
+          'index',
+          'en',
+          corpusVersion,
+        );
+        expect(
+          await summarizeWithOllama('en', claims, new AbortController().signal),
+        ).toBe(expected);
+        expect(excerpts).toEqual(input.map(({ answer }) => answer.en));
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    },
+  );
 });
 
 describe('curated evidence', () => {

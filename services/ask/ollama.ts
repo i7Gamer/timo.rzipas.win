@@ -162,6 +162,11 @@ export type SummarizeFacts = (
   signal: AbortSignal,
 ) => Promise<string | null>;
 
+const SUMMARY_PROJECT_NAMES: Partial<Record<string, string>> = {
+  'myspeed-fork': 'MySpeed',
+  'spotify-upstream-review': 'SpotifyStatsTracker',
+};
+
 export const summarizeWithOllama: SummarizeFacts = async (
   locale,
   claims,
@@ -185,6 +190,7 @@ export const summarizeWithOllama: SummarizeFacts = async (
       ? [
           {
             text: workText.slice(snapshot?.[0].length ?? 0),
+            name: undefined,
             focus: dated
               ? 'Cover his work at Abacus and what he is building outside work.'
               : 'Name an employer and explain what Timo worked on.',
@@ -192,6 +198,7 @@ export const summarizeWithOllama: SummarizeFacts = async (
         ]
       : []),
     ...projects.map(({ id, text }) => ({
+      name: SUMMARY_PROJECT_NAMES[id],
       text:
         id === 'spotify-upstream-review'
           ? text
@@ -208,7 +215,7 @@ export const summarizeWithOllama: SummarizeFacts = async (
     })),
   ];
   const sentences = [];
-  for (const { text, focus } of sections) {
+  for (const { text, focus, name } of sections) {
     const result = await chatWithOllama(
       [
         {
@@ -241,7 +248,12 @@ export const summarizeWithOllama: SummarizeFacts = async (
       !isSummaryText(result.summary)
     )
       return null;
-    sentences.push(result.summary);
+    const summary = result.summary;
+    sentences.push(
+      name && !summary.toLowerCase().includes(name.toLowerCase())
+        ? `${name} · ${summary}`
+        : summary,
+    );
   }
   if (snapshot)
     sentences.push(
