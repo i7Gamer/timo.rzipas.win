@@ -175,6 +175,7 @@ docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml ps ol
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml restart ask
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml stop ask
 node services/ask/smoke.ts http://127.0.0.1:18093 --gateway-offline
+ASK_SMOKE_URL=http://127.0.0.1:18093 pnpm vitest run src/lib/ask/packaged-outage.test.ts
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml down
 ```
 
@@ -265,7 +266,9 @@ Restart only `ask` again before the ordinary live smoke. It checks exact
 bilingual local answers and their citations while the same Ollama model remains
 warm. The `--offline` phase pauses Ollama and checks reviewed index answers plus
 the no-store 503 response. The `--gateway-offline` phase stops `ask` and checks
-nginx's no-store unavailable response. Wait for Ollama's health check after
+nginx's no-store unavailable response; `packaged-outage.test.ts` then runs the
+real browser chat against the packaged page and requires a reviewed excerpt
+and citation in English and German. Wait for Ollama's health check after
 unpausing it before starting a stopped gateway. CI runs both startup and gateway-stopped
 smoke without pulling model weights. The optional JSON reports preserve each
 phase's results for review.
