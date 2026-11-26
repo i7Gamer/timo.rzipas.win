@@ -7,8 +7,18 @@ import { profileQuestionChoices } from './reviewed-questions';
 import { TOPIC_PROMPTS } from './topics';
 
 const MOTIVATION = [
-  { label: 'Homelab', ids: ['homelab-motivation'] },
-  { label: 'Projects', ids: ['portfolio-leisure'] },
+  {
+    id: 'homelab',
+    label: 'Homelab',
+    names: ['Homelab'],
+    ids: ['homelab-motivation'],
+  },
+  {
+    id: 'projects',
+    label: 'Projects',
+    names: ['Projects', 'Projekte'],
+    ids: ['portfolio-leisure'],
+  },
 ] as const;
 
 describe('clarification choices', () => {
@@ -65,8 +75,8 @@ describe('clarification choices', () => {
   it('removes duplicate facts when choices overlap', () => {
     expect(
       resolveChoice('both', [
-        { label: 'A', ids: ['cv-degree', 'cv-matura'] },
-        { label: 'B', ids: ['cv-matura', 'tutoring'] },
+        { id: 'a', label: 'A', names: ['A'], ids: ['cv-degree', 'cv-matura'] },
+        { id: 'b', label: 'B', names: ['B'], ids: ['cv-matura', 'tutoring'] },
       ]),
     ).toEqual(['cv-degree', 'cv-matura', 'tutoring']);
   });

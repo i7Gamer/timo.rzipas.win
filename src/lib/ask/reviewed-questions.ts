@@ -593,8 +593,34 @@ export function profileQuestionNote(
 }
 
 export interface AnswerChoice {
+  /** Stable across languages; buttons answer by id. */
+  id: string;
+  /** The label shown in the current language. */
   label: string;
+  /** Every language's name, so a typed pick resolves after a switch. */
+  names: readonly string[];
   ids: readonly string[];
+}
+
+const choiceNames = {
+  cv: { en: 'CV', de: 'Lebenslauf' },
+  work: { en: 'Work experience', de: 'Berufserfahrung' },
+  projects: { en: 'Projects', de: 'Projekte' },
+  homelab: { en: 'Homelab', de: 'Homelab' },
+} as const satisfies Record<string, Record<Locale, string>>;
+
+function choice(
+  id: keyof typeof choiceNames,
+  locale: Locale,
+  ids: readonly string[],
+): AnswerChoice {
+  const names = choiceNames[id];
+  return {
+    id,
+    label: names[locale],
+    names: [...new Set(Object.values(names))],
+    ids,
+  };
 }
 
 /** Answer options for a clarification note, answered locally when picked. */
@@ -602,26 +628,24 @@ export function profileQuestionChoices(
   terms: string,
   locale: Locale,
 ): readonly AnswerChoice[] | undefined {
-  const de = locale === 'de';
   if (isSummaryExpansion(terms))
     return [
-      {
-        label: de ? 'Lebenslauf' : 'CV',
-        ids: expandedSummaries['longer summary of his cv'],
-      },
-      {
-        label: de ? 'Berufserfahrung' : 'Work experience',
-        ids: expandedSummaries['longer summary of his work experience'],
-      },
-      {
-        label: de ? 'Projekte' : 'Projects',
-        ids: expandedSummaries['longer summary of his projects'],
-      },
+      choice('cv', locale, expandedSummaries['longer summary of his cv']),
+      choice(
+        'work',
+        locale,
+        expandedSummaries['longer summary of his work experience'],
+      ),
+      choice(
+        'projects',
+        locale,
+        expandedSummaries['longer summary of his projects'],
+      ),
     ];
   if (terms === 'motivation')
     return [
-      { label: 'Homelab', ids: ['homelab-motivation'] },
-      { label: de ? 'Projekte' : 'Projects', ids: ['portfolio-leisure'] },
+      choice('homelab', locale, ['homelab-motivation']),
+      choice('projects', locale, ['portfolio-leisure']),
     ];
 }
 

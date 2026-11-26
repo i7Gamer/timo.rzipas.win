@@ -158,6 +158,8 @@ export function setupAskWork(panel: HTMLElement) {
     { question: string; subjects: SiteSubject[]; spelling?: true } | undefined;
   let active: AbortController | undefined;
   let pendingChoices: readonly AnswerChoice[] | undefined;
+  /** The option a visitor clicked, answered by id rather than by its text. */
+  let clickedChoice: AnswerChoice | undefined;
   let suggestTopics = false;
   let unknownCount = 0;
   let followLatest = true;
@@ -278,9 +280,10 @@ export function setupAskWork(panel: HTMLElement) {
   };
   const updateActions = () => {
     if (!actions) return;
+    const options = pending ? undefined : pendingChoices;
     const choices =
       pending?.subjects.map(({ label }) => label) ??
-      pendingChoices?.map(({ label }) => label);
+      options?.map(({ label }) => label);
     const suggestions =
       subjects.length === 1 &&
       subjects[0].href === '/projects/spotify-stats-tracker/'
@@ -300,7 +303,10 @@ export function setupAskWork(panel: HTMLElement) {
           action.type = 'button';
           action.className = 'btn-muted text-sm';
           action.textContent = label;
-          action.addEventListener('click', () => submitPrompt(label));
+          action.addEventListener('click', () => {
+            clickedChoice = options?.find((option) => option.label === label);
+            submitPrompt(label);
+          });
           return action;
         },
       ),
@@ -561,8 +567,13 @@ export function setupAskWork(panel: HTMLElement) {
     }
 
     const rawQuestion = removeChatPrefix(line);
+    const clicked = offeredChoices?.find(
+      ({ id, label }) => id === clickedChoice?.id && label === line,
+    );
+    clickedChoice = undefined;
     const pickedIds =
-      offeredChoices && resolveChoice(rawQuestion, offeredChoices);
+      clicked?.ids ??
+      (offeredChoices && resolveChoice(rawQuestion, offeredChoices));
     if (pickedIds) {
       pending = undefined;
       const picked = pickedIds.flatMap((id) =>

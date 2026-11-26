@@ -198,8 +198,9 @@ export function resolveChoice(
   const picked = everyChoice.test(name)
     ? choices
     : choices.filter(
-        ({ label }, index) =>
-          normalize(label) === name || choiceOrdinals[index]?.test(name),
+        ({ label, names }, index) =>
+          [label, ...names].some((entry) => normalize(entry) === name) ||
+          choiceOrdinals[index]?.test(name),
       );
   if (picked.length) return [...new Set(picked.flatMap(({ ids }) => ids))];
 }

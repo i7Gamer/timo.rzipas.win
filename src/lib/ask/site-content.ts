@@ -129,6 +129,8 @@ export interface SiteAnswer {
 export interface SiteSubject {
   href: string;
   heading?: string;
+  /** The heading's position on its page, the same in every language. */
+  section?: number;
   label: string;
   catFactId?: (typeof PET_DETAIL_IDS)[number];
 }
@@ -404,6 +406,11 @@ export function scopedDigests(page: SitePage, heading: string) {
   return [...own, ...children.map(item)];
 }
 
+const whichSection: Record<Locale, string> = {
+  en: 'Which section of that page do you mean?',
+  de: 'Welchen Abschnitt dieser Seite meinst du?',
+};
+
 const topicExhausted: Record<Locale, string> = {
   en: 'That’s everything I have on that. Ask about his projects, his work or his homelab for more.',
   de: 'Das ist alles, was ich dazu habe. Frag nach seinen Projekten, seiner Arbeit oder seinem Homelab, um mehr zu erfahren.',
@@ -678,10 +685,14 @@ export function namesSiteSubject(question: string, index: SiteContent) {
 
 function subjectOf(page: SitePage, heading?: string): SiteSubject {
   if (heading?.includes(' › ')) {
+    const section = page.sections.findIndex(
+      (entry) => entry.heading === heading,
+    );
     return {
       href: page.href,
       heading,
       label: heading.split(' › ').at(-1) ?? page.title,
+      ...(section >= 0 ? { section } : {}),
     };
   }
   return { href: page.href, label: page.title };
@@ -1011,6 +1022,29 @@ export function findSiteContent(
     (kind === 'overview' || subject) &&
     answerPets(normalized, index.locale, index.localPets, subject);
   if (pets) return pets;
+  // A section remembered in one language is found again by its position.
+  if (subject?.heading) {
+    const page = index.pages.find(({ href }) => href === subject?.href);
+    const known = page?.sections.some(
+      ({ heading }) => heading === subject?.heading,
+    );
+    const depth = subject.heading.split(HEADING_SEPARATOR).length;
+    const moved =
+      page && !known && subject.section !== undefined
+        ? page.sections[subject.section]?.heading
+        : undefined;
+    if (moved && moved.split(HEADING_SEPARATOR).length === depth)
+      subject = subjectOf(page!, moved);
+    else if (page && !known)
+      return {
+        status: 'unknown',
+        sources: [],
+        missing: [],
+        localOnly: true,
+        subjects: [subjectOf(page)],
+        note: whichSection[index.locale],
+      };
+  }
   const rememberedPage =
     subject &&
     index.pages.find(
