@@ -95,12 +95,12 @@ export function questionLocale(question: string, fallback: Locale): Locale {
     /^was (?:kostet|hat|macht|nutzt|verwendet|ist|sind|war|wird|kann|kannst|bedeutet|enthaelt|zeigt|erzaehlt)\b/.test(
       text,
     ) ||
-    /\b(?:wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses|ausbildung|freizeit|schwaechen|lebenslauf|spannendes|interessantes|kurzprofil|projekte|arbeit|zusammenfassung|ausfuehrlicher)\b/.test(
+    /\b(?:wie|wo|woran|wofuer|warum|wer|welch\w*|ist|hast|hat|kann\w*|erzaehl\w*|zeig\w*|danke|hallo|heiss\w*|beitraege|haustier\w*|katzen?|sprachen?|berufserfahrung(?:en)?|werdegang|maennlich|weiblich|geschlecht|kater|andere|weitere|fruehere|fass(?:e)?|noch|dieses|ausbildung|freizeit|schwaechen|lebenslauf|spannendes|interessantes|kurzprofil|projekte|arbeit|zusammenfassung|ausfuehrlicher|mehr|gruende?|beispiele?|argumente?|punkte|staerken)\b/.test(
       text,
     );
   const english =
     text === 'work' ||
-    /\b(?:(?:short|quick|brief) (?:pitch|intro|bio)|what|whats|which|where|when|who|why|how|does|tell|show|have|are|please|thanks|thank|hello|called|languages?|langauges?|cats?|pets?|his|any|more|summary|summari[sz]e|experience|colou?rs?|male|female|gender|other|different|education|leisure|hobbies|downsides|perks|interesting|projects)\b/.test(
+    /\b(?:(?:short|quick|brief) (?:pitch|intro|bio)|what|whats|which|where|when|who|why|how|does|tell|show|have|are|please|thanks|thank|hello|called|languages?|langauges?|cats?|pets?|his|any|more|summary|summari[sz]e|experience|colou?rs?|male|female|gender|other|different|education|leisure|hobbies|downsides|perks|interesting|projects|additional|further|reasons?|examples?|arguments?|points?|strengths?)\b/.test(
       text,
     );
   if (german === english) {
