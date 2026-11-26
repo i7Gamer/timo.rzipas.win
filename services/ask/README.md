@@ -205,6 +205,12 @@ set `ASK_SELECTOR_TIMEOUT_MS=8000` with the same warm-up and timing settings,
 then run `docker compose up -d --no-deps ask` on the isolated test project and
 repeat the warm suite. `ASK_TIMINGS=on` logs model load, prompt processing and
 generation timings plus gateway failures without question or answer text.
+`ASK_OLLAMA_THREADS` (default 4) sets the CPU threads per model request. On a
+busy shared host, more threads made requests slower. On a 20-thread
+i5-13500 host at 54–89 % load from other work, a warm selector request in the
+8-CPU Docker VM took 3.6–3.7 s with 4 threads and 6.2–6.3 s with Ollama's
+default thread count. In a 16-CPU VM, generation ran at about 4 tokens/s with 4
+threads and below 1.5 tokens/s with 6 or more.
 
 Full HTTP evaluation exceeds the per-process gateway quota. Add
 `--reset-compose-project <project-name>` to an HTTP suite command to restart

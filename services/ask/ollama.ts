@@ -12,6 +12,22 @@ export const WARMUP_TIMEOUT_MS = 45_000;
 const WARMUP_FACT_ID = 'spotify-python';
 const WARMUP_QUESTION = 'Which project used Flask?';
 const NS_PER_MS = 1_000_000;
+/**
+ * CPU threads per Ollama request. On a busy shared host, few threads finish
+ * sooner than one per core, which stall each other; override with
+ * ASK_OLLAMA_THREADS.
+ */
+export const DEFAULT_OLLAMA_THREADS = 4;
+const MAX_OLLAMA_THREADS = 64;
+
+export function ollamaThreads(env: Record<string, string | undefined>) {
+  const value = env.ASK_OLLAMA_THREADS;
+  const threads = value && /^\d+$/.test(value) ? Number(value) : 0;
+  return threads >= 1 && threads <= MAX_OLLAMA_THREADS
+    ? threads
+    : DEFAULT_OLLAMA_THREADS;
+}
+
 export const MODEL = 'qwen3:4b-instruct-2507-q4_K_M';
 export const MODEL_DIGEST =
   '0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0';
@@ -79,7 +95,13 @@ async function chatWithOllama(
         model === MODEL && process.env.ASK_KEEP_MODEL_WARM === 'on'
           ? '10m'
           : '2m',
-      options: { temperature: 0, seed: 23, num_ctx: 2048, num_predict: 96 },
+      options: {
+        temperature: 0,
+        seed: 23,
+        num_ctx: 2048,
+        num_predict: 96,
+        num_thread: ollamaThreads(process.env),
+      },
       format,
       messages,
     }),

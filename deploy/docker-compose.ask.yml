@@ -29,6 +29,7 @@ services:
       ASK_KEEP_MODEL_WARM: ${ASK_KEEP_MODEL_WARM:-on}
       ASK_SELECTOR_TIMEOUT_MS: ${ASK_SELECTOR_TIMEOUT_MS:-6000}
       ASK_TIMINGS: ${ASK_TIMINGS:-off}
+      ASK_OLLAMA_THREADS: ${ASK_OLLAMA_THREADS:-4}
     read_only: true
     cap_drop:
       - ALL
