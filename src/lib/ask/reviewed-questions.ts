@@ -18,13 +18,16 @@ import {
   answerTopic,
   continuationOf,
   summaryFactIds,
-  topicContinuation,
+  interleaveFacts,
+  topicContinuations,
   topicLongerSummary,
   topicSelection,
 } from './topics.ts';
 
 type ReviewedAnswer = {
   ids: readonly string[];
+  /** A broad topic overview: one fact represents it in a compound answer. */
+  broad?: true;
   partial?: true;
   missing?: MissingDetail;
   preferModel?: true;
@@ -476,22 +479,22 @@ export function topicMoreIds(terms: string, history: readonly ChatTurn[]) {
   });
   if (!anchor) return;
   const topic = answerTopic(anchor.answer);
-  const pool =
-    topicContinuation(normalize(removeChatPrefix(anchor.question))) ??
-    (topic && continuationOf(topic));
-  if (!pool) return;
+  const fromAnswer = topic && continuationOf(topic);
+  const pools =
+    topicContinuations(normalize(removeChatPrefix(anchor.question))) ??
+    (fromAnswer ? [fromAnswer] : undefined);
+  if (!pools) return;
   const shown = history.map(({ answer }) => normalize(answer));
-  return pool
-    .filter((id) => {
-      const fact = facts.find((entry) => entry.id === id);
-      return (
-        fact &&
-        !Object.values(fact.answer).some((text) =>
-          shown.some((previous) => previous.includes(normalize(text))),
-        )
-      );
-    })
-    .slice(0, MAX_CLAIMS);
+  const unseen = (id: string) => {
+    const fact = facts.find((entry) => entry.id === id);
+    return Boolean(
+      fact &&
+      !Object.values(fact.answer).some((text) =>
+        shown.some((previous) => previous.includes(normalize(text))),
+      ),
+    );
+  };
+  return interleaveFacts(pools.map((pool) => pool.filter(unseen))).ids;
 }
 
 export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
@@ -761,24 +764,55 @@ export function approvedAnswer(
     : answer;
 }
 
+/**
+ * Combines clause answers within the claim limit. A precise clause keeps all
+ * of its evidence or is marked missing; each broad topic clause first gets one
+ * representative fact, and spare slots then go to broad clauses in turn.
+ */
 export function combineReviewedClauses(
   clauses: readonly ReviewedAnswer[],
 ): ReviewedAnswer | undefined {
-  const ids = new Set<string>();
-  let missing: MissingDetail | undefined;
-  for (const clause of clauses) {
-    const combined = new Set([...ids, ...clause.ids]);
-    if (combined.size <= MAX_CLAIMS) {
-      for (const id of clause.ids) ids.add(id);
+  const picked = clauses.map((): string[] => []);
+  const used = new Set<string>();
+  const isBroad = (clause: ReviewedAnswer) =>
+    Boolean(clause.broad && clause.ids.length);
+  const broadAfter = (index: number) =>
+    clauses.slice(index + 1).filter(isBroad).length;
+  const take = (index: number, id: string) => {
+    picked[index].push(id);
+    used.add(id);
+  };
+  clauses.forEach((clause, index) => {
+    if (isBroad(clause)) {
+      const id = clause.ids.find((entry) => !used.has(entry)) ?? clause.ids[0];
+      if (used.has(id) || used.size < MAX_CLAIMS) take(index, id);
+      return;
     }
-    if (clause.missing === 'cv-gaps') missing = clause.missing;
-    else if (!clause.ids.length || clause.partial || combined.size > MAX_CLAIMS)
-      missing ??= clause.missing ?? 'additional-question';
+    const fresh = clause.ids.filter((id) => !used.has(id));
+    if (
+      clause.ids.length &&
+      used.size + fresh.length <= MAX_CLAIMS - broadAfter(index)
+    )
+      for (const id of clause.ids) take(index, id);
+  });
+  for (let depth = 1; used.size < MAX_CLAIMS; depth++) {
+    const next = clauses.flatMap((clause, index) =>
+      isBroad(clause) && depth < clause.ids.length
+        ? [{ index, id: clause.ids[depth] }]
+        : [],
+    );
+    if (!next.length) break;
+    for (const { index, id } of next)
+      if (!used.has(id) && used.size < MAX_CLAIMS) take(index, id);
   }
-  if (ids.size)
-    return missing
-      ? { ids: [...ids], partial: true, missing }
-      : { ids: [...ids] };
+  let missing: MissingDetail | undefined;
+  clauses.forEach((clause, index) => {
+    if (clause.missing === 'cv-gaps') missing = clause.missing;
+    else if (!picked[index].length || clause.partial)
+      missing ??= clause.missing ?? 'additional-question';
+  });
+  const ids = [...new Set(picked.flat())];
+  if (ids.length) return missing ? { ids, partial: true, missing } : { ids };
 }
 
 export type ReviewedCompoundClause = {
@@ -1116,7 +1150,7 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
     const summary = summaryFactIds(terms);
     if (summary) return { ids: summary };
     const topic = topicSelection(terms);
-    if (topic) return topic;
+    if (topic) return { ...topic, broad: true };
   }
 }
 

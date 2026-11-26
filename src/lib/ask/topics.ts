@@ -397,15 +397,33 @@ export function topicContinuation(terms: string) {
   return matched.length === 1 ? continuationOf(matched[0].id) : undefined;
 }
 
+/**
+ * One continuation list per topic a question named. Several topics are
+ * continued together, so work experience keeps its longer summary there.
+ */
+export function topicContinuations(terms: string) {
+  const matched = resolvedTopics(terms);
+  if (matched.length === 1) {
+    const pool = continuationOf(matched[0].id);
+    return pool ? [pool] : undefined;
+  }
+  if (!matched.length) return;
+  return matched.map(({ ids, longer }) => [
+    ...new Set([...ids, ...summaryIds(longer)]),
+  ]);
+}
+
 /** The facts a topic can show, or undefined for work experience. */
 export function continuationOf(id: TopicId) {
   const topic = topics.find((entry) => entry.id === id);
   if (!topic || topic.id === 'work') return;
-  const more =
-    topic.longer && Object.hasOwn(expandedSummaries, topic.longer)
-      ? expandedSummaries[topic.longer as keyof typeof expandedSummaries]
-      : [];
-  return [...new Set([...topic.ids, ...more])];
+  return [...new Set([...topic.ids, ...summaryIds(topic.longer)])];
+}
+
+function summaryIds(longer: string | undefined): readonly string[] {
+  return longer && Object.hasOwn(expandedSummaries, longer)
+    ? expandedSummaries[longer as keyof typeof expandedSummaries]
+    : [];
 }
 
 /**

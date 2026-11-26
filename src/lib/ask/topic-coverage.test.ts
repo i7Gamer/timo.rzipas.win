@@ -4,10 +4,12 @@ import {
   prepareQuestion,
   type SelectFacts,
 } from '../../../services/ask/selection.ts';
-import { CV_OVERVIEW_IDS, MAX_CLAIMS, facts } from './catalog';
+import { CV_OVERVIEW_IDS, MAX_CLAIMS, facts, normalize } from './catalog';
+import { topicMoreIds } from './reviewed-questions';
 import {
   expandTopicMatches,
   topicCandidates,
+  topicContinuation,
   topicFactIds,
   topicSelection,
 } from './topics';
@@ -113,5 +115,69 @@ describe('a selected topic in a compound question', () => {
       AbortSignal.timeout(1_000),
     );
     expect(result?.status).toBe('answer');
+  });
+});
+
+describe('broad topics in compound questions', () => {
+  it.each([
+    ['Tell me about his CV, and what are his hobbies?', 'en'],
+    ['Lebenslauf, und was macht er in seiner Freizeit?', 'de'],
+    ['What are his hobbies, and tell me about his CV?', 'en'],
+  ] as const)('represents every topic in %j', (question, locale) => {
+    const prepared = prepareQuestion(question, locale);
+    const ids = prepared.fallback.claims.map(({ id }) => id);
+    expect(ids).toContain(LEISURE);
+    expect(ids.some((id) => CV_OVERVIEW_IDS.includes(id as never))).toBe(true);
+    expect(ids.length).toBeLessThanOrEqual(MAX_CLAIMS);
+    expect(prepared.fallback.status).toBe('answer');
+  });
+
+  it('keeps a precise clause whole next to a broad topic', () => {
+    const ids = prepareQuestion(
+      'What does Timo do at Abacus, and what are his hobbies?',
+      'en',
+    ).fallback.claims.map(({ id }) => id);
+    expect(ids).toContain('abacus-workflow');
+    expect(ids).toContain(LEISURE);
+  });
+
+  it('still marks an unanswered clause as missing', () => {
+    const prepared = prepareQuestion(
+      'Tell me about his CV, and is he left-handed?',
+      'en',
+    );
+    expect(prepared.fallback.status).toBe('partial');
+    expect(prepared.fallback.missing).toBe('additional-question');
+  });
+});
+
+describe('more after several topics', () => {
+  const answerOf = (ids: readonly string[]) =>
+    ids.map((id) => fact(id).answer.en).join(' ');
+
+  it.each([
+    ['CV and hobbies', 'additional details'],
+    ['Lebenslauf und Freizeit', 'weitere details'],
+  ])('continues the remaining topic after %j', (question, more) => {
+    const first = topicFactIds(normalize(question))!;
+    const next = topicMoreIds(more, [{ question, answer: answerOf(first) }])!;
+    expect(next.length).toBeGreaterThan(0);
+    for (const id of first) expect(next).not.toContain(id);
+    expect(
+      next.some(
+        (id) =>
+          CV_OVERVIEW_IDS.includes(id as never) ||
+          id.startsWith('cv') ||
+          id.startsWith('career'),
+      ),
+    ).toBe(true);
+  });
+
+  it('is exhausted only when every topic is', () => {
+    const pools = ['cv', 'hobbies'].map((t) => topicContinuation(t)!);
+    const shown = answerOf([...new Set(pools.flat())]);
+    expect(
+      topicMoreIds('more', [{ question: 'CV and hobbies', answer: shown }]),
+    ).toEqual([]);
   });
 });
