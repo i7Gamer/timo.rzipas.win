@@ -5,6 +5,7 @@ import {
   publishedPortMatches,
   recoveryOutcome,
   type GateRow,
+  warmupState,
 } from '../../../tests/ask/gate.ts';
 
 const row = (overrides: Partial<GateRow> = {}): GateRow => ({
@@ -147,6 +148,30 @@ describe('recovery outcome', () => {
     ).toBe(false);
   });
 
+  it.each([429, 200])(
+    'fails when the outage request got %s instead of an outage',
+    (httpStatus) => {
+      expect(
+        recoveryOutcome({
+          duringOutage: {
+            httpStatus,
+            mode: httpStatus === 200 ? 'index' : null,
+          },
+          afterResume: [{ httpStatus: 200, mode: 'local', ms: 3_000, at: 1 }],
+        }).recovered,
+      ).toBe(false);
+    },
+  );
+
+  it('accepts a dropped connection as the outage', () => {
+    expect(
+      recoveryOutcome({
+        duringOutage: { httpStatus: null, mode: null },
+        afterResume: [{ httpStatus: 200, mode: 'local', ms: 3_000, at: 1 }],
+      }).recovered,
+    ).toBe(true);
+  });
+
   it('fails when no local answer follows', () => {
     expect(
       recoveryOutcome({
@@ -154,5 +179,24 @@ describe('recovery outcome', () => {
         afterResume: [{ httpStatus: 200, mode: 'index', ms: 50, at: 1 }],
       }),
     ).toEqual({ recovered: false, attempts: 1, recoveredAfterMs: null });
+  });
+});
+
+describe('gateway warm-up state', () => {
+  it.each([
+    ['', 'pending'],
+    ['Ask gateway on http://0.0.0.0:4513\n', 'pending'],
+    ['Ask gateway on http://0.0.0.0:4513\nAsk chat ready\n', 'ready'],
+    ['Ask gateway on x\nAsk chat ready\nAsk gateway on x\n', 'pending'],
+    [
+      'Ask gateway on x\nAsk chat warm-up failed; reviewed answers remain available\n',
+      'failed',
+    ],
+    [
+      'Ask gateway on x\nAsk chat warm-up failed; x\nAsk gateway on x\nAsk chat ready\n',
+      'ready',
+    ],
+  ])('reads the latest start in %j as %s', (logs, state) => {
+    expect(warmupState(logs)).toBe(state);
   });
 });

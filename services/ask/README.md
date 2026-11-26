@@ -237,10 +237,14 @@ Three time limits apply, each measured differently:
 recovery sentinels that only the local model answers. It fails when a
 sentinel misses its reviewed answer, when answers fall back to the index,
 when any request times out or fails, or when a time limit is exceeded. It
-prints answered/total per route. `--recovery` pauses the project's `ollama`
-container, asks once during the outage, resumes it and then asks every
-12 seconds (inside the normal quota, without restarting `ask`) until a local
-answer arrives or two minutes pass. Both exit non-zero on failure.
+prints answered/total per route. After each `ask` restart the evaluator waits
+for the gateway's warm-up log line, because HTTP readiness comes first and the
+gateway answers 503 while it warms up. `--recovery` runs on its own: it waits
+for warm-up, pauses the project's `ollama` container, requires a 503 during
+the outage (a quota 429 or a fallback does not count), resumes it and then
+asks every 12 seconds (inside the normal quota, without restarting `ask`)
+until a local answer arrives or two minutes pass. Both exit non-zero on
+failure.
 
 Every HTTP report records the git commit and whether the worktree was clean,
 the model and digest, context size, budgets, how the model was warmed, and
@@ -249,7 +253,7 @@ memory.
 
 ```sh
 node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --gate --reset-compose-project ask-qwen-check-20261124 --report .local-ask/gate.json
-node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --cold-only --recovery --reset-compose-project ask-qwen-check-20261124 --report .local-ask/recovery.json
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --recovery --reset-compose-project ask-qwen-check-20261124 --report .local-ask/recovery.json
 ```
 
 From the repository root, preload the pinned model and run each packaged suite

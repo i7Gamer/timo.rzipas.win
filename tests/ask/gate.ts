@@ -121,9 +121,12 @@ export interface RecoverySample {
   at?: number;
 }
 
+const OUTAGE_STATUS = 503;
+
 /**
- * Recovery without restarting the gateway: the outage request must not be a
- * local answer, and a later request must be one.
+ * Recovery without restarting the gateway: the outage request must see the
+ * outage (503 or a dropped connection, not a quota 429 or a fallback), and a
+ * later request must be a local answer.
  */
 export function recoveryOutcome({
   duringOutage,
@@ -135,12 +138,29 @@ export function recoveryOutcome({
   const index = afterResume.findIndex(
     ({ httpStatus, mode }) => httpStatus === 200 && mode === 'local',
   );
-  const outageWasLocal =
-    duringOutage.httpStatus === 200 && duringOutage.mode === 'local';
-  const recovered = !outageWasLocal && index >= 0;
+  const sawOutage =
+    duringOutage.httpStatus === null ||
+    duringOutage.httpStatus === OUTAGE_STATUS;
+  const recovered = sawOutage && index >= 0;
   return {
     recovered,
     attempts: recovered ? index + 1 : afterResume.length,
     recoveredAfterMs: recovered ? (afterResume[index].at ?? null) : null,
   };
+}
+
+const GATEWAY_STARTED = 'Ask gateway on ';
+const WARMUP_READY = 'Ask chat ready';
+const WARMUP_FAILED = 'Ask chat warm-up failed';
+
+/**
+ * Warm-up state of the latest gateway start in its log. With ASK_WARMUP=on
+ * the gateway answers 503 until warm-up ends, although HTTP is already up.
+ */
+export function warmupState(logs: string): 'pending' | 'ready' | 'failed' {
+  const start = logs.lastIndexOf(GATEWAY_STARTED);
+  if (start < 0) return 'pending';
+  const latest = logs.slice(start);
+  if (latest.includes(WARMUP_READY)) return 'ready';
+  return latest.includes(WARMUP_FAILED) ? 'failed' : 'pending';
 }

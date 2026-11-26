@@ -44,6 +44,7 @@ import {
   publishedPortMatches,
   recoveryOutcome,
   type RecoverySample,
+  warmupState,
 } from './gate.ts';
 
 const LEXICAL_TIMEOUT_MS = 6_000;
@@ -105,6 +106,8 @@ const RECOVERY_TIMEOUT_MS = 120_000;
 const RECOVERY_POLL_MS = 12_000;
 const COMPOSE_FILE = 'deploy/docker-compose.ask.yml';
 const COMPOSE_SERVICES = ['website', 'ask', 'ollama'];
+/** Longer than the gateway's own warm-up timeout. */
+const WARMUP_WAIT_MS = 150_000;
 const httpFlag = process.argv.indexOf('--http');
 const httpUrl = httpFlag < 0 ? undefined : process.argv[httpFlag + 1];
 if (httpFlag >= 0 && (!httpUrl || httpUrl.startsWith('--')))
@@ -136,9 +139,12 @@ if ([coldOnly, warmOnly, suiteOnly].filter(Boolean).length > 1)
   throw new Error('Choose one of --cold-only, --warm-only, or --suite-only');
 if ((coldOnly || warmOnly || suiteOnly) && !httpOrigin)
   throw new Error('The packaged check options require --http');
-const checkCold = !warmOnly && !suiteOnly;
 const gate = process.argv.includes('--gate');
 const recovery = process.argv.includes('--recovery');
+// Recovery runs alone so earlier requests do not use up its quota.
+if (recovery && (gate || coldOnly || warmOnly || suiteOnly))
+  throw new Error('--recovery runs on its own');
+const checkCold = !warmOnly && !suiteOnly && !recovery;
 if ((gate || recovery) && !httpOrigin)
   throw new Error('--gate and --recovery require --http');
 if (recovery && !resetProject)
@@ -247,7 +253,7 @@ if (routingExpectations.length && !baseline) {
 }
 const fixtures =
   mode === 'http'
-    ? coldOnly
+    ? coldOnly || recovery
       ? []
       : gate
         ? [...PACKAGED_WARM_FIXTURES, ...MODEL_SENTINELS]
@@ -346,9 +352,11 @@ async function hostIdentity() {
     modelDigest: MODEL_DIGEST,
     contextTokens: SELECTOR_CONTEXT_TOKENS,
     budgets: MODEL_GATE,
-    warmMethod: checkCold
-      ? 'cold probe first, then the cases on the loaded model'
-      : 'cases on the current model state, no cold probe',
+    warmMethod:
+      (checkCold
+        ? 'cold probe first, then the cases on the loaded model'
+        : 'cases on the current model state, no cold probe') +
+      (resetProject ? '; after each restart, wait for gateway warm-up' : ''),
     gatewayResets: resetProject
       ? `restart ask every ${PACKAGED_RETRIEVAL_QUOTA} requests`
       : 'none',
@@ -372,6 +380,27 @@ async function hostIdentity() {
   return identity;
 }
 
+/**
+ * HTTP readiness is not warm inference: with ASK_WARMUP=on the gateway
+ * answers 503 until its warm-up ends, so wait for the log line.
+ */
+async function waitForWarmGateway() {
+  const warmup = await output(
+    compose('exec', '-T', 'ask', 'printenv', 'ASK_WARMUP'),
+  );
+  if (warmup !== 'on') return;
+  const deadline = Date.now() + WARMUP_WAIT_MS;
+  for (;;) {
+    const state = warmupState(
+      await output(compose('logs', '--no-log-prefix', 'ask')),
+    );
+    assert.notEqual(state, 'failed', 'Ask gateway warm-up failed');
+    if (state === 'ready') return;
+    assert.ok(Date.now() < deadline, 'Ask gateway warm-up did not finish');
+    await delay(HTTP_POLL_INTERVAL_MS);
+  }
+}
+
 async function resetPackagedGateway() {
   if (!resetProject) return;
   await verifyResetTarget();
@@ -381,7 +410,7 @@ async function resetPackagedGateway() {
     const ready = await fetch(new URL('/api/ask', httpOrigin!), {
       signal: AbortSignal.timeout(2_000),
     }).catch(() => undefined);
-    if (ready?.status === 405) return;
+    if (ready?.status === 405) return waitForWarmGateway();
     assert.ok(
       Date.now() < deadline,
       'Ask gateway did not restart through nginx',
@@ -677,6 +706,7 @@ async function askOnce(question: string): Promise<RecoverySample> {
 let recoveryReport: Record<string, unknown> | null = null;
 if (recovery) {
   await verifyResetTarget();
+  await waitForWarmGateway();
   const before = await askOnce(PACKAGED_COLD_QUESTION);
   await compose('pause', 'ollama');
   let duringOutage: RecoverySample;
