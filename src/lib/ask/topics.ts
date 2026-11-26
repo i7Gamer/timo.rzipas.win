@@ -390,13 +390,43 @@ export function topicLongerSummary(terms: string) {
  */
 export function topicContinuation(terms: string) {
   const matched = resolvedTopics(terms);
-  if (matched.length !== 1 || matched[0].id === 'work') return;
-  const [{ ids, longer }] = matched;
+  return matched.length === 1 ? continuationOf(matched[0].id) : undefined;
+}
+
+/** The facts a topic can show, or undefined for work experience. */
+export function continuationOf(id: TopicId) {
+  const topic = topics.find((entry) => entry.id === id);
+  if (!topic || topic.id === 'work') return;
   const more =
-    longer && Object.hasOwn(expandedSummaries, longer)
-      ? expandedSummaries[longer as keyof typeof expandedSummaries]
+    topic.longer && Object.hasOwn(expandedSummaries, topic.longer)
+      ? expandedSummaries[topic.longer as keyof typeof expandedSummaries]
       : [];
-  return [...new Set([...ids, ...more])];
+  return [...new Set([...topic.ids, ...more])];
+}
+
+/**
+ * The topic whose whole reviewed answer an earlier reply showed, also when the
+ * selector inferred it from a question without topic words. The largest
+ * matching topic wins (a CV answer also contains the education facts).
+ */
+export function answerTopic(answer: string): TopicId | undefined {
+  const shown = normalize(answer);
+  if (!shown) return;
+  const contains = (id: string) => {
+    const fact = facts.find((entry) => entry.id === id);
+    return Boolean(
+      fact &&
+      Object.values(fact.answer).some((text) =>
+        shown.includes(normalize(text)),
+      ),
+    );
+  };
+  const matched = topics
+    .filter(({ ids }) => ids.every(contains))
+    .sort((a, b) => b.ids.length - a.ids.length);
+  if (!matched.length) return;
+  if (matched[1] && matched[1].ids.length === matched[0].ids.length) return;
+  return matched[0].id;
 }
 
 // A summary request is a summary word, an optional length and a subject:

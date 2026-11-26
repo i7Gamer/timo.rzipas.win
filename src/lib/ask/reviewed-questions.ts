@@ -12,9 +12,11 @@ import {
   wordCountSummaries,
   type MissingDetail,
 } from './catalog.ts';
-import { acknowledgement, type ChatTurn } from './history.ts';
+import { acknowledgement, removeChatPrefix, type ChatTurn } from './history.ts';
 import { isSingleTypo } from './spelling.ts';
 import {
+  answerTopic,
+  continuationOf,
   summaryFactIds,
   topicContinuation,
   topicLongerSummary,
@@ -472,7 +474,11 @@ export function topicMoreIds(terms: string, history: readonly ChatTurn[]) {
     const prior = normalize(question);
     return !moreQuestion.test(prior) && !acknowledgement.test(prior);
   });
-  const pool = anchor && topicContinuation(normalize(anchor.question));
+  if (!anchor) return;
+  const topic = answerTopic(anchor.answer);
+  const pool =
+    topicContinuation(normalize(removeChatPrefix(anchor.question))) ??
+    (topic && continuationOf(topic));
   if (!pool) return;
   const shown = history.map(({ answer }) => normalize(answer));
   return pool

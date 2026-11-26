@@ -26,6 +26,7 @@ import {
   needsDatedWorkEvidence,
   needsCompoundSelection,
   profileFollowUp,
+  topicMoreIds,
   profileHighlightIds,
   profileQuestionNote,
   questionClauses,
@@ -403,6 +404,21 @@ function prepareExactQuestion(
   const unknown = documentAnswer([], 'unknown', 'index', locale, corpusVersion);
   if (outOfScope.test(terms) || profileQuestionNote(terms, locale, question))
     return { fallback: unknown, candidates: [], semanticPool: [] };
+  // A request for more after a broad topic answer continues that topic; it
+  // takes priority over career follow-ups, as in the browser.
+  const topicMore = topicMoreIds(terms, history);
+  if (topicMore) {
+    const more = topicMore.flatMap((id) =>
+      facts.filter((fact) => fact.id === id),
+    );
+    return {
+      fallback: more.length
+        ? documentAnswer(more, 'answer', 'index', locale, corpusVersion)
+        : unknown,
+      candidates: [],
+      semanticPool: [],
+    };
+  }
   const careerScope = careerFollowUpScope(terms, history);
   const approved = careerScope ? undefined : approvedAnswer(terms, question);
   const reviewed = (approved?.ids ?? []).flatMap((id) => {

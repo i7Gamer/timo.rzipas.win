@@ -15,8 +15,33 @@ export interface ChatTurn {
   answer: string;
 }
 
-export const acknowledgement =
-  /^(?:thanks|thank you|danke|ok(?:ay)?|got it|nice|great|verstanden|gern)$/;
+export const greeting =
+  /^(?:hey|hi|hello|yo|hallo|moin|hoi|servus)(?: there| zusammen)?$/;
+export const casual =
+  /^(?:(?:yo|hey|hi|hallo) )?(?:what s up|whats up|what up|wassup|sup|how (?:are you|s it going)|wie geht s|wie geht es dir|was geht|alles klar)$/;
+export const thanks =
+  /^(?:thanks|thank you|cheers|cool|nice|great|thanks a lot|vielen dank|danke(?: schoen| dir)?|super)(?: very much| that helps| das hilft)?$/;
+export const thanksAfterConfirmation =
+  /^(?:(?:ah|oh|ach) )?(?:(?:yes|yeah|yep|ja) )?(?:that ?s (?:exactly )?what i meant |(?:genau )?das meinte ich )?(?:thanks(?: a lot)?|thank you(?: very much)?|danke(?: dir| schoen)?|vielen dank)$/;
+const okay = /^(?:ok(?:ay)?|got it|verstanden|gern)$/;
+
+/**
+ * Social turns (greetings, thanks, “ok”) that never set the subject of a
+ * follow-up. Matches normalized text; shared by every follow-up route.
+ */
+export const acknowledgement = new RegExp(
+  [greeting, casual, thanks, thanksAfterConfirmation, okay]
+    .map(({ source }) => '(?:' + source + ')')
+    .join('|'),
+);
+
+/** Removes a leading greeting or thanks: “Hi, why hire Timo?”. */
+export function removeChatPrefix(question: string) {
+  return question.replace(
+    /^(?:hey|hi|hello|yo|hallo|moin|hoi|servus|thanks|thank you|danke(?: dir)?)[,!]\s+/i,
+    '',
+  );
+}
 
 interface TaggedTurn extends ChatTurn {
   subjects?: readonly { label: string }[];

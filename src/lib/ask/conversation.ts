@@ -1,5 +1,12 @@
 import type { Locale } from '../../i18n';
 import { normalize } from './catalog';
+import {
+  casual,
+  greeting,
+  removeChatPrefix,
+  thanks,
+  thanksAfterConfirmation,
+} from './history';
 import { PROJECTS_PATH } from './project-context';
 import {
   modelOverviewIds,
@@ -39,17 +46,9 @@ const copy = {
   },
 };
 
-const greeting =
-  /^(?:hey|hi|hello|yo|hallo|moin|hoi|servus)(?: there| zusammen)?$/;
-const casual =
-  /^(?:(?:yo|hey|hi|hallo) )?(?:what s up|whats up|what up|wassup|sup|how (?:are you|s it going)|wie geht s|wie geht es dir|was geht|alles klar)$/;
-const thanks =
-  /^(?:thanks|thank you|cheers|cool|nice|great|thanks a lot|vielen dank|danke(?: schoen| dir)?|super)(?: very much| that helps| das hilft)?$/;
-const thanksAfterConfirmation =
-  /^(?:(?:ah|oh|ach) )?(?:(?:yes|yeah|yep|ja) )?(?:that ?s (?:exactly )?what i meant |(?:genau )?das meinte ich )?(?:thanks(?: a lot)?|thank you(?: very much)?|danke(?: dir| schoen)?|vielen dank)$/;
 const help =
   /^(?:what can (?:you do|i ask(?: you)?|you help(?: me)? with)|what do you know|who are you|(?:can|could|would) you (?:please )?help(?: me)?(?: please)?|(?:i need )?help|was kannst du|was kann ich (?:dich )?fragen|wer bist du|(?:(?:wo(?:bei|mit)|wie) )?(?:kannst|koenntest) du (?:mir )?(?:bitte )?helfen|(?:ich brauche )?hilfe)$/;
-export { moreQuestion };
+export { moreQuestion, removeChatPrefix };
 export const languageQuestion =
   /^(?:(?:programming )?lang(?:ua|au)ges?|(?:programmier)?sprachen?|(?:in )?(?:what|which) (?:programming )?lang(?:ua|au)ges?(?: (?:does (?:it )?)?use| (?:is|was) (?:it )?(?:written|built) in| was used for)?|(?:welche[nr]?|in welcher) (?:programmier)?sprachen?(?: (?:nutzt|verwendet|geschrieben|ist geschrieben)(?: es)?)?)$/;
 const countQuestion =
@@ -131,13 +130,6 @@ export function socialReply(question: string, locale: Locale) {
   if (help.test(normalize(removeChatPrefix(question))))
     return copy[locale].help;
   return null;
-}
-
-export function removeChatPrefix(question: string) {
-  return question.replace(
-    /^(?:hey|hi|hello|yo|hallo|moin|hoi|servus|thanks|thank you|danke(?: dir)?)[,!]\s+/i,
-    '',
-  );
 }
 
 export function followUp(question: string) {
