@@ -216,8 +216,40 @@ Full HTTP evaluation exceeds the per-process gateway quota. Add
 `--reset-compose-project <project-name>` to an HTTP suite command to restart
 only that Compose project's `ask` service after each four fixture requests.
 The flag is restricted to loopback URLs and a validated project name; it keeps
-Ollama and its loaded model running. Do not use it for a service outside the
-dedicated evaluation Compose project.
+Ollama and its loaded model running. Before the first restart it checks that
+`docker compose port website 80` for that project publishes the tested URL
+and that the project has the `website`, `ask` and `ollama` services; otherwise
+it refuses. Do not use it for a service outside the dedicated evaluation
+Compose project.
+
+### Model gate
+
+Three time limits apply, each measured differently:
+
+- **Selector deadline** (`ASK_SELECTOR_TIMEOUT_MS`, 6 s): the gateway's own
+  limit for one model selection. Past it the gateway answers 503.
+- **Warm p95** (4 s): p95 of successful local answers, end to end over HTTP,
+  once the model is loaded.
+- **Cold end to end** (6 s): the first request after a fresh start.
+
+`--gate` runs the packaged warm cases plus English and German SpotifyTracker
+recovery sentinels that only the local model answers. It fails when a
+sentinel misses its reviewed answer, when answers fall back to the index,
+when any request times out or fails, or when a time limit is exceeded. It
+prints answered/total per route. `--recovery` pauses the project's `ollama`
+container, asks once during the outage, resumes it and then asks every
+12 seconds (inside the normal quota, without restarting `ask`) until a local
+answer arrives or two minutes pass. Both exit non-zero on failure.
+
+Every HTTP report records the git commit and whether the worktree was clean,
+the model and digest, context size, budgets, how the model was warmed, and
+with a Compose project its image IDs, `ASK_*` settings and Docker CPU and
+memory.
+
+```sh
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --gate --reset-compose-project ask-qwen-check-20261124 --report .local-ask/gate.json
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --cold-only --recovery --reset-compose-project ask-qwen-check-20261124 --report .local-ask/recovery.json
+```
 
 From the repository root, preload the pinned model and run each packaged suite
 against the dedicated target host. Replace the project name and URL with the

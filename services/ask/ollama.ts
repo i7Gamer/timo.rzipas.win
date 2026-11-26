@@ -29,6 +29,8 @@ export function ollamaThreads(env: Record<string, string | undefined>) {
 }
 
 export const MODEL = 'qwen3:4b-instruct-2507-q4_K_M';
+/** Context window per model request. */
+export const SELECTOR_CONTEXT_TOKENS = 2048;
 export const MODEL_DIGEST =
   '0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0';
 export const SUMMARY_MODEL = 'LiquidAI/lfm2.5-1.2b-instruct:q4_k_m';
@@ -98,7 +100,7 @@ async function chatWithOllama(
       options: {
         temperature: 0,
         seed: 23,
-        num_ctx: 2048,
+        num_ctx: SELECTOR_CONTEXT_TOKENS,
         num_predict: 96,
         num_thread: ollamaThreads(process.env),
       },

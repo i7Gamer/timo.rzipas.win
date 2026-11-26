@@ -20,7 +20,13 @@ import {
   localPorts,
   LOOPBACK,
 } from '../../services/ask/local-profile.ts';
-import { selectWithOllama } from '../../services/ask/ollama.ts';
+import {
+  MODEL,
+  MODEL_DIGEST,
+  ollamaThreads,
+  SELECTOR_CONTEXT_TOKENS,
+  selectWithOllama,
+} from '../../services/ask/ollama.ts';
 import { askModel, prepareQuestion } from '../../services/ask/selection.ts';
 import { createGateway } from '../../services/ask/server.ts';
 import {
@@ -32,6 +38,13 @@ import paraphrases from './paraphrases.json' with { type: 'json' };
 import questions from './questions.json' with { type: 'json' };
 import routing from './routing.json' with { type: 'json' };
 import { assertRoutingExpectations } from '../../src/lib/ask/routing-gate.ts';
+import {
+  MODEL_GATE,
+  modelGate,
+  publishedPortMatches,
+  recoveryOutcome,
+  type RecoverySample,
+} from './gate.ts';
 
 const LEXICAL_TIMEOUT_MS = 6_000;
 const PRIME_TIMEOUT_MS = 45_000;
@@ -67,6 +80,31 @@ const PACKAGED_WARM_FIXTURES: Fixture[] = [
     expectedMode: 'local',
   },
 ];
+// Questions only the local model answers, in both languages. The gate needs a
+// correct local answer for each of them.
+const MODEL_SENTINELS: Fixture[] = [
+  {
+    suite: 'sentinel',
+    locale: 'en',
+    question: 'How does SpotifyTracker recover missed plays?',
+    status: 'answer',
+    acceptableIds: [['spotify-recovery']],
+    expectedMode: 'local',
+  },
+  {
+    suite: 'sentinel',
+    locale: 'de',
+    question: 'Wie trägt SpotifyTracker verpasste Wiedergaben nach?',
+    status: 'answer',
+    acceptableIds: [['spotify-recovery']],
+    expectedMode: 'local',
+  },
+];
+const RECOVERY_TIMEOUT_MS = 120_000;
+/** Spacing that keeps recovery polling inside the normal gateway quota. */
+const RECOVERY_POLL_MS = 12_000;
+const COMPOSE_FILE = 'deploy/docker-compose.ask.yml';
+const COMPOSE_SERVICES = ['website', 'ask', 'ollama'];
 const httpFlag = process.argv.indexOf('--http');
 const httpUrl = httpFlag < 0 ? undefined : process.argv[httpFlag + 1];
 if (httpFlag >= 0 && (!httpUrl || httpUrl.startsWith('--')))
@@ -99,6 +137,12 @@ if ([coldOnly, warmOnly, suiteOnly].filter(Boolean).length > 1)
 if ((coldOnly || warmOnly || suiteOnly) && !httpOrigin)
   throw new Error('The packaged check options require --http');
 const checkCold = !warmOnly && !suiteOnly;
+const gate = process.argv.includes('--gate');
+const recovery = process.argv.includes('--recovery');
+if ((gate || recovery) && !httpOrigin)
+  throw new Error('--gate and --recovery require --http');
+if (recovery && !resetProject)
+  throw new Error('--recovery pauses Ollama and needs --reset-compose-project');
 const mode = httpOrigin
   ? 'http'
   : process.argv.includes('--index')
@@ -203,11 +247,13 @@ if (routingExpectations.length && !baseline) {
 }
 const fixtures =
   mode === 'http'
-    ? warmOnly
-      ? PACKAGED_WARM_FIXTURES
-      : coldOnly
-        ? []
-        : allFixtures
+    ? coldOnly
+      ? []
+      : gate
+        ? [...PACKAGED_WARM_FIXTURES, ...MODEL_SENTINELS]
+        : warmOnly
+          ? PACKAGED_WARM_FIXTURES
+          : allFixtures
     : allFixtures;
 if (process.argv.includes('--misses') && mode !== 'http')
   assert.equal(fixtures.length, misses.size);
@@ -263,17 +309,73 @@ if (mode === 'http') {
   }
 }
 
-async function resetPackagedGateway() {
-  if (!resetProject) return;
-  await execFileAsync('docker', [
+const compose = (...args: string[]) =>
+  execFileAsync('docker', [
     'compose',
     '-p',
-    resetProject,
+    resetProject!,
     '-f',
-    'deploy/docker-compose.ask.yml',
-    'restart',
-    'ask',
+    COMPOSE_FILE,
+    ...args,
   ]);
+const output = async (command: Promise<{ stdout: string }>) =>
+  (await command.catch(() => ({ stdout: '' }))).stdout.trim();
+
+let resetTargetVerified = false;
+/** Refuses to touch a Compose project that does not serve the tested URL. */
+async function verifyResetTarget() {
+  if (resetTargetVerified || !resetProject) return;
+  const published = await output(compose('port', 'website', '80'));
+  const services = (await output(compose('config', '--services'))).split(/\s+/);
+  assert.ok(
+    publishedPortMatches(published, httpOrigin!) &&
+      COMPOSE_SERVICES.every((service) => services.includes(service)),
+    `Compose project ${resetProject} does not publish ${httpOrigin}; refusing to restart it`,
+  );
+  resetTargetVerified = true;
+}
+
+/** Build, model and resource identity recorded with every HTTP report. */
+async function hostIdentity() {
+  const run = (command: string, args: string[]) =>
+    output(execFileAsync(command, args));
+  const identity: Record<string, unknown> = {
+    commit: await run('git', ['rev-parse', 'HEAD']),
+    worktreeClean: !(await run('git', ['status', '--porcelain'])),
+    model: MODEL,
+    modelDigest: MODEL_DIGEST,
+    contextTokens: SELECTOR_CONTEXT_TOKENS,
+    budgets: MODEL_GATE,
+    warmMethod: checkCold
+      ? 'cold probe first, then the cases on the loaded model'
+      : 'cases on the current model state, no cold probe',
+    gatewayResets: resetProject
+      ? `restart ask every ${PACKAGED_RETRIEVAL_QUOTA} requests`
+      : 'none',
+  };
+  if (resetProject) {
+    identity.composeProject = resetProject;
+    identity.images = await output(compose('images', '--format', 'json'));
+    identity.askEnvironment = (
+      await output(compose('exec', '-T', 'ask', 'printenv'))
+    )
+      .split('\n')
+      .filter((line) => line.startsWith('ASK_'));
+    identity.docker = await run('docker', [
+      'info',
+      '--format',
+      'cpus={{.NCPU}} memory={{.MemTotal}}',
+    ]);
+  } else {
+    identity.ollamaThreads = ollamaThreads(process.env);
+  }
+  return identity;
+}
+
+async function resetPackagedGateway() {
+  if (!resetProject) return;
+  await verifyResetTarget();
+  await compose('restart', 'ask');
   const deadline = Date.now() + HTTP_STARTUP_TIMEOUT_MS;
   for (;;) {
     const ready = await fetch(new URL('/api/ask', httpOrigin!), {
@@ -552,6 +654,65 @@ if (process.argv.includes('--misses')) {
       })),
   );
 }
+async function askOnce(question: string): Promise<RecoverySample> {
+  const started = performance.now();
+  const response = await fetch(new URL('/api/ask', httpOrigin!), {
+    method: 'POST',
+    headers: { Origin: httpOrigin!, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, locale: 'en' }),
+    signal: AbortSignal.timeout(CLIENT_TIMEOUT),
+  }).catch(() => undefined);
+  const body: unknown = await response?.json().catch(() => null);
+  const result =
+    response?.status === 200 ? validateResult(body, 'en', corpusVersion) : null;
+  return {
+    httpStatus: response?.status ?? null,
+    mode: result?.mode ?? null,
+    ms: Math.round(performance.now() - started),
+  };
+}
+
+// Loss and recovery on one gateway process with its normal quota: Ollama is
+// paused and resumed, the gateway is never restarted.
+let recoveryReport: Record<string, unknown> | null = null;
+if (recovery) {
+  await verifyResetTarget();
+  const before = await askOnce(PACKAGED_COLD_QUESTION);
+  await compose('pause', 'ollama');
+  let duringOutage: RecoverySample;
+  try {
+    duringOutage = await askOnce(PACKAGED_COLD_QUESTION);
+  } finally {
+    await compose('unpause', 'ollama');
+  }
+  const resumed = performance.now();
+  const afterResume: RecoverySample[] = [];
+  while (performance.now() - resumed < RECOVERY_TIMEOUT_MS) {
+    await delay(RECOVERY_POLL_MS);
+    const sample = await askOnce(PACKAGED_COLD_QUESTION);
+    afterResume.push({
+      ...sample,
+      at: Math.round(performance.now() - resumed),
+    });
+    if (sample.httpStatus === 200 && sample.mode === 'local') break;
+  }
+  recoveryReport = {
+    before,
+    duringOutage,
+    afterResume,
+    ...recoveryOutcome({ duringOutage, afterResume }),
+  };
+  console.log('recovery', JSON.stringify(recoveryReport));
+}
+
+const gateResult = gate ? modelGate(rows, checkCold ? coldProbe : null) : null;
+if (gateResult) {
+  console.log(gateResult.passed ? 'model gate passed' : 'model gate FAILED');
+  for (const failure of gateResult.failures) console.log(' - ' + failure);
+  console.table(gateResult.counts);
+}
+const identity = usesHttp ? await hostIdentity() : null;
+
 if (reportPath)
   await writeFile(
     reportPath,
@@ -561,7 +722,10 @@ if (reportPath)
         usesHttp,
         expectationsVersion,
         corpusVersion,
+        identity,
         coldProbe,
+        gate: gateResult,
+        recovery: recoveryReport,
         summary,
         rows,
       },
@@ -583,3 +747,5 @@ if (
         coldProbe.citations.map(({ id }) => id).join() !== 'spotify-code')))
 )
   process.exitCode = 1;
+if (gateResult && !gateResult.passed) process.exitCode = 1;
+if (recoveryReport && !recoveryReport.recovered) process.exitCode = 1;
