@@ -304,6 +304,71 @@ function cite(page: SitePage, paragraphs: string[], anchor = ''): SiteExcerpt {
   };
 }
 
+const HEADING_SEPARATOR = ' › ';
+const LABEL_SEPARATOR = ': ';
+const ITEM_SEPARATOR = '; ';
+const NAME_SEPARATOR = ', ';
+const DESCRIPTION_SEPARATOR = ' — ';
+const sentence = /[.!?]$/;
+
+/**
+ * One verbatim excerpt per top-level section of a page, in page order. A
+ * section with subsections lists them (with their first line, or their own
+ * subsection names); otherwise its first sentence, or its lines when it has
+ * no full sentence.
+ */
+export function sectionDigests(page: SitePage) {
+  const sections = page.sections.map(({ heading, paragraphs }) => ({
+    path: heading.split(HEADING_SEPARATOR),
+    paragraphs,
+  }));
+  const childrenOf = (path: readonly string[]) =>
+    sections.filter(
+      (section) =>
+        section.path.length === path.length + 1 &&
+        path.every((part, depth) => section.path[depth] === part),
+    );
+  return sections
+    .filter(({ path }) => path.length === 1)
+    .flatMap(({ path, paragraphs }) => {
+      const children = childrenOf(path);
+      if (!children.length) {
+        const first = paragraphs.find((text) => sentence.test(text));
+        if (first) return [first];
+        return paragraphs.length
+          ? [path[0] + LABEL_SEPARATOR + paragraphs.join(ITEM_SEPARATOR)]
+          : [];
+      }
+      const items = children.map((child) => {
+        const label = child.path.at(-1)!;
+        const names = childrenOf(child.path).map(({ path }) => path.at(-1)!);
+        if (names.length)
+          return label + LABEL_SEPARATOR + names.join(NAME_SEPARATOR);
+        return child.paragraphs.length
+          ? label + DESCRIPTION_SEPARATOR + child.paragraphs[0]
+          : label;
+      });
+      return [path[0] + LABEL_SEPARATOR + items.join(ITEM_SEPARATOR)];
+    });
+}
+
+/**
+ * The excerpts no earlier visible answer showed. Collapsed supporting
+ * excerpts do not count: the visitor has not necessarily read them.
+ */
+function unseen(excerpts: readonly string[], history: readonly ChatTurn[]) {
+  const shown = history.map(({ answer }) => normalize(answer));
+  return excerpts.filter((text) => {
+    const target = normalize(excerpt(text));
+    return !shown.some((previous) => previous.includes(target));
+  });
+}
+
+const allShown = (page: SitePage, locale: Locale) =>
+  locale === 'de'
+    ? `Das ist alles, was die Seite ${page.title} dazu zeigt. Dort findest du die ganze Seite.`
+    : `That’s everything the ${page.title} page covers. You can open the full page there.`;
+
 const aiUsageQuestion = [
   /^(?:ai|ki|artificial intelligence|kuenstliche intelligenz)$/,
   /^(?:(?:use|usage) of ai|ai (?:use|usage)|tell me about (?:your|timo s|his) use of ai)$/,
@@ -944,21 +1009,19 @@ export function findSiteContent(
             normalize(heading),
           ),
         )
-        .flatMap(({ paragraphs }) => paragraphs.slice(0, 1))
-        .filter(
-          (excerpt) =>
-            !history.some(({ answer }) =>
-              normalize(answer).includes(normalize(excerpt)),
-            ),
-        );
-      if (details.length)
+        .flatMap(({ paragraphs }) => paragraphs.slice(0, 1));
+      const projectDetails = unseen(details, history);
+      const more = projectDetails.length
+        ? projectDetails
+        : unseen(sectionDigests(target), history).slice(0, MAX_CLAIMS);
+      if (more.length || history.length)
         return {
           status: 'answer',
-          sources: [cite(target, details)],
+          sources: [cite(target, more)],
           missing: [],
           subjects: [subjectOf(target)],
+          ...(more.length ? {} : { note: allShown(target, index.locale) }),
         };
-      if (history.length) return null;
     }
   }
   const attribution =

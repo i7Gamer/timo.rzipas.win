@@ -373,11 +373,12 @@ describe('Ask public page content', () => {
     const earlier = findSiteContent('more?', content, 'related', subject);
     const excerpt = earlier!.sources[0].excerpts[0];
     expect(excerpt).toContain('Reconciliation');
-    expect(
-      findSiteContent('more?', content, 'related', subject, [
-        { question: 'more?', answer: excerpt },
-      ]),
-    ).toBeNull();
+    const next = findSiteContent('more?', content, 'related', subject, [
+      { question: 'more?', answer: excerpt },
+    ]);
+    expect(next?.sources.flatMap(({ excerpts }) => excerpts)).not.toContain(
+      excerpt,
+    );
   });
 
   it.each([
