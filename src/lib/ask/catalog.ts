@@ -197,6 +197,17 @@ export function isPortfolioPageHref(href: string) {
   return /^\/(?:[a-z0-9-]+\/)*(?:#[a-z0-9-]+)?$/i.test(href);
 }
 
+const reviewedHrefs = new Set(
+  Object.values(sources).flatMap(({ href }) =>
+    typeof href === 'string' ? [href] : Object.values(href),
+  ),
+);
+
+/** Whether an href is exactly one the reviewed catalogue cites. */
+export function isReviewedSourceHref(href: string) {
+  return reviewedHrefs.has(href) || catalogDownload(href) !== undefined;
+}
+
 const DOWNLOADS_PREFIX = '/downloads/';
 const PAGE_FRAGMENT = /^page=\d+$/;
 const catalogFiles = new Set(

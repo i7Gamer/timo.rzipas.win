@@ -653,7 +653,7 @@ describe('Ask public page content', () => {
       ],
       final: 'Benji is a Bengal with a silver-grey coat',
       excluded: /Georgi/,
-      links: [],
+      links: ['/ask-pets.txt'],
     },
     {
       title:
@@ -900,7 +900,7 @@ describe('Ask public page content', () => {
       'How much faster is SpotifyTracker’s Compare view when sorting?',
       'https://github.com/i7Gamer/SpotifyTracker/pull/44',
     ],
-  ])('shows a text-only source for %s', async (question, href) => {
+  ])('links the reviewed external source for %s', async (question, href) => {
     const window = new Window();
     try {
       vi.stubGlobal('document', window.document);
@@ -918,8 +918,10 @@ describe('Ask public page content', () => {
       panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
       await vi.waitFor(() => {
         const reply = panel.querySelector('[data-ask-reply]')!;
-        expect(reply.querySelector('[data-ask-attribution]')).toBeTruthy();
-        expect(reply.querySelector('a[href="' + href + '"]')).toBeNull();
+        expect(reply.querySelector('[data-ask-attribution]')).toBeNull();
+        expect(
+          reply.querySelector('a[href="' + href + '"]')?.getAttribute('rel'),
+        ).toBe('noopener noreferrer');
       });
     } finally {
       vi.unstubAllGlobals();
@@ -928,7 +930,7 @@ describe('Ask public page content', () => {
   });
 
   it.each([false, true])(
-    'shows unlinked pet attribution (gateway fallback: %s)',
+    'links the reviewed pet text (gateway fallback: %s)',
     async (gatewayFallback) => {
       const window = new Window();
       try {
@@ -958,9 +960,9 @@ describe('Ask public page content', () => {
         await vi.waitFor(() => {
           const reply = panel.querySelector('[data-ask-reply]')!;
           expect(reply.textContent).toContain('Timo has three cats.');
-          expect(reply.querySelector('a')).toBeNull();
+          expect(reply.querySelector('[data-ask-attribution]')).toBeNull();
           expect(
-            reply.querySelector('[data-ask-attribution]')?.textContent,
+            reply.querySelector('a[href="/ask-pets.txt"]')?.textContent,
           ).toBe(sourceLink('portfolio-pets', 'en').label);
         });
       } finally {
@@ -2151,7 +2153,7 @@ describe('Ask public page content', () => {
       await ask('more', /thesis.*class/is);
       await ask('pets', /three cats/i);
       const pets = await ask('what kind', /Rudi.*Georgi.*Benji/s);
-      expect(pets.querySelector('a[href$=".txt"]')).toBeNull();
+      expect(pets.querySelector('a[href$=".txt"]')).not.toBeNull();
       await ask('all negatives about him', /period in his CV/i);
       expect(fetchLocal.mock.calls.some(([path]) => path === '/api/ask')).toBe(
         true,

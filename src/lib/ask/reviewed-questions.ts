@@ -912,6 +912,14 @@ const compoundCoverage = [
       /^(?:what work does timo do downstream (?:in|at) abacus|which abacus document workflow does timo handle|welchen (?:erp|beleg) workflow betreut timo bei abacus)$/,
   },
   {
+    // One reviewed fact covers both what the app builder blocked and how
+    // Timo got push notifications enabled.
+    ids: ['coilwatch-push-notifications'],
+    scope: /\bcoilwatch\b/,
+    question:
+      /^(?:what did the (?:coilwatch )?(?:app )?(?:builder|tool)(?: for coilwatch)? (?:block|refuse|prevent)|what was blocked|how did (?:timo|he) (?:fix|solve|resolve|get around) (?:it|that|this)|was hat der (?:app )?(?:baukasten|builder)(?: von coilwatch)? blockiert|was wurde blockiert|wie hat (?:timo|er) (?:das|es) (?:geloest|behoben|umgangen))$/,
+  },
+  {
     ids: ['abacus-tests'],
     scope: /\babacus\b/,
     question:

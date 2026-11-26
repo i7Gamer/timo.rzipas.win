@@ -11,6 +11,7 @@ import {
   hasExtendedPitchClaims,
   catalogDownload,
   isPortfolioPageHref,
+  isReviewedSourceHref,
   missingDetails,
   normalize,
   validateResult,
@@ -88,7 +89,7 @@ const downloadLabel: Record<Locale, string> = {
 };
 
 function citation(href: string, label: string) {
-  if (!isPortfolioPageHref(href) && !catalogDownload(href)) {
+  if (!isPortfolioPageHref(href) && !isReviewedSourceHref(href)) {
     const attribution = document.createElement('span');
     attribution.className = 'text-muted mt-1 block text-xs';
     attribution.textContent = label;
@@ -98,6 +99,7 @@ function citation(href: string, label: string) {
   const link = document.createElement('a');
   link.className = 'link-accent mt-1 block w-fit text-xs';
   link.href = href;
+  if (/^https?:/.test(href)) link.rel = 'noopener noreferrer';
   link.textContent = label;
   return link;
 }
