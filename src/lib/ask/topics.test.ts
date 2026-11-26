@@ -107,7 +107,11 @@ describe('topic keywords', () => {
 
   it('combines two topics without exceeding the claim limit', () => {
     const combined = ids('education and skills');
-    expect(combined).toEqual([...EDUCATION_IDS, SKILL_IDS[0]]);
+    expect(combined).toEqual([
+      EDUCATION_IDS[0],
+      SKILL_IDS[0],
+      EDUCATION_IDS[1],
+    ]);
   });
 
   it('reports the matched topic ids in question order', () => {

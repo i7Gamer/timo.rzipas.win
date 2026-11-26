@@ -43,7 +43,7 @@ import {
 } from '../../src/lib/ask/project-context.ts';
 import { isSingleTypo } from '../../src/lib/ask/spelling.ts';
 import {
-  expandTopicMatches,
+  topicExpansion,
   isTopicCandidate,
   topicCandidates,
 } from '../../src/lib/ask/topics.ts';
@@ -752,15 +752,15 @@ export async function askModel(
       clarifyProject: focus.id,
     };
   if (status === 'clarify') return null;
+  // A chosen topic becomes its reviewed facts; the clause checks below still
+  // apply, so a topic never hides an unanswered part of the question.
+  let topicIds = new Set<string>();
+  let topicPartial = false;
   if (matches.some(isTopicCandidate)) {
-    const expanded = expandTopicMatches(matches);
-    return documentAnswer(
-      expanded,
-      expanded.some(({ partial }) => partial) ? 'partial' : 'answer',
-      'local',
-      locale,
-      corpusVersion,
-    );
+    const expanded = topicExpansion(matches);
+    matches = expanded.facts;
+    topicIds = expanded.topicIds;
+    topicPartial = Boolean(expanded.partial);
   }
   const clauses = questionClauses(question);
   let additionalUnanswered = false;
@@ -778,16 +778,25 @@ export async function askModel(
           ...modelIds,
         ]),
     );
-    matches = matches.filter(({ id }) => covered.some((ids) => ids.has(id)));
+    matches = matches.filter(
+      ({ id }) => topicIds.has(id) || covered.some((ids) => ids.has(id)),
+    );
     if (!matches.length)
       return documentAnswer([], 'unknown', 'local', locale, corpusVersion);
-    additionalUnanswered = covered.some(
+    let open = covered.filter(
       (ids) => !matches.some(({ id, partial }) => ids.has(id) && !partial),
-    );
+    ).length;
+    // A topic the selector chose answers one clause no reviewed route covers.
+    if (
+      topicIds.size &&
+      !covered.some((ids) => [...topicIds].some((id) => ids.has(id)))
+    )
+      open--;
+    additionalUnanswered = open > 0;
   }
   return documentAnswer(
     matches,
-    additionalUnanswered || matches.some((fact) => fact.partial)
+    additionalUnanswered || topicPartial || matches.some((fact) => fact.partial)
       ? 'partial'
       : status,
     'local',

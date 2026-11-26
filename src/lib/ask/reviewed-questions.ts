@@ -17,8 +17,8 @@ import { isSingleTypo } from './spelling.ts';
 import {
   summaryFactIds,
   topicContinuation,
-  topicFactIds,
   topicLongerSummary,
+  topicSelection,
 } from './topics.ts';
 
 type ReviewedAnswer = {
@@ -1107,8 +1107,10 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
   // “why hire?”, “Erfahrung”) come last, so every narrower reviewed route
   // above keeps priority.
   if (!modelOverviewIds(terms)) {
-    const topic = summaryFactIds(terms) ?? topicFactIds(terms);
-    if (topic) return { ids: topic };
+    const summary = summaryFactIds(terms);
+    if (summary) return { ids: summary };
+    const topic = topicSelection(terms);
+    if (topic) return topic;
   }
 }
 

@@ -338,12 +338,43 @@ function resolvedTopics(terms: string) {
   );
 }
 
-/** Reviewed fact ids for a broad topic question, or undefined. */
-export function topicFactIds(terms: string): readonly string[] | undefined {
+export interface TopicSelection {
+  ids: readonly string[];
+  /** Set when a requested part got no fact within the claim limit. */
+  partial?: true;
+}
+
+/**
+ * Takes one fact from each list in turn, without repeats, up to the claim
+ * limit, so every requested part gets a slot before any part gets a second.
+ */
+export function interleaveFacts(
+  lists: readonly (readonly string[])[],
+): TopicSelection {
+  const ids: string[] = [];
+  const depth = Math.max(0, ...lists.map(({ length }) => length));
+  for (let index = 0; index < depth; index++)
+    for (const list of lists) {
+      const id = list[index];
+      if (id !== undefined && !ids.includes(id) && ids.length < MAX_CLAIMS)
+        ids.push(id);
+    }
+  return lists.every((list) => list.some((id) => ids.includes(id)))
+    ? { ids }
+    : { ids, partial: true };
+}
+
+/** Reviewed facts for a broad topic question, or undefined. */
+export function topicSelection(terms: string): TopicSelection | undefined {
   const matched = resolvedTopics(terms);
   if (!matched.length) return;
-  if (matched.length === 1) return matched[0].ids;
-  return [...new Set(matched.flatMap(({ ids }) => ids))].slice(0, MAX_CLAIMS);
+  if (matched.length === 1) return { ids: matched[0].ids };
+  return interleaveFacts(matched.map(({ ids }) => ids));
+}
+
+/** Reviewed fact ids for a broad topic question, or undefined. */
+export function topicFactIds(terms: string): readonly string[] | undefined {
+  return topicSelection(terms)?.ids;
 }
 
 /** The reviewed longer summary that follows a topic answer. */
@@ -526,14 +557,30 @@ export function isTopicCandidate({ id }: Pick<Fact, 'id'>) {
   return id.startsWith(TOPIC_PREFIX);
 }
 
-/** Replaces chosen topic candidates with their reviewed facts. */
-export function expandTopicMatches(matches: readonly Fact[]): Fact[] {
-  const ids = matches.flatMap(({ id }) =>
+/**
+ * Replaces chosen topic candidates with their reviewed facts, giving every
+ * chosen topic or fact a slot. `topicIds` are the facts that came from topics.
+ */
+export function topicExpansion(matches: readonly Fact[]) {
+  const lists = matches.map(({ id }) =>
     isTopicCandidate({ id })
       ? (topics.find((topic) => TOPIC_PREFIX + topic.id === id)?.ids ?? [])
       : [id],
   );
-  return [...new Set(ids)]
-    .slice(0, MAX_CLAIMS)
-    .flatMap((id) => facts.filter((fact) => fact.id === id));
+  const { ids, partial } = interleaveFacts(lists);
+  const fromTopics = new Set(
+    matches.flatMap((match, index) =>
+      isTopicCandidate(match) ? lists[index] : [],
+    ),
+  );
+  return {
+    facts: ids.flatMap((id) => facts.filter((fact) => fact.id === id)),
+    topicIds: new Set(ids.filter((id) => fromTopics.has(id))),
+    ...(partial ? { partial } : {}),
+  };
+}
+
+/** Replaces chosen topic candidates with their reviewed facts. */
+export function expandTopicMatches(matches: readonly Fact[]): Fact[] {
+  return topicExpansion(matches).facts;
 }
