@@ -3,11 +3,18 @@ import {
   askModel,
   broadEvidencePool,
   rankedWithTopics,
+  prepareBoundedQuestion,
   prepareQuestion,
   shortlist,
   type SelectFacts,
 } from '../../../services/ask/selection.ts';
-import { CV_OVERVIEW_IDS, WORK_EXPERIENCE_IDS, facts } from './catalog';
+import {
+  CV_OVERVIEW_IDS,
+  EXTENDED_PITCH_IDS,
+  WORK_EXPERIENCE_IDS,
+  facts,
+  longProjectSummary,
+} from './catalog';
 import { corpusVersion } from './version';
 import { findSiteContent, parseSiteContent } from './site-content';
 import { TOPIC_PROMPTS, topicCandidates } from './topics';
@@ -241,5 +248,48 @@ describe('ranked facts with topic candidates', () => {
       AbortSignal.timeout(1_000),
     );
     expect(result?.claims.map(({ id }) => id)).toEqual(HIRE_IDS);
+  });
+});
+
+describe('second round of owner feedback', () => {
+  it.each([
+    ['200 word summary', 'en', EXTENDED_PITCH_IDS],
+    ['CV download', 'en', CV_OVERVIEW_IDS],
+    [
+      '200 word summary about hearthcoil',
+      'en',
+      longProjectSummary('/projects/hearthcoil/'),
+    ],
+  ] as const)('answers %j without the model', (question, locale, expected) => {
+    const prepared = prepareBoundedQuestion(question, locale);
+    expect(prepared.fallback.status).toBe('answer');
+    expect(prepared.fallback.claims.map(({ id }) => id)).toEqual(expected);
+    expect(prepared.retrievalRequired).toBe(false);
+  });
+
+  it('shows the project summary in the browser with the cited page', () => {
+    const answer = findSiteContent(
+      '200 word summary about hearthcoil',
+      parseSiteContent(
+        {
+          locale: 'en',
+          pages: [
+            {
+              href: '/projects/hearthcoil/',
+              title: 'Hearthcoil',
+              overview: [],
+              sections: [],
+            },
+          ],
+        },
+        'en',
+      )!,
+      'overview',
+    );
+    expect(answer?.status).toBe('answer');
+    expect(answer?.preferModel).toBeUndefined();
+    expect(answer?.sources.flatMap(({ excerpts }) => excerpts)).toHaveLength(
+      longProjectSummary('/projects/hearthcoil/').length,
+    );
   });
 });

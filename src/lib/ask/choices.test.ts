@@ -168,6 +168,19 @@ describe('choices in the chat', () => {
     }
   });
 
+  it('suggests topics when the lookup fails', async () => {
+    const window = new Window({ url: 'http://127.0.0.1:4511/' });
+    try {
+      stubFetch(() => new Response(null, { status: 503 }));
+      const panel = chatPanel(window) as unknown as HTMLElement;
+      const reply = await submit(window, panel, 'Is he left-handed?');
+      expect(reply.textContent).toBe('Offline.');
+      expect(actionLabels(panel)).toEqual([...TOPIC_PROMPTS.en]);
+    } finally {
+      await window.happyDOM.close();
+    }
+  });
+
   it('suggests topics after an unknown answer', async () => {
     const window = new Window({ url: 'http://127.0.0.1:4511/' });
     try {

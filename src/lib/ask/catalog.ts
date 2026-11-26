@@ -121,10 +121,39 @@ export function hasExtendedPitchClaims(claims: readonly Pick<Fact, 'id'>[]) {
   return includesExactClaims(claims, EXTENDED_PITCH_IDS);
 }
 
+/** Most facts a long reviewed summary shows, as many as the extended pitch. */
+export const LONG_SUMMARY_CLAIMS = EXTENDED_PITCH_IDS.length;
+const PROJECTS_PREFIX = '/projects/';
+
+/** The page a source links to, without its fragment. */
+export function sourcePage(id: SourceId) {
+  const { href } = sources[id];
+  return (typeof href === 'string' ? href : href.en).split('#')[0];
+}
+
+/** General facts per project page, in catalogue order. */
+export const projectFacts: Readonly<Record<string, readonly string[]>> =
+  facts.reduce<Record<string, string[]>>((pages, fact) => {
+    const page = sourcePage(fact.sourceId);
+    if (
+      !fact.explicitOnly &&
+      page.startsWith(PROJECTS_PREFIX) &&
+      page !== PROJECTS_PREFIX
+    )
+      (pages[page] ??= []).push(fact.id);
+    return pages;
+  }, {});
+
+/** The reviewed long summary of one project page. */
+export function longProjectSummary(page: string) {
+  return (projectFacts[page] ?? []).slice(0, LONG_SUMMARY_CLAIMS);
+}
+
 function hasExtendedSummaryClaims(claims: readonly Pick<Fact, 'id'>[]) {
   return [
     ...Object.values(wordCountSummaries),
     ...Object.values(expandedSummaries),
+    ...Object.keys(projectFacts).map(longProjectSummary),
   ].some((ids) => includesExactClaims(claims, ids));
 }
 

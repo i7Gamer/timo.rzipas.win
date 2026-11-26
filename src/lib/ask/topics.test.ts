@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   CV_OVERVIEW_IDS,
+  EXTENDED_PITCH_IDS,
+  MAX_CLAIMS,
+  documentAnswer,
+  sources,
+  validateResult,
+  wordCountSummaries,
   WORK_EXPERIENCE_IDS,
   facts,
   normalize,
@@ -9,10 +15,12 @@ import {
   TOPIC_PROMPTS,
   expandTopicMatches,
   questionTopics,
+  summaryFactIds,
   topicCandidates,
   topicFactIds,
   topicLongerSummary,
 } from './topics';
+import { corpusVersion } from './version';
 
 const HIRE_IDS = ['abacus-workflow', 'stadler-vpn', 'spotify-python'];
 const SUMMARY_IDS = [
@@ -160,4 +168,89 @@ describe('topic candidates for the selector', () => {
       WORK_EXPERIENCE_IDS,
     );
   });
+});
+
+describe('summary requests', () => {
+  const HEARTHCOIL_PAGE = '/projects/hearthcoil/';
+  const hearthcoilIds = facts
+    .filter(({ sourceId, explicitOnly }) => {
+      const { href } = sources[sourceId];
+      return (
+        !explicitOnly &&
+        typeof href === 'string' &&
+        href.startsWith(HEARTHCOIL_PAGE)
+      );
+    })
+    .map(({ id }) => id);
+  const summary = (question: string) => summaryFactIds(normalize(question));
+
+  it.each([
+    '200 word summary',
+    'Give me a 200 word summary',
+    'long summary please',
+    'detailed overview',
+    'Zusammenfassung in 200 Wörtern',
+    'ausführliche Zusammenfassung über Timo',
+  ])('gives the reviewed long pitch for %j', (question) => {
+    expect(summary(question)).toEqual(EXTENDED_PITCH_IDS);
+  });
+
+  it.each([
+    '200 word summary about hearthcoil',
+    'Write a detailed summary of Hearthcoil',
+    'Zusammenfassung über Hearthcoil in 200 Wörtern',
+  ])('summarizes a whole project for %j', (question) => {
+    const ids = summary(question)!;
+    expect(ids[0]).toBe('hearthcoil-game');
+    expect(ids.length).toBeGreaterThan(MAX_CLAIMS);
+    expect(ids.length).toBeLessThanOrEqual(EXTENDED_PITCH_IDS.length);
+    for (const id of ids) expect(hearthcoilIds).toContain(id);
+  });
+
+  it.each([
+    ['summarize hearthcoil', 'hearthcoil-game'],
+    ['Fasse Hearthcoil zusammen', 'hearthcoil-game'],
+    ['summary of spotify tracker', 'spotify-rewrite'],
+    ['overview of the carini project', 'carini-team'],
+    ['short summary of tutto', 'tutto-modes'],
+  ])('gives a short project summary for %j', (question, first) => {
+    const ids = summary(question)!;
+    expect(ids[0]).toBe(first);
+    expect(ids.length).toBeLessThanOrEqual(MAX_CLAIMS);
+  });
+
+  it('uses the reviewed long CV summary for a long CV request', () => {
+    expect(summary('long summary of his cv')).toEqual(wordCountSummaries.cv);
+  });
+
+  it.each([
+    'summary of hearthcoil release date',
+    'summary of the world cup',
+    'hearthcoil',
+    'summary of his weaknesses',
+    '200 words',
+  ])('leaves %j to other routes', (question) => {
+    expect(summary(question)).toBeUndefined();
+  });
+
+  it('accepts every long project summary as a complete reviewed answer', () => {
+    const ids = summary('200 word summary about hearthcoil')!;
+    const answer = documentAnswer(
+      ids.map((id) => facts.find((fact) => fact.id === id)!),
+      'answer',
+      'local',
+      'en',
+      corpusVersion,
+    );
+    expect(validateResult(answer, 'en', corpusVersion)).toEqual(answer);
+  });
+});
+
+describe('download requests', () => {
+  it.each(['CV download', 'download cv', 'Lebenslauf herunterladen', 'cv pdf'])(
+    'answers %j with the CV and its PDF link',
+    (question) => {
+      expect(ids(question)).toEqual(CV_OVERVIEW_IDS);
+    },
+  );
 });

@@ -14,7 +14,7 @@ import {
 } from './catalog.ts';
 import { acknowledgement, type ChatTurn } from './history.ts';
 import { isSingleTypo } from './spelling.ts';
-import { topicFactIds, topicLongerSummary } from './topics.ts';
+import { summaryFactIds, topicFactIds, topicLongerSummary } from './topics.ts';
 
 type ReviewedAnswer = {
   ids: readonly string[];
@@ -1071,10 +1071,11 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
       return { ids: ['tutto-kniffel-completion-fixture'] };
   }
 
-  // Broad topic questions (“cv”, “why hire?”, “Erfahrung”) come last, so every
-  // narrower reviewed route above keeps priority.
+  // Summary requests for any subject and broad topic questions (“cv”,
+  // “why hire?”, “Erfahrung”) come last, so every narrower reviewed route
+  // above keeps priority.
   if (!modelOverviewIds(terms)) {
-    const topic = topicFactIds(terms);
+    const topic = summaryFactIds(terms) ?? topicFactIds(terms);
     if (topic) return { ids: topic };
   }
 }

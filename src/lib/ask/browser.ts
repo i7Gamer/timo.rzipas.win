@@ -911,7 +911,10 @@ export function setupAskWork(panel: HTMLElement) {
       if (projectForClarification)
         askProjectScope(reply, projectForClarification, question);
       else if (pageAnswer) showSite(reply, pageAnswer, focus, true);
-      else reply.textContent = messages.offline;
+      else {
+        reply.textContent = messages.offline;
+        suggestTopics = true;
+      }
     } finally {
       if (active === controller) {
         rememberReply(line, reply);

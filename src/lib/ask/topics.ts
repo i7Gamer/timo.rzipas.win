@@ -1,10 +1,18 @@
 import type { Locale } from '../../i18n';
 import {
   CV_OVERVIEW_IDS,
+  EXTENDED_PITCH_IDS,
   MAX_CLAIMS,
   WORK_EXPERIENCE_IDS,
   facts,
+  longProjectSummary,
+  normalize,
+  projectFacts,
+  sourcePage,
+  sources,
+  wordCountSummaries,
   type Fact,
+  type SourceId,
 } from './catalog.ts';
 import { isSingleTypo } from './spelling.ts';
 
@@ -259,7 +267,9 @@ const filler = new Set(
     'nenn nenne ueber von zu zum zur im mit der die den dem des ein eine ' +
     'einen einem einer und oder auch bitte kurz kurze kurzer kurzes kurzen ' +
     'etwas mal hat hast haben ist sind bist kann kannst koennte koenntest ' +
-    'sollte sollten soll wo'
+    'sollte sollten soll wo ' +
+    // Asking for a download still wants the document: “CV download”.
+    'download downloads pdf link file datei herunterladen runterladen'
   ).split(' '),
 );
 
@@ -339,6 +349,140 @@ export function topicFactIds(terms: string): readonly string[] | undefined {
 export function topicLongerSummary(terms: string) {
   const matched = resolvedTopics(terms);
   return matched.length === 1 ? matched[0].longer : undefined;
+}
+
+// A summary request is a summary word, an optional length and a subject:
+// Timo, a broad topic or one project page.
+const summaryWords = new Set([
+  'summary',
+  'summaries',
+  'summarize',
+  'summarise',
+  'summarized',
+  'overview',
+  'pitch',
+  'recap',
+  'rundown',
+  'tldr',
+  'zusammenfassung',
+  'zusammenfassen',
+  'ueberblick',
+  'uebersicht',
+]);
+const germanSummarize = {
+  verbs: new Set(['fass', 'fasse']),
+  particle: 'zusammen',
+};
+const longWords = new Set([
+  'long',
+  'longer',
+  'detailed',
+  'full',
+  'complete',
+  'extended',
+  'lang',
+  'lange',
+  'langen',
+  'langer',
+  'laengere',
+  'laengeren',
+  'ausfuehrlich',
+  'ausfuehrliche',
+  'ausfuehrlichen',
+  'ausfuehrlicher',
+  'detailliert',
+  'detaillierte',
+  'detaillierten',
+  'vollstaendige',
+]);
+const lengthUnits = new Set(['word', 'words', 'wort', 'woerter', 'woertern']);
+const summaryConnectors = new Set(
+  (
+    'of on for in write make create around roughly approximately um rund ' +
+    'etwa ca circa ungefaehr schreib schreibe erstell erstelle nice good ' +
+    'schoene gute knapp knappe'
+  ).split(' '),
+);
+/** Requested word counts from this length on get the long summary. */
+const LONG_SUMMARY_MIN_WORDS = 100;
+const projectWords = ['project', 'projects', 'projekt', 'projekte'];
+const longTopicSummaries: Partial<Record<TopicId, readonly string[]>> = {
+  summary: EXTENDED_PITCH_IDS,
+  hire: EXTENDED_PITCH_IDS,
+  cv: wordCountSummaries.cv,
+  work: wordCountSummaries.work,
+};
+
+const words = (phrase: string) => normalize(phrase).split(' ');
+const projectNames = Object.keys(projectFacts).map((page) => {
+  const pageSources = Object.keys(sources).filter(
+    (id) => sourcePage(id as SourceId) === page,
+  ) as SourceId[];
+  return {
+    page,
+    names: new Set([
+      ...projectWords,
+      ...page
+        .split('/')
+        .filter(Boolean)
+        .slice(1)
+        .flatMap((slug) => slug.split('-')),
+      ...pageSources.flatMap((id) => [
+        ...sources[id].topics.flatMap(words),
+        // “Hearthcoil · Project story” names the project before the dot.
+        ...Object.values(sources[id].label).flatMap((label) =>
+          words(label.split('·')[0]),
+        ),
+      ]),
+    ]),
+  };
+});
+
+/** Reviewed fact ids for a summary request, or undefined. */
+export function summaryFactIds(terms: string): readonly string[] | undefined {
+  const all = terms.split(' ').filter(Boolean);
+  const germanVerb =
+    all.includes(germanSummarize.particle) &&
+    all.some((word) => germanSummarize.verbs.has(word));
+  if (!germanVerb && !all.some((word) => summaryWords.has(word))) return;
+  let long = false;
+  const subject: string[] = [];
+  for (const [index, word] of all.entries()) {
+    if (longWords.has(word)) long = true;
+    else if (/^\d+$/.test(word) && lengthUnits.has(all[index + 1] ?? ''))
+      long ||= Number(word) >= LONG_SUMMARY_MIN_WORDS;
+    else if (
+      !summaryWords.has(word) &&
+      !lengthUnits.has(word) &&
+      !summaryConnectors.has(word) &&
+      !filler.has(word) &&
+      !(
+        germanVerb &&
+        (germanSummarize.verbs.has(word) || word === germanSummarize.particle)
+      )
+    )
+      subject.push(word);
+  }
+  if (!subject.length)
+    return long
+      ? EXTENDED_PITCH_IDS
+      : topics.find(({ id }) => id === 'summary')!.ids;
+
+  const named = questionTopics(subject.join(' ')).filter(
+    (id) => id !== 'summary',
+  );
+  if (named.length === 1) {
+    const topic = topics.find(({ id }) => id === named[0])!;
+    return (long && longTopicSummaries[topic.id]) || topic.ids;
+  }
+  const pages = projectNames.filter(({ names }) =>
+    subject.every((word) => names.has(word)),
+  );
+  if (pages.length !== 1) return;
+  const { page } = pages[0];
+  return long
+    ? longProjectSummary(page)
+    : projectFacts[page].slice(0, MAX_CLAIMS);
 }
 
 /** Labels offered as buttons when a question could not be answered. */
