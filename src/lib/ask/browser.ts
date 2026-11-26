@@ -153,6 +153,9 @@ export function setupAskWork(panel: HTMLElement) {
     subjects: SiteSubject[];
     evidence: string[];
     localOnly: boolean;
+    /** Languages the question and answer were written in. */
+    questionLang: string;
+    answerLang: string;
   })[] = [];
   const replySubjects = new WeakMap<HTMLElement, SiteSubject[]>();
   let subjects: SiteSubject[] = [];
@@ -329,6 +332,8 @@ export function setupAskWork(panel: HTMLElement) {
           (part) => part.textContent ?? '',
         ),
         localOnly: reply.hasAttribute('data-ask-local-only'),
+        questionLang: locale,
+        answerLang: reply.lang || locale,
       });
     if (starters)
       starters.hidden = transcript.some(({ subjects }) => subjects.length > 0);
@@ -595,6 +600,11 @@ export function setupAskWork(panel: HTMLElement) {
         (locale === 'de'
           ? 'Das finde ich in diesem Chat nicht.'
           : 'I can’t find that in this chat.');
+      if (recalled.turn)
+        reply.lang =
+          recalled.field === 'question'
+            ? recalled.turn.questionLang
+            : recalled.turn.answerLang;
       if (recalled.turn?.subjects.length)
         rememberSubjects(reply, recalled.turn.subjects);
       if (recalled.turn?.localOnly)
@@ -612,6 +622,7 @@ export function setupAskWork(panel: HTMLElement) {
       );
     if (earlier && !pivot?.[2]) {
       reply.textContent = earlier.answer;
+      reply.lang = earlier.answerLang;
       rememberSubjects(reply, earlier.subjects);
       if (earlier.localOnly) reply.setAttribute('data-ask-local-only', '');
       pending = undefined;

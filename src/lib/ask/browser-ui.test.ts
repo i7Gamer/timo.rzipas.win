@@ -65,6 +65,11 @@ describe('Ask about my work UI', () => {
       expect(
         details.querySelector('[data-ask-result]')?.getAttribute('aria-label'),
       ).toBe('Conversation with Ask about Timo');
+      // The scrolling transcript is a keyboard stop, so text-only replies
+      // can be scrolled with the keyboard and show the global focus ring.
+      expect(
+        details.querySelector('[data-ask-result]')?.getAttribute('tabindex'),
+      ).toBe('0');
       const tools = Array.from(
         details.parentElement?.querySelectorAll(
           '[data-ask-window-tools] button',
