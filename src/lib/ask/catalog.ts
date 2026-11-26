@@ -197,6 +197,29 @@ export function isPortfolioPageHref(href: string) {
   return /^\/(?:[a-z0-9-]+\/)*(?:#[a-z0-9-]+)?$/i.test(href);
 }
 
+const DOWNLOADS_PREFIX = '/downloads/';
+const PAGE_FRAGMENT = /^page=\d+$/;
+const catalogFiles = new Set(
+  Object.values(sources)
+    .flatMap(({ href }) =>
+      typeof href === 'string' ? [href] : Object.values(href),
+    )
+    .map((href) => href.split('#')[0])
+    .filter((href) => href.startsWith(DOWNLOADS_PREFIX)),
+);
+
+/**
+ * The reviewed catalogue file an href points to, or undefined. Only files the
+ * catalogue cites qualify, optionally with a `#page=N` fragment.
+ */
+export function catalogDownload(href: string) {
+  const hash = href.indexOf('#');
+  const file = hash < 0 ? href : href.slice(0, hash);
+  if (!catalogFiles.has(file)) return;
+  if (hash >= 0 && !PAGE_FRAGMENT.test(href.slice(hash + 1))) return;
+  return file;
+}
+
 export function sourceLink(id: SourceId, locale: Locale) {
   const { href, label } = sources[id];
   return {

@@ -1,6 +1,7 @@
 import { PROJECT_AI_NOTES } from '../../data/project-ai';
 import type { Locale } from '../../i18n';
 import {
+  catalogDownload,
   EXTENDED_PITCH_IDS,
   extendedPitchLead,
   facts,
@@ -12,6 +13,7 @@ import {
   sourceLink,
 } from './catalog';
 import { languageQuestion, moreQuestion } from './conversation';
+import { downloadRequest } from './topics';
 import {
   careerCandidates,
   careerFollowUpScope,
@@ -120,6 +122,8 @@ export interface SiteAnswer {
   localOnly?: true;
   /** Options for a clarification note; the browser answers a pick locally. */
   choices?: readonly AnswerChoice[];
+  /** Reviewed files to offer as downloads, when the visitor asked for one. */
+  downloads?: readonly string[];
 }
 
 export interface SiteSubject {
@@ -923,6 +927,16 @@ export function findSiteContent(
         sources.set(source.href, citation);
         if (page) subjects.set(page.href, subjectOf(page));
       }
+      const downloads = downloadRequest.test(normalized)
+        ? [
+            ...new Set(
+              [...sources.keys()].flatMap((href) => {
+                const file = catalogDownload(href);
+                return file ? [file] : [];
+              }),
+            ),
+          ]
+        : [];
       const petIds = matched
         .filter(({ source }) => source.href === PET_SOURCE_PATH)
         .map(({ fact }) => fact.id);
@@ -947,6 +961,7 @@ export function findSiteContent(
             ? extendedPitchLead[index.locale]
             : undefined,
         lead: single ? matched[0].fact.answer[index.locale] : undefined,
+        ...(downloads.length ? { downloads } : {}),
       };
     }
   }

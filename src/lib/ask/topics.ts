@@ -274,6 +274,10 @@ const filler = new Set(
   ).split(' '),
 );
 
+/** Whether the visitor wants the file itself: “CV download”, “Lebenslauf PDF”. */
+export const downloadRequest =
+  /\b(?:download\w*|herunterladen|runterladen|pdf)\b/;
+
 const keywordWords = new Set(
   topics.flatMap(({ keywords }) => keywords.flatMap((k) => k.split(' '))),
 );

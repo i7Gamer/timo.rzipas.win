@@ -1,3 +1,4 @@
+import type { Locale } from '../../i18n';
 import {
   CLIENT_TIMEOUT,
   MAX_CLAIMS,
@@ -8,6 +9,7 @@ import {
   facts,
   extendedPitchLead,
   hasExtendedPitchClaims,
+  catalogDownload,
   isPortfolioPageHref,
   missingDetails,
   normalize,
@@ -80,8 +82,13 @@ function addParagraph(parent: HTMLElement, text: string, className?: string) {
   return paragraph;
 }
 
+const downloadLabel: Record<Locale, string> = {
+  en: 'Download PDF',
+  de: 'PDF herunterladen',
+};
+
 function citation(href: string, label: string) {
-  if (!isPortfolioPageHref(href)) {
+  if (!isPortfolioPageHref(href) && !catalogDownload(href)) {
     const attribution = document.createElement('span');
     attribution.className = 'text-muted mt-1 block text-xs';
     attribution.textContent = label;
@@ -465,6 +472,15 @@ export function setupAskWork(panel: HTMLElement) {
         messages.missing.replace('{detail}', () => detail),
         'text-muted',
       );
+    }
+    for (const file of answer.downloads ?? []) {
+      if (!catalogDownload(file)) continue;
+      const link = document.createElement('a');
+      link.className = 'link-accent mt-2 block w-fit text-sm';
+      link.href = file;
+      link.setAttribute('download', '');
+      link.textContent = downloadLabel[locale];
+      reply.append(link);
     }
     if (answer.subjects?.length) rememberSubjects(reply, answer.subjects);
   };

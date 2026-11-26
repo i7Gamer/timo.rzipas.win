@@ -863,11 +863,39 @@ describe('Ask public page content', () => {
     },
   );
 
+  it('links a reviewed catalogue PDF', async () => {
+    const window = new Window();
+    try {
+      vi.stubGlobal('document', window.document);
+      window.document.documentElement.lang = 'en';
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => Response.json(index())),
+      );
+      window.document.body.innerHTML =
+        '<section data-mode="local" data-version="fixture"><div data-ask-result></div><form><textarea></textarea><button type="submit">Ask</button></form></section>';
+      const panel = window.document.querySelector('section')!;
+      panel.dataset.messages = JSON.stringify({ wait: 'Looking...' });
+      setupAskWork(panel as unknown as HTMLElement);
+      panel.querySelector('textarea')!.value =
+        'What was the title of Timo’s bachelor thesis?';
+      panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
+      await vi.waitFor(() => {
+        const reply = panel.querySelector('[data-ask-reply]')!;
+        expect(
+          reply.querySelector(
+            'a[href="/downloads/timo-rzipa-bachelor-thesis.pdf#page=1"]',
+          ),
+        ).toBeTruthy();
+        expect(reply.querySelector('[data-ask-attribution]')).toBeNull();
+      });
+    } finally {
+      vi.unstubAllGlobals();
+      window.close();
+    }
+  });
+
   it.each([
-    [
-      'What was the title of Timo’s bachelor thesis?',
-      '/downloads/timo-rzipa-bachelor-thesis.pdf#page=1',
-    ],
     [
       'How much faster is SpotifyTracker’s Compare view when sorting?',
       'https://github.com/i7Gamer/SpotifyTracker/pull/44',
