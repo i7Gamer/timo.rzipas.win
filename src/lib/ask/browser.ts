@@ -48,6 +48,7 @@ import {
   approvedAnswer,
   isShortPetFollowUp,
   profileFollowUp,
+  topicMoreIds,
   type AnswerChoice,
 } from './reviewed-questions';
 import { TOPIC_PROMPTS } from './topics';
@@ -696,10 +697,10 @@ export function setupAskWork(panel: HTMLElement) {
       const terms = normalize(question);
       const profileQuestion = profileFollowUp(terms, publicHistory);
       if (terms !== profileQuestion) question = profileQuestion;
-      const careerFollowUp = careerFollowUpScope(
-        normalize(question),
-        publicHistory,
-      );
+      const topicMore = topicMoreIds(normalize(question), publicHistory);
+      const careerFollowUp = topicMore
+        ? undefined
+        : careerFollowUpScope(normalize(question), publicHistory);
       const projectContext =
         !careerFollowUp &&
         (!chosen || projectListChosen) &&
@@ -717,6 +718,7 @@ export function setupAskWork(panel: HTMLElement) {
         petFollowUp ||
         (shortFollowUp &&
           !approvedAnswer(profileQuestion, question) &&
+          !topicMore &&
           (languageQuestion.test(shortFollowUp) ||
             moreQuestion.test(shortFollowUp) ||
             !(index && namesSiteSubject(question, index))));

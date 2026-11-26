@@ -2,6 +2,7 @@ import type { Locale } from '../../i18n';
 import {
   CV_OVERVIEW_IDS,
   EXTENDED_PITCH_IDS,
+  expandedSummaries,
   MAX_CLAIMS,
   WORK_EXPERIENCE_IDS,
   facts,
@@ -349,6 +350,22 @@ export function topicFactIds(terms: string): readonly string[] | undefined {
 export function topicLongerSummary(terms: string) {
   const matched = resolvedTopics(terms);
   return matched.length === 1 ? matched[0].longer : undefined;
+}
+
+/**
+ * Every reviewed fact a single topic can show, in order: its answer, then the
+ * rest of its longer summary. “More” follow-ups walk through this list.
+ * Work experience is left to the career follow-ups, which continue by role.
+ */
+export function topicContinuation(terms: string) {
+  const matched = resolvedTopics(terms);
+  if (matched.length !== 1 || matched[0].id === 'work') return;
+  const [{ ids, longer }] = matched;
+  const more =
+    longer && Object.hasOwn(expandedSummaries, longer)
+      ? expandedSummaries[longer as keyof typeof expandedSummaries]
+      : [];
+  return [...new Set([...ids, ...more])];
 }
 
 // A summary request is a summary word, an optional length and a subject:

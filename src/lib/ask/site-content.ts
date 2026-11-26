@@ -36,6 +36,7 @@ import {
   abacusRoleQuestion,
   summaryOverviewIds,
   reviewedFactId,
+  topicMoreIds,
 } from './reviewed-questions';
 import type { ChatTurn } from './history';
 import type { LocalPets } from './local-pets';
@@ -368,6 +369,11 @@ const allShown = (page: SitePage, locale: Locale) =>
   locale === 'de'
     ? `Das ist alles, was die Seite ${page.title} dazu zeigt. Dort findest du die ganze Seite.`
     : `That’s everything the ${page.title} page covers. You can open the full page there.`;
+
+const topicExhausted: Record<Locale, string> = {
+  en: 'That’s everything I have on that. Ask about his projects, his work or his homelab for more.',
+  de: 'Das ist alles, was ich dazu habe. Frag nach seinen Projekten, seiner Arbeit oder seinem Homelab, um mehr zu erfahren.',
+};
 
 const aiUsageQuestion = [
   /^(?:ai|ki|artificial intelligence|kuenstliche intelligenz)$/,
@@ -801,7 +807,10 @@ export function findSiteContent(
   }
   const contextualQuestion =
     subject?.href === PET_SOURCE_PATH ? normalized + ' pets' : normalized;
-  const careerScope = careerFollowUpScope(contextualQuestion, history);
+  const topicMore = topicMoreIds(contextualQuestion, history);
+  const careerScope = topicMore
+    ? undefined
+    : careerFollowUpScope(contextualQuestion, history);
   const careerIds =
     careerScope &&
     careerCandidates(history, careerScope)
@@ -816,6 +825,13 @@ export function findSiteContent(
         index.locale === 'de'
           ? 'Über welche Stelle oder Aufgabe möchtest du mehr erfahren?'
           : 'Which role or part of Timo’s work would you like to explore?',
+    };
+  if (topicMore?.length === 0)
+    return {
+      status: 'answer',
+      sources: [],
+      missing: [],
+      note: topicExhausted[index.locale],
     };
   const highlights = profileHighlightIds(contextualQuestion, history);
   const projectIds =
@@ -862,6 +878,7 @@ export function findSiteContent(
     };
   const approved: ReturnType<typeof approvedAnswer> =
     (careerIds ? { ids: careerIds, partial: undefined } : undefined) ??
+    (topicMore ? { ids: topicMore, partial: undefined } : undefined) ??
     (otherCats
       ? {
           ids: PET_DETAIL_IDS.filter((id) => id !== subject?.catFactId),

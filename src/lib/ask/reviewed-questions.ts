@@ -14,7 +14,12 @@ import {
 } from './catalog.ts';
 import { acknowledgement, type ChatTurn } from './history.ts';
 import { isSingleTypo } from './spelling.ts';
-import { summaryFactIds, topicFactIds, topicLongerSummary } from './topics.ts';
+import {
+  summaryFactIds,
+  topicContinuation,
+  topicFactIds,
+  topicLongerSummary,
+} from './topics.ts';
 
 type ReviewedAnswer = {
   ids: readonly string[];
@@ -38,7 +43,7 @@ const genreCount =
 const kniffel = /\bkniffel\b/;
 
 const plainMoreQuestion =
-  /^(?:(?:that ?s the same(?: again)?|you already said that|das hast du schon gesagt) )?(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|mehr|erzaehl mir mehr|(?:und )?sonst noch|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
+  /^(?:(?:that ?s the same(?: again)?|you already said that|das hast du schon gesagt) )?(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?(?:more|other|further|additional) (?:details?|information|infos?|reasons?|examples?|points?|arguments?|things?|strengths?)|more|mehr|erzaehl mir mehr|(?:und )?sonst noch|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere|andere) (?:details|infos|gruende|beispiele|punkte|argumente|staerken))$/;
 const shortExpansion =
   /^(?:(?:please )?(?:a bit |a little )?(?:longer|more detail(?:ed)?)(?: please)?|(?:bitte )?(?:etwas )?(?:laenger|ausfuehrlicher)(?: bitte)?)$/;
 export const moreQuestion = new RegExp(
@@ -454,6 +459,33 @@ export function profileHighlightIds(
       )
     );
   });
+}
+
+/**
+ * The next unseen reviewed facts when “more” follows a broad topic answer,
+ * such as “any more reasons?” after “why hire Timo?”. Empty once the topic is
+ * exhausted; undefined when the question does not continue a topic.
+ */
+export function topicMoreIds(terms: string, history: readonly ChatTurn[]) {
+  if (!moreQuestion.test(terms)) return;
+  const anchor = history.findLast(({ question }) => {
+    const prior = normalize(question);
+    return !moreQuestion.test(prior) && !acknowledgement.test(prior);
+  });
+  const pool = anchor && topicContinuation(normalize(anchor.question));
+  if (!pool) return;
+  const shown = history.map(({ answer }) => normalize(answer));
+  return pool
+    .filter((id) => {
+      const fact = facts.find((entry) => entry.id === id);
+      return (
+        fact &&
+        !Object.values(fact.answer).some((text) =>
+          shown.some((previous) => previous.includes(normalize(text))),
+        )
+      );
+    })
+    .slice(0, MAX_CLAIMS);
 }
 
 export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
