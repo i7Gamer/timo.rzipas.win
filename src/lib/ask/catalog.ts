@@ -9,6 +9,8 @@ export interface Fact {
   aliases: readonly string[];
   standalone?: readonly string[];
   partial?: boolean;
+  /** Answers only its own narrow question, e.g. “no master’s degree is listed”. */
+  explicitOnly?: boolean;
   answer: Record<Locale, string>;
   lead?: Record<Locale, string>;
   evidence: readonly string[];

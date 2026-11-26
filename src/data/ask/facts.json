@@ -1198,6 +1198,7 @@
     },
     {
       "id": "stadler-start-month",
+      "explicitOnly": true,
       "sourceId": "stadler",
       "facet": "published start month at Stadler RDS",
       "aliases": [
@@ -1233,6 +1234,7 @@
     },
     {
       "id": "cv-masters-listing",
+      "explicitOnly": true,
       "sourceId": "cv",
       "facet": "degrees listed in the published CV",
       "aliases": [
@@ -1266,6 +1268,7 @@
     },
     {
       "id": "carini-billing-scope",
+      "explicitOnly": true,
       "sourceId": "carini",
       "facet": "documented scope of the CARINI project",
       "aliases": [],
@@ -1278,6 +1281,7 @@
     },
     {
       "id": "myspeed-forecast-scope",
+      "explicitOnly": true,
       "sourceId": "myspeed",
       "facet": "measurement and forecasting scope",
       "aliases": [],
@@ -1289,6 +1293,7 @@
     },
     {
       "id": "tutto-kniffel-completed-fixture",
+      "explicitOnly": true,
       "sourceId": "tutto-kniffel-tests",
       "facet": "completed Classic Kniffel coach test",
       "aliases": [
@@ -1304,6 +1309,7 @@
     },
     {
       "id": "tutto-kniffel-completion-fixture",
+      "explicitOnly": true,
       "sourceId": "tutto-kniffel-tests",
       "facet": "before-final-roll Kniffel probability test",
       "aliases": [

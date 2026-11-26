@@ -14,6 +14,7 @@ import {
 } from './catalog.ts';
 import { acknowledgement, type ChatTurn } from './history.ts';
 import { isSingleTypo } from './spelling.ts';
+import { topicFactIds, topicLongerSummary } from './topics.ts';
 
 type ReviewedAnswer = {
   ids: readonly string[];
@@ -161,7 +162,7 @@ const homelabMotivation =
   /^(?:homelab motivation|motivation (?:for|fuer) (?:the |his |timos )?home ?lab|why (?:(?:does|did) (?:timo|he)|do you) (?:self host|run (?:a|his|your) home ?lab)|warum (?:betreibt (?:timo|er) (?:ein|sein) home ?lab|hostet (?:timo|er) selbst))$/;
 const hiring =
   /^(?:why (?:should|would) (?:i|we) hire (?:him|you|timo(?: rzipa)?)|warum sollte(?:n)? (?:ich|wir) (?:ihn|dich|timo(?: rzipa)?) einstellen)$/;
-const perks = /^(?:perks|vorteile)$/;
+const perks = /^(?:perks|vorteile|benefits)$/;
 const publicTimeline =
   /^(?:(?:no )?(?:info|information) (?:about|for) |what (?:happened|did (?:timo|he) do|was (?:timo|he) doing) (?:in|from) |(?:keine )?(?:infos?|informationen) (?:zu|ueber) |was (?:machte|tat) (?:er|timo) (?:von|zwischen) )?2015 (?:to |and |bis |und )?2016$/;
 const setbacks =
@@ -486,6 +487,8 @@ export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
     )
       return 'longer summary of timo';
     if (anchor && Object.hasOwn(expandedSummaries, anchor)) return anchor;
+    const topicSummary = topicLongerSummary(anchor);
+    if (topicSummary) return topicSummary;
     if (shortExpansion.test(repairSummarySpelling(terms)))
       terms = anchor ? 'tell me more' : 'longer summary please';
   }
@@ -542,14 +545,43 @@ export function profileQuestionNote(
     return locale === 'de'
       ? 'Welchen Zeitraum im Lebenslauf möchtest du prüfen?'
       : 'Which period in his CV would you like to check?';
-  if (perks.test(terms))
-    return locale === 'de'
-      ? 'Meinst du Timos Berufserfahrung oder Zusatzleistungen bei einem Arbeitgeber?'
-      : 'Do you mean Timo’s experience or benefits at an employer?';
   if (terms === 'motivation')
     return locale === 'de'
-      ? 'Meinst du die Motivation für sein Homelab, ein Projekt oder seine Berufswahl?'
-      : 'Do you mean his motivation for self-hosting, a project, or his career?';
+      ? 'Meinst du seine Motivation für das Homelab oder für seine Projekte?'
+      : 'Do you mean his motivation for self-hosting or for his projects?';
+}
+
+export interface AnswerChoice {
+  label: string;
+  ids: readonly string[];
+}
+
+/** Answer options for a clarification note, answered locally when picked. */
+export function profileQuestionChoices(
+  terms: string,
+  locale: Locale,
+): readonly AnswerChoice[] | undefined {
+  const de = locale === 'de';
+  if (isSummaryExpansion(terms))
+    return [
+      {
+        label: de ? 'Lebenslauf' : 'CV',
+        ids: expandedSummaries['longer summary of his cv'],
+      },
+      {
+        label: de ? 'Berufserfahrung' : 'Work experience',
+        ids: expandedSummaries['longer summary of his work experience'],
+      },
+      {
+        label: de ? 'Projekte' : 'Projects',
+        ids: expandedSummaries['longer summary of his projects'],
+      },
+    ];
+  if (terms === 'motivation')
+    return [
+      { label: 'Homelab', ids: ['homelab-motivation'] },
+      { label: de ? 'Projekte' : 'Projects', ids: ['portfolio-leisure'] },
+    ];
 }
 
 export function modelOverviewIds(terms: string): readonly string[] | undefined {
@@ -1037,6 +1069,13 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
       )
     )
       return { ids: ['tutto-kniffel-completion-fixture'] };
+  }
+
+  // Broad topic questions (“cv”, “why hire?”, “Erfahrung”) come last, so every
+  // narrower reviewed route above keeps priority.
+  if (!modelOverviewIds(terms)) {
+    const topic = topicFactIds(terms);
+    if (topic) return { ids: topic };
   }
 }
 

@@ -42,6 +42,11 @@ import {
   PROJECT_OVERVIEW_PATTERNS,
 } from '../../src/lib/ask/project-context.ts';
 import { isSingleTypo } from '../../src/lib/ask/spelling.ts';
+import {
+  expandTopicMatches,
+  isTopicCandidate,
+  topicCandidates,
+} from '../../src/lib/ask/topics.ts';
 import type { Locale } from '../../src/i18n';
 
 const MAX_CANDIDATES = 6;
@@ -50,7 +55,9 @@ const portfolioReference =
   /\b(?:timo|rzipa|portfolio|he|him|his|er|ihn|ihm|sein(?:e|en|er|em|es)?)\b/;
 const employerInWorkQuestion =
   /\b(?:work|jobs?|roles?|positions?|employment|internships?|berufserfahrung|stellen?|praktika|gearbeitet)\b.*?\b(?:at|bei) (.+)$/;
-const publicFactIds = facts.map(({ id }) => id);
+// Facts that answer only their own narrow question stay out of broad pools.
+const generalFacts = facts.filter(({ explicitOnly }) => !explicitOnly);
+const publicFactIds = generalFacts.map(({ id }) => id);
 const retrievalWords = new Set(
   [
     'work experience professional experience career history berufserfahrung beruflichen werdegang',
@@ -81,7 +88,7 @@ export function broadEvidencePool(question: string) {
   const terms = normalize(question);
   const employer = employerInWorkQuestion.exec(terms)?.[1];
   if (!employer) return portfolioReference.test(terms) ? publicFactIds : [];
-  return facts
+  return generalFacts
     .filter(({ sourceId }) => {
       const source = sources[sourceId];
       return [...source.topics, ...Object.values(source.label)].some((label) =>
@@ -550,7 +557,7 @@ function prepareExactQuestion(
   const candidates = shortlist(question);
   const semanticPool = candidates.length
     ? []
-    : facts
+    : generalFacts
         .filter(
           ({ id, sourceId }) =>
             (!development || id !== 'tutto-coach') &&
@@ -605,17 +612,49 @@ export function prepareQuestion(
   if (!exact.allowBroadSearch) return { ...exact, compound };
   const terms = normalize(question);
   const corrected = recoverSpelling(terms);
-  if (corrected === terms) return { ...exact, compound };
-  const recovered = prepareExactQuestion(corrected, locale, history);
-  const ids = recovered.fallback.claims.map(({ id }) => id);
+  const recovered =
+    corrected === terms
+      ? undefined
+      : prepareExactQuestion(corrected, locale, history);
+  const ids = recovered?.fallback.claims.map(({ id }) => id) ?? [];
+  const candidates = recovered?.candidates.length
+    ? recovered.candidates
+    : facts.filter(({ id }) => ids.includes(id));
+  const semanticPool = recovered?.semanticPool ?? [];
   return {
     ...exact,
     compound,
-    candidates: recovered.candidates.length
-      ? recovered.candidates
-      : facts.filter(({ id }) => ids.includes(id)),
-    semanticPool: recovered.semanticPool,
+    // A question about Timo with nothing to match lets the selector pick a
+    // broad topic or abstain. Questions naming another employer stay unknown.
+    candidates:
+      candidates.length ||
+      semanticPool.length ||
+      !portfolioReference.test(terms) ||
+      employerInWorkQuestion.test(terms)
+        ? candidates
+        : topicCandidates(),
+    semanticPool,
   };
+}
+
+/**
+ * Ranked facts plus broad topic candidates, so the selector can pick a
+ * specific fact or a topic. Ordinary candidates are returned unchanged.
+ */
+export function rankedWithTopics(
+  ranked: readonly Fact[],
+  candidates: readonly Fact[],
+): Fact[] {
+  if (candidates.some((fact) => !isTopicCandidate(fact)))
+    return [...candidates];
+  return [...ranked, ...candidates];
+}
+
+/** Selector candidates for a pool of fact ids, used without a ranker. */
+export function poolCandidates(ids: readonly string[]) {
+  return generalFacts
+    .filter(({ id }) => ids.includes(id))
+    .slice(0, MAX_CANDIDATES);
 }
 
 function prepareMixedCompound(question: string, fallback: AskResult) {
@@ -713,6 +752,16 @@ export async function askModel(
       clarifyProject: focus.id,
     };
   if (status === 'clarify') return null;
+  if (matches.some(isTopicCandidate)) {
+    const expanded = expandTopicMatches(matches);
+    return documentAnswer(
+      expanded,
+      expanded.some(({ partial }) => partial) ? 'partial' : 'answer',
+      'local',
+      locale,
+      corpusVersion,
+    );
+  }
   const clauses = questionClauses(question);
   let additionalUnanswered = false;
   if (matches.length && clauses.length > 1) {

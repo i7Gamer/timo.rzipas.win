@@ -29,7 +29,9 @@ import {
   PET_DETAIL_IDS,
   profileFollowUp,
   profileHighlightIds,
+  profileQuestionChoices,
   profileQuestionNote,
+  type AnswerChoice,
   questionClauses,
   abacusRoleQuestion,
   summaryOverviewIds,
@@ -115,6 +117,8 @@ export interface SiteAnswer {
   note?: string;
   lead?: string;
   localOnly?: true;
+  /** Options for a clarification note; the browser answers a pick locally. */
+  choices?: readonly AnswerChoice[];
 }
 
 export interface SiteSubject {
@@ -716,8 +720,16 @@ export function findSiteContent(
   const requestedClauses = questionClauses(question);
   const compound = requestedClauses.length > 1 || nextClause.test(question);
   const profileNote = profileQuestionNote(normalized, index.locale, question);
-  if (profileNote)
-    return { status: 'unknown', sources: [], missing: [], note: profileNote };
+  if (profileNote) {
+    const choices = profileQuestionChoices(normalized, index.locale);
+    return {
+      status: 'unknown',
+      sources: [],
+      missing: [],
+      note: profileNote,
+      ...(choices ? { choices } : {}),
+    };
+  }
   if (kind === 'overview' && !subject && requestedClauses.length === 2) {
     const languages = combinedLanguageAnswer(index, requestedClauses);
     if (languages) return languages;

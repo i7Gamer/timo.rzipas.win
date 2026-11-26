@@ -33,10 +33,13 @@ import {
 import {
   askModel,
   broadEvidencePool,
+  poolCandidates,
   prepareBoundedQuestion,
   prepareQuestion,
+  rankedWithTopics,
   type SelectFacts,
 } from './selection.ts';
+import { isTopicCandidate } from '../../src/lib/ask/topics.ts';
 
 const LOCAL_ORIGINS = [localPorts.en, localPorts.de].map(
   (port) => `http://${LOOPBACK}:${port}`,
@@ -294,10 +297,19 @@ export function createGateway({
           allowBroadSearch && !semanticPool.length
             ? broadEvidencePool(question)
             : semanticPool;
+        // Ranked facts join any broad topic candidates; without a ranker,
+        // topic-scoped pools go to the selector directly.
         const selected =
-          rank && pool.length && !candidates.length
-            ? await rankedCandidates(rank, question, locale, pool, signal)
-            : candidates;
+          rank &&
+          pool.length &&
+          (!candidates.length || candidates.every(isTopicCandidate))
+            ? rankedWithTopics(
+                await rankedCandidates(rank, question, locale, pool, signal),
+                candidates,
+              )
+            : candidates.length
+              ? candidates
+              : poolCandidates(semanticPool);
         const result = await askModel(
           select,
           question,

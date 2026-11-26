@@ -5,6 +5,7 @@ import {
   PET_SOURCE_PATH,
   documentAnswer,
   exampleMatch,
+  facts,
   extendedPitchLead,
   hasExtendedPitchClaims,
   isPortfolioPageHref,
@@ -21,6 +22,7 @@ import {
   moreQuestion,
   pickSubject,
   removeChatPrefix,
+  resolveChoice,
   socialReply,
   subjectCorrection,
   unknownReply,
@@ -46,7 +48,9 @@ import {
   approvedAnswer,
   isShortPetFollowUp,
   profileFollowUp,
+  type AnswerChoice,
 } from './reviewed-questions';
+import { TOPIC_PROMPTS } from './topics';
 import {
   careerAnchorIndex,
   careerFollowUpScope,
@@ -145,6 +149,8 @@ export function setupAskWork(panel: HTMLElement) {
   let pending:
     { question: string; subjects: SiteSubject[]; spelling?: true } | undefined;
   let active: AbortController | undefined;
+  let pendingChoices: readonly AnswerChoice[] | undefined;
+  let suggestTopics = false;
   let unknownCount = 0;
   let followLatest = true;
   let previousScrollTop = 0;
@@ -216,11 +222,15 @@ export function setupAskWork(panel: HTMLElement) {
 
   const sayUnknown = (reply: HTMLElement) => {
     reply.textContent = unknownReply(locale, unknownCount++);
+    suggestTopics = true;
   };
   const indexOnly = panel.dataset.mode === 'index';
   const canShowSiteImmediately = (answer: SiteAnswer) =>
     indexOnly ||
-    (!answer.preferModel && (answer.status !== 'unknown' || answer.localOnly));
+    (!answer.preferModel &&
+      (answer.status !== 'unknown' ||
+        answer.localOnly ||
+        Boolean(answer.choices)));
   const askProjectScope = (
     reply: HTMLElement,
     project: NonNullable<ReturnType<typeof projectChoice>>,
@@ -260,7 +270,9 @@ export function setupAskWork(panel: HTMLElement) {
   };
   const updateActions = () => {
     if (!actions) return;
-    const choices = pending?.subjects.map(({ label }) => label);
+    const choices =
+      pending?.subjects.map(({ label }) => label) ??
+      pendingChoices?.map(({ label }) => label);
     const suggestions =
       subjects.length === 1 &&
       subjects[0].href === '/projects/spotify-stats-tracker/'
@@ -271,15 +283,19 @@ export function setupAskWork(panel: HTMLElement) {
               ),
           )
         : [];
+    const topics =
+      !suggestions.length && suggestTopics ? TOPIC_PROMPTS[locale] : [];
     actions.replaceChildren(
-      ...(choices ?? suggestions).map((label) => {
-        const action = document.createElement('button');
-        action.type = 'button';
-        action.className = 'btn-muted text-sm';
-        action.textContent = label;
-        action.addEventListener('click', () => submitPrompt(label));
-        return action;
-      }),
+      ...(choices ?? (suggestions.length ? suggestions : topics)).map(
+        (label) => {
+          const action = document.createElement('button');
+          action.type = 'button';
+          action.className = 'btn-muted text-sm';
+          action.textContent = label;
+          action.addEventListener('click', () => submitPrompt(label));
+          return action;
+        },
+      ),
     );
   };
   const rememberReply = (question: string, reply: HTMLElement) => {
@@ -386,6 +402,7 @@ export function setupAskWork(panel: HTMLElement) {
   ) => {
     const { status, sources, missing, lead, note } = answer;
     if (answer.localOnly) reply.setAttribute('data-ask-local-only', '');
+    if (answer.choices) pendingChoices = answer.choices;
     reply.replaceChildren();
     if (lead) addParagraph(reply, lead);
     const statusLine =
@@ -458,6 +475,8 @@ export function setupAskWork(panel: HTMLElement) {
     messages = siteMessages;
     setSubjects([]);
     pending = undefined;
+    pendingChoices = undefined;
+    suggestTopics = false;
     unknownCount = 0;
     transcript.length = 0;
     for (const reply of observedReplies) outputObserver?.unobserve(reply);
@@ -490,6 +509,9 @@ export function setupAskWork(panel: HTMLElement) {
     }
     setOpen(true);
     followLatest = true;
+    const offeredChoices = pendingChoices;
+    pendingChoices = undefined;
+    suggestTopics = false;
     locale = questionLocale(line, locale);
     messages = locale === siteLocale ? siteMessages : otherMessages;
     if (validation) validation.textContent = '';
@@ -522,6 +544,20 @@ export function setupAskWork(panel: HTMLElement) {
     }
 
     const rawQuestion = removeChatPrefix(line);
+    const pickedIds =
+      offeredChoices && resolveChoice(rawQuestion, offeredChoices);
+    if (pickedIds) {
+      pending = undefined;
+      const picked = pickedIds.flatMap((id) =>
+        facts.filter((fact) => fact.id === id),
+      );
+      showFacts(
+        reply,
+        documentAnswer(picked, 'answer', 'index', locale, version),
+      );
+      rememberReply(line, reply);
+      return;
+    }
     const recalled = recallChat(rawQuestion, transcript);
     if (recalled) {
       reply.textContent =

@@ -1139,7 +1139,7 @@ describe('gateway', () => {
     expect(rank).toHaveBeenCalledWith(
       question,
       'en',
-      facts.map(({ id }) => id),
+      facts.filter(({ explicitOnly }) => !explicitOnly).map(({ id }) => id),
       expect.any(AbortSignal),
     );
   });

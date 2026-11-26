@@ -7,6 +7,7 @@ import {
   pitchQuestionLocale,
   repairReviewedSummaryText,
 } from './reviewed-questions';
+import type { AnswerChoice } from './reviewed-questions';
 import type { SiteSubject } from './site-content';
 
 const copy = {
@@ -19,8 +20,8 @@ const copy = {
     which: 'Which project or machine do you mean?',
     clarify: (options: string) => 'Which one did you mean? ' + options + '?',
     unknown: [
-      'I don’t have that detail. You can ask me about one of Timo’s projects, his work, or his homelab.',
-      'I’m not sure about that one. If you name the project or setup you’re interested in, I can look for something more specific.',
+      'I couldn’t find that in Timo’s portfolio. Pick a topic below or ask about one of his projects, his work, or his homelab.',
+      'I’m not sure about that one. Try a topic below or name the project you’re interested in.',
     ],
   },
   de: {
@@ -32,8 +33,8 @@ const copy = {
     which: 'Welches Projekt oder welchen Rechner meinst du?',
     clarify: (options: string) => 'Was davon meinst du? ' + options + '?',
     unknown: [
-      'Das Detail habe ich gerade nicht. Frag mich gern nach Timos Projekten, seiner Arbeit oder seinem Homelab.',
-      'Da bin ich mir nicht sicher. Wenn du das Projekt oder den Rechner nennst, kann ich gezielter suchen.',
+      'Dazu finde ich in Timos Portfolio nichts. Wähle unten ein Thema oder frag nach seinen Projekten, seiner Arbeit oder seinem Homelab.',
+      'Da bin ich mir nicht sicher. Probier ein Thema unten oder nenn das Projekt, das dich interessiert.',
     ],
   },
 };
@@ -183,6 +184,32 @@ export function pickSubject(answer: string, subjects: SiteSubject[]) {
     const named = subjects.filter(({ href }) => href !== PROJECTS_PATH);
     if (named.length === 1) return named[0];
   }
+}
+
+const everyChoice =
+  /^(?:both|all|everything|beide|beides|alle|alles)(?: (?:of them|davon|options|optionen))?$/;
+const choiceOrdinals = [
+  /^(?:first|1|1st|erste[nrs]?)$/,
+  /^(?:second|2|2nd|zweite[nrs]?)$/,
+  /^(?:third|3|3rd|dritte[nrs]?)$/,
+];
+const choiceFiller =
+  /^(?:the|der|die|das|den) |(?: (?:one|option|please|bitte|eins|davon))+$/g;
+
+/** Fact ids for the visitor’s pick from clarification choices. */
+export function resolveChoice(
+  answer: string,
+  choices: readonly AnswerChoice[],
+): readonly string[] | undefined {
+  const name = normalize(answer).replace(choiceFiller, '').trim();
+  if (!name) return;
+  const picked = everyChoice.test(name)
+    ? choices
+    : choices.filter(
+        ({ label }, index) =>
+          normalize(label) === name || choiceOrdinals[index]?.test(name),
+      );
+  if (picked.length) return [...new Set(picked.flatMap(({ ids }) => ids))];
 }
 
 export function clarification(locale: Locale, labels: string[]) {
