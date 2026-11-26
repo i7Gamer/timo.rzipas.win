@@ -128,7 +128,7 @@ describe('“more” about a remembered page', () => {
   });
 
   it.each([
-    ['en', /everything.*Homelab/],
+    ['en', /all I can show.*Homelab/],
     ['de', /alles.*Homelab/],
   ] as const)(
     'says in %s that everything was shown, with the page link',
@@ -228,5 +228,81 @@ describe('“more” in the chat', () => {
     } finally {
       await window.happyDOM.close();
     }
+  });
+});
+
+describe('“more” about a remembered section', () => {
+  const server = {
+    href: HOMELAB.href,
+    label: 'Server',
+    heading: 'Hardware › Server',
+  };
+  const services = {
+    href: HOMELAB.href,
+    label: 'Running services',
+    heading: 'Running services › Built by me',
+  };
+  const serverTurn = {
+    question: 'What is his server?',
+    answer: 'Timo’s server hosts this site.',
+  };
+
+  it('stays inside the section', () => {
+    const answer = findSiteContent('tell me more', index(), 'related', server, [
+      serverTurn,
+    ]);
+    expect(excerpts(answer)).toEqual([
+      'Always on: hosts this site',
+      'CPU Intel Core i5-13500',
+    ]);
+    expect(answer?.subjects).toEqual([
+      expect.objectContaining({ heading: server.heading }),
+    ]);
+  });
+
+  it('digests the subsections of a remembered section', () => {
+    const answer = findSiteContent('more', index(), 'related', services, [
+      serverTurn,
+    ]);
+    expect(excerpts(answer)).toEqual([
+      'MySpeed — Speed history of my connection.',
+      'Tutto — My Tutto card game.',
+    ]);
+  });
+
+  it.each([
+    ['en', /everything.*Server/],
+    ['de', /alles.*Server/],
+  ] as const)(
+    'says in %s when the section is exhausted, keeping its scope',
+    (locale, note) => {
+      const answer = findSiteContent('more', index(locale), 'related', server, [
+        serverTurn,
+        {
+          question: 'more',
+          answer: 'Always on: hosts this site CPU Intel Core i5-13500',
+        },
+      ]);
+      expect(answer?.note).toMatch(note);
+      expect(excerpts(answer)).toEqual([]);
+      expect(answer?.subjects).toEqual([
+        expect.objectContaining({ heading: server.heading }),
+      ]);
+    },
+  );
+
+  it('does not claim the whole page was covered', () => {
+    const shown = [
+      ...HOMELAB.overview,
+      HARDWARE,
+      REQUEST_PATH,
+      SERVICES,
+      BACKUPS,
+    ].join(' ');
+    const answer = findSiteContent('more', index(), 'related', subject, [
+      { question: 'more', answer: shown },
+    ]);
+    expect(answer?.note).not.toMatch(/covers|everything the/);
+    expect(answer?.note).toMatch(/Homelab/);
   });
 });

@@ -322,7 +322,7 @@ const sentence = /[.!?]$/;
  * subsection names); otherwise its first sentence, or its lines when it has
  * no full sentence.
  */
-export function sectionDigests(page: SitePage) {
+function sectionTree(page: SitePage) {
   const sections = page.sections.map(({ heading, paragraphs }) => ({
     path: heading.split(HEADING_SEPARATOR),
     paragraphs,
@@ -333,6 +333,21 @@ export function sectionDigests(page: SitePage) {
         section.path.length === path.length + 1 &&
         path.every((part, depth) => section.path[depth] === part),
     );
+  /** A subsection as one item: its own subsection names, or its first line. */
+  const item = (child: (typeof sections)[number]) => {
+    const label = child.path.at(-1)!;
+    const names = childrenOf(child.path).map(({ path }) => path.at(-1)!);
+    if (names.length)
+      return label + LABEL_SEPARATOR + names.join(NAME_SEPARATOR);
+    return child.paragraphs.length
+      ? label + DESCRIPTION_SEPARATOR + child.paragraphs[0]
+      : label;
+  };
+  return { sections, childrenOf, item };
+}
+
+export function sectionDigests(page: SitePage) {
+  const { sections, childrenOf, item } = sectionTree(page);
   return sections
     .filter(({ path }) => path.length === 1)
     .flatMap(({ path, paragraphs }) => {
@@ -344,16 +359,9 @@ export function sectionDigests(page: SitePage) {
           ? [path[0] + LABEL_SEPARATOR + paragraphs.join(ITEM_SEPARATOR)]
           : [];
       }
-      const items = children.map((child) => {
-        const label = child.path.at(-1)!;
-        const names = childrenOf(child.path).map(({ path }) => path.at(-1)!);
-        if (names.length)
-          return label + LABEL_SEPARATOR + names.join(NAME_SEPARATOR);
-        return child.paragraphs.length
-          ? label + DESCRIPTION_SEPARATOR + child.paragraphs[0]
-          : label;
-      });
-      return [path[0] + LABEL_SEPARATOR + items.join(ITEM_SEPARATOR)];
+      return [
+        path[0] + LABEL_SEPARATOR + children.map(item).join(ITEM_SEPARATOR),
+      ];
     });
 }
 
@@ -371,8 +379,30 @@ function unseen(excerpts: readonly string[], history: readonly ChatTurn[]) {
 
 const allShown = (page: SitePage, locale: Locale) =>
   locale === 'de'
-    ? `Das ist alles, was die Seite ${page.title} dazu zeigt. Dort findest du die ganze Seite.`
-    : `That’s everything the ${page.title} page covers. You can open the full page there.`;
+    ? `Das ist alles, was ich dir hier von der Seite ${page.title} zeigen kann. Dort findest du alle Details.`
+    : `That’s all I can show you here from the ${page.title} page. Open it for every detail.`;
+const sectionShown = (label: string, locale: Locale) =>
+  locale === 'de'
+    ? `Das ist alles zu ${label}. Auf der Seite findest du den ganzen Abschnitt.`
+    : `That’s everything under ${label}. Open the page for the full section.`;
+
+/**
+ * Excerpts from one remembered section: its sentences (or, for a section
+ * without subsections, its lines), then one item per subsection.
+ */
+export function scopedDigests(page: SitePage, heading: string) {
+  const { sections, childrenOf, item } = sectionTree(page);
+  const path = heading.split(HEADING_SEPARATOR);
+  const root = sections.find(
+    (section) => section.path.join(HEADING_SEPARATOR) === heading,
+  );
+  if (!root) return [];
+  const children = childrenOf(path);
+  const sentences = root.paragraphs.filter((text) => sentence.test(text));
+  // Lines such as “4 services” only count subsections; keep them for leaves.
+  const own = sentences.length || children.length ? sentences : root.paragraphs;
+  return [...own, ...children.map(item)];
+}
 
 const topicExhausted: Record<Locale, string> = {
   en: 'That’s everything I have on that. Ask about his projects, his work or his homelab for more.',
@@ -1042,17 +1072,29 @@ export function findSiteContent(
           ),
         )
         .flatMap(({ paragraphs }) => paragraphs.slice(0, 1));
-      const projectDetails = unseen(details, history);
+      // A remembered section keeps the follow-up inside that section.
+      const heading = subject?.heading;
+      const projectDetails = heading ? [] : unseen(details, history);
       const more = projectDetails.length
         ? projectDetails
-        : unseen(sectionDigests(target), history).slice(0, MAX_CLAIMS);
+        : unseen(
+            heading ? scopedDigests(target, heading) : sectionDigests(target),
+            history,
+          ).slice(0, MAX_CLAIMS);
+      const scope = subjectOf(target, heading);
       if (more.length || history.length)
         return {
           status: 'answer',
           sources: [cite(target, more)],
           missing: [],
-          subjects: [subjectOf(target)],
-          ...(more.length ? {} : { note: allShown(target, index.locale) }),
+          subjects: [scope],
+          ...(more.length
+            ? {}
+            : {
+                note: heading
+                  ? sectionShown(scope.label, index.locale)
+                  : allShown(target, index.locale),
+              }),
         };
     }
   }
