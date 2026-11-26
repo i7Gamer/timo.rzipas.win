@@ -237,6 +237,78 @@ describe('Ask public page content', () => {
     expect(questionLocale('Noch mehr?', 'en')).toBe('de');
   });
 
+  it('keeps German project follow-ups on projects when the gateway goes offline', async () => {
+    const window = new Window();
+    try {
+      vi.stubGlobal('document', window.document);
+      window.document.documentElement.lang = 'de';
+      const content = { ...index(), locale: 'de' };
+      for (const path of [
+        'myspeed',
+        'tutto',
+        'bachelor-thesis',
+        'carini-management-system',
+      ]) {
+        content.pages.push(
+          extractPage(`<main><h1>${path}</h1></main>`, `/projects/${path}/`),
+        );
+      }
+      vi.stubGlobal(
+        'fetch',
+        vi.fn<typeof fetch>(async (path, init) => {
+          if (path === '/ask-content-de.json') return Response.json(content);
+          if (JSON.parse(String(init?.body)).question === 'projekte')
+            return Response.json(
+              documentAnswer(
+                ['spotify-rewrite', 'myspeed-fork', 'tutto-modes'].map((id) =>
+                  facts.find((fact) => fact.id === id)!,
+                ),
+                'answer',
+                'local',
+                'de',
+                corpusVersion,
+              ),
+            );
+          return new Response(null, { status: 503 });
+        }),
+      );
+      window.document.body.innerHTML = `<section data-mode="local" data-version="${corpusVersion}" data-messages="{}"><div data-ask-result></div><div data-ask-actions></div><form><textarea></textarea><button type="submit">Ask</button></form></section>`;
+      const panel = window.document.querySelector('section')!;
+      setupAskWork(panel as unknown as HTMLElement);
+      for (const [index, question] of [
+        'yo',
+        'projekte',
+        'mehr',
+        'mehr zu projekten',
+      ].entries()) {
+        panel.querySelector('textarea')!.value = question;
+        panel.querySelector('form')!.dispatchEvent(new window.Event('submit'));
+        await vi.waitFor(() => {
+          expect(panel.querySelectorAll('[data-ask-reply]')).toHaveLength(
+            index + 1,
+          );
+          expect(panel.querySelector('button')!.disabled).toBe(false);
+        });
+      }
+      const [, overview, next, exhausted] =
+        panel.querySelectorAll('[data-ask-reply]');
+      expect(
+        overview.querySelector('a[href="/projects/tutto/"]'),
+      ).not.toBeNull();
+      expect(
+        next.querySelector('a[href="/projects/hearthcoil/"]'),
+      ).not.toBeNull();
+      expect(next.textContent).not.toContain('SpotifyTracker');
+      expect(exhausted.textContent).toContain(
+        'Über welches Projekt möchtest du mehr erfahren?',
+      );
+      expect(exhausted.querySelector('a[href^="/about/"]')).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+      window.close();
+    }
+  });
+
   it('uses the page index for other projects when the gateway stays offline', async () => {
     const window = new Window();
     try {

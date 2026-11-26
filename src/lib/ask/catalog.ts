@@ -70,6 +70,36 @@ export const expandedSummaries = {
     'stadler-vpn',
   ],
 } as const;
+export const SUMMARY_WORD_TARGET = 200;
+export const wordCountSummaries = {
+  profile: EXTENDED_PITCH_IDS,
+  cv: [
+    ...expandedSummaries['longer summary of his cv'],
+    'early-stadler',
+    'carini-dates',
+    'portfolio-spoken-languages',
+  ],
+  work: [
+    'career-role-titles',
+    ...expandedSummaries['longer summary of his work experience'],
+    'abacus-jenkins',
+    'carini-document-view',
+  ],
+  projects: [
+    ...expandedSummaries['longer summary of his projects'],
+    'myspeed-stack',
+    'spotify-accounts',
+  ],
+  workAndProjects: [
+    'career-role-titles',
+    'abacus-workflow',
+    'stadler-vpn',
+    ...PROJECT_OVERVIEW_IDS,
+    'hearthcoil-game',
+    'bachelor-contribution',
+    'portfolio-website-architecture',
+  ],
+} as const;
 export const extendedPitchLead = {
   en: 'Here’s a pitch of about 200 words.',
   de: 'Hier ist ein Pitch mit rund 200 Wörtern.',
@@ -90,12 +120,10 @@ export function hasExtendedPitchClaims(claims: readonly Pick<Fact, 'id'>[]) {
 }
 
 function hasExtendedSummaryClaims(claims: readonly Pick<Fact, 'id'>[]) {
-  return (
-    hasExtendedPitchClaims(claims) ||
-    Object.values(expandedSummaries).some((ids) =>
-      includesExactClaims(claims, ids),
-    )
-  );
+  return [
+    ...Object.values(wordCountSummaries),
+    ...Object.values(expandedSummaries),
+  ].some((ids) => includesExactClaims(claims, ids));
 }
 
 export function summaryRequiresAllFacts(

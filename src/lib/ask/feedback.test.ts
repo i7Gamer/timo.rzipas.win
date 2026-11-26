@@ -473,7 +473,10 @@ describe('portfolio Ask feedback regressions', () => {
 
   it.each([
     ['en', 'summary of projects', 'anything else?'],
+    ['en', 'projects', 'more'],
     ['de', 'Zusammenfassung von Timos Projekten', 'Und sonst noch?'],
+    ['de', 'projekte', 'mehr'],
+    ['de', 'projekte', 'mehr zu projekten'],
   ] as const)(
     'continues a project summary with fresh project evidence in %s',
     async (locale, question, followUp) => {
@@ -509,6 +512,7 @@ describe('portfolio Ask feedback regressions', () => {
 
   it.each([
     ['en', 'give me good 200 word pitch about timo', 'this is not 200 words'],
+    ['en', '200 word summary about timo', 'this is not 200 words'],
     [
       'de',
       'Schreib mir einen Pitch über Timo in etwa 200 Wörtern',
@@ -542,6 +546,100 @@ describe('portfolio Ask feedback regressions', () => {
           ),
         );
       }
+    },
+  );
+
+  it.each([
+    ['en', '200 word summary about timo', 'hearthcoil-game', 'cv-matura'],
+    [
+      'en',
+      '200 word summary about timos projects',
+      'hearthcoil-game',
+      'career-role-titles',
+    ],
+    [
+      'en',
+      "Write a summary of Timo's work in around 200 words",
+      'abacus-workflow',
+      'hearthcoil-game',
+    ],
+    [
+      'en',
+      '200-word overview of Timo’s résumé',
+      'cv-degree',
+      'hearthcoil-game',
+    ],
+    [
+      'en',
+      '200-word summary of his work and projects',
+      'hearthcoil-game',
+      'cv-degree',
+    ],
+    [
+      'de',
+      'Eine Zusammenfassung über Timo in 200 Wörtern',
+      'hearthcoil-game',
+      'cv-matura',
+    ],
+    [
+      'de',
+      '200 Wörter Zusammenfassung über Timos Projekte',
+      'hearthcoil-game',
+      'career-role-titles',
+    ],
+    [
+      'de',
+      'Schreib mir eine Zusammenfassung von Timos Arbeit in rund 200 Wörtern',
+      'abacus-workflow',
+      'hearthcoil-game',
+    ],
+    [
+      'de',
+      'Zusammenfassung von Timos Lebenslauf in etwa 200 Wörtern',
+      'cv-degree',
+      'hearthcoil-game',
+    ],
+  ] as const)(
+    'provides a scoped 200-word %s summary for %s with and without inference',
+    async (locale, question, included, excluded) => {
+      const summarize = vi.fn<SummarizeFacts>(async (_locale, claims) => ({
+        ids: [...claims].reverse().map(({ id }) => id),
+      }));
+      await open({ local: true, summarize });
+      const online = (await ask(question, locale)).body;
+      expect(online).toMatchObject({ status: 'answer', mode: 'local' });
+      summarize.mockRejectedValueOnce(new Error('Model unavailable'));
+      const offline = (await ask(question, locale)).body;
+      expect(offline).toMatchObject({ status: 'answer', mode: 'index' });
+      expect(summarize).toHaveBeenCalledTimes(2);
+      for (const result of [online, offline]) {
+        expect(validateResult(result, locale, corpusVersion)).toEqual(result);
+        const ids = result.claims!.map(({ id }) => id);
+        expect(ids).toContain(included);
+        expect(ids).not.toContain(excluded);
+        const words = result
+          .claims!.map(({ text }) => text)
+          .join(' ')
+          .split(/\s+/u).length;
+        expect(words).toBeGreaterThanOrEqual(190);
+        expect(words).toBeLessThanOrEqual(215);
+      }
+      expect(online.claims).toEqual([...offline.claims!].reverse());
+    },
+  );
+
+  it.each([
+    ['en', '200 word summary about Timo’s work at NASA'],
+    ['de', 'Zusammenfassung von Timos Arbeit bei der NASA in 200 Wörtern'],
+  ] as const)(
+    'keeps unsupported %s summary scopes out of the reviewed path',
+    async (locale, question) => {
+      await open();
+      expect((await ask(question, locale)).body).toMatchObject({
+        status: 'unknown',
+        claims: [],
+        sources: [],
+      });
     },
   );
 

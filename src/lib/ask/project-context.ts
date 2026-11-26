@@ -23,7 +23,7 @@ const projectOverview = new RegExp(
   '^(?:' + PROJECT_OVERVIEW_PATTERNS.join('|') + ')$',
 );
 const otherProjects =
-  /^(?:(?:what |which |any |some )?(?:other|more|additional) projects(?: (?:has timo|have (?:you|they)|did (?:timo|you|he)) (?:work(?:ed)? on|build|built|make|made))?|(?:welche )?(?:andere|weitere) projekte(?: (?:hat timo|hast du) (?:umgesetzt|gebaut|entwickelt))?)$/;
+  /^(?:(?:what |which |any |some )?(?:other|more|additional) projects(?: (?:has timo|have (?:you|they)|did (?:timo|you|he)) (?:work(?:ed)? on|build|built|make|made))?|(?:welche )?(?:andere|weitere) projekte(?: (?:hat timo|hast du) (?:umgesetzt|gebaut|entwickelt))?|(?:tell me )?more (?:about|on) (?:his |the |timo s )?projects|(?:erzaehl mir )?mehr (?:zu|ueber) (?:den |seine[n]? |timos )?projekte[n]?)$/;
 const showcase = [
   { id: 'spotify-rewrite', label: 'SpotifyTracker', aliases: ['spotify'] },
   { id: 'myspeed-fork', label: 'MySpeed' },
@@ -78,10 +78,8 @@ export function projectFollowUp(terms: string, history: readonly ChatTurn[]) {
       return { overview: root, projectId: named[0].id };
     return;
   }
-  return {
-    overview: root,
-    focus: mentioned.length === 1 ? projectChoice(mentioned[0].id) : undefined,
-  };
+  if (mentioned.length !== 1) return { listRequested: true as const };
+  return { overview: root, focus: projectChoice(mentioned[0].id) };
 }
 
 export function projectCandidates(

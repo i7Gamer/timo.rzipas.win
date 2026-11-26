@@ -7,7 +7,9 @@ import {
   MAX_CLAIMS,
   normalize,
   PROJECT_OVERVIEW_IDS,
+  SUMMARY_WORD_TARGET,
   WORK_EXPERIENCE_IDS,
+  wordCountSummaries,
   type MissingDetail,
 } from './catalog.ts';
 import { acknowledgement, type ChatTurn } from './history.ts';
@@ -35,7 +37,7 @@ const genreCount =
 const kniffel = /\bkniffel\b/;
 
 const plainMoreQuestion =
-  /^(?:(?:that ?s the same(?: again)?|you already said that|das hast du schon gesagt) )?(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|erzaehl mir mehr|(?:und )?sonst noch|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
+  /^(?:(?:that ?s the same(?: again)?|you already said that|das hast du schon gesagt) )?(?:(?:can you )?tell me more|(?:anything|any|what) (?:else|more)|(?:any |some )?more (?:details?|information)|more|mehr|erzaehl mir mehr|(?:und )?sonst noch|(?:sonst )?noch (?:etwas|was|mehr)|(?:noch )?(?:mehr|weitere) (?:details|infos))$/;
 const shortExpansion =
   /^(?:(?:please )?(?:a bit |a little )?(?:longer|more detail(?:ed)?)(?: please)?|(?:bitte )?(?:etwas )?(?:laenger|ausfuehrlicher)(?: bitte)?)$/;
 export const moreQuestion = new RegExp(
@@ -244,7 +246,73 @@ const pitchLengthCorrection = new RegExp(
   pitchLengthEn.source + '|' + pitchLengthDe.source,
 );
 
+const englishWordCount =
+  '(?:(?:about|around|roughly|approximately) )?' +
+  SUMMARY_WORD_TARGET +
+  ' words?';
+const germanWordCount =
+  '(?:(?:etwa|rund|ungefaehr|circa|ca) )?' +
+  SUMMARY_WORD_TARGET +
+  ' woerter[n]?';
+const summaryNounEn = '(?:summary|overview) (?:about|of|on) ';
+const summaryNounDe = '(?:zusammenfassung|uebersicht) (?:ueber|von|zu) ';
+const wordCountSummaryEn = new RegExp(
+  '^(?:(?:can|could|would) you )?(?:please )?(?:write(?: me)? |give me |provide(?: me)? )?(?:an? )?(?:' +
+    englishWordCount +
+    ' ' +
+    summaryNounEn +
+    '(.+?)|' +
+    '(?:' +
+    summaryNounEn +
+    '|summari[sz]e )(.+?) in ' +
+    englishWordCount +
+    ')(?: please)?$',
+);
+const wordCountSummaryDe = new RegExp(
+  '^(?:bitte )?(?:(?:schreib(?:e)?|gib|erstell(?:e)?)(?: mir)? )?(?:eine )?(?:' +
+    germanWordCount +
+    ' ' +
+    summaryNounDe +
+    '(.+?)|' +
+    summaryNounDe +
+    '(.+?) (?:in|mit) ' +
+    germanWordCount +
+    ')(?: bitte)?$',
+);
+
+function wordCountSummary(terms: string) {
+  const english = wordCountSummaryEn.exec(terms);
+  const match = english ?? wordCountSummaryDe.exec(terms);
+  if (!match) return;
+  const locale: Locale = english ? 'en' : 'de';
+  const subject = match[1] ?? match[2];
+  const topic = subject.replace(
+    /^(?:all |alle )?(?:(?:timo ?s|his|your|the|sein(?:e[rmns]?)?|dein(?:e[rmns]?)?|der|die) )?/,
+    '',
+  );
+  if (/^(?:timo(?: rzipa)?|him|ihn)$/.test(subject))
+    return { locale, ids: wordCountSummaries.profile };
+  if (/^(?:cv|resume|curriculum vitae|lebenslauf(?:s)?)$/.test(topic))
+    return { locale, ids: wordCountSummaries.cv };
+  if (
+    /^(?:work(?: experience)?|professional experience|career(?: history)?|arbeit|berufserfahrung|berufliche[nr] werdegang)$/.test(
+      topic,
+    )
+  )
+    return { locale, ids: wordCountSummaries.work };
+  if (/^(?:projects|projekte[n]?)$/.test(topic))
+    return { locale, ids: wordCountSummaries.projects };
+  if (
+    /^(?:(?:work|career) and (?:his )?projects|projects and (?:his )?(?:work|career)|arbeit und (?:seine )?projekte|projekte und (?:seine )?arbeit)$/.test(
+      topic,
+    )
+  )
+    return { locale, ids: wordCountSummaries.workAndProjects };
+}
+
 export function pitchQuestionLocale(terms: string): Locale | undefined {
+  const summary = wordCountSummary(terms);
+  if (summary) return summary.locale;
   if (
     shortPitchEn.test(terms) ||
     extendedPitchEn.test(terms) ||
@@ -427,6 +495,7 @@ export function profileFollowUp(terms: string, history: readonly ChatTurn[]) {
         ({ question }) => !pitchLengthCorrection.test(normalize(question)),
       )?.question ?? '',
     );
+    if (wordCountSummary(previousPitch)) return previousPitch;
     if (extendedPitch.test(previousPitch) || profilePitch.test(previousPitch))
       return '200 word pitch about timo';
   }
@@ -507,6 +576,8 @@ function exactSummaryOverviewIds(terms: string): readonly string[] | undefined {
   if (Object.hasOwn(expandedSummaries, terms))
     return expandedSummaries[terms as keyof typeof expandedSummaries];
   if (extendedPitch.test(terms)) return EXTENDED_PITCH_IDS;
+  const wordCount = wordCountSummary(terms);
+  if (wordCount) return wordCount.ids;
   if (profilePitch.test(terms)) return ['portfolio-pitch'];
   if (openSourceDescription.test(terms)) return OPEN_SOURCE_IDS;
   if (englishWorkSummary.test(terms) || germanWorkSummary.test(terms))

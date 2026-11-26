@@ -59,6 +59,7 @@ export function questionLocale(question: string, fallback: Locale): Locale {
   const text = normalize(question);
   const pitchLocale = pitchQuestionLocale(text);
   if (pitchLocale) return pitchLocale;
+  if (text === 'mehr') return 'de';
   // One-word fragments are often project names, labels, or continuation prompts.
   // Let conversation state decide unless the word itself is a clear sentence cue.
   if (ambiguousShortFragment.test(text) && text !== 'work') return fallback;
