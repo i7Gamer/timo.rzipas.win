@@ -3,6 +3,7 @@ import {
   MODEL,
   MODEL_DIGEST,
   selectWithOllama,
+  setOllamaCallListener,
 } from '../../../services/ask/ollama.ts';
 import { facts } from './catalog';
 
@@ -27,6 +28,12 @@ function stubSelector(reply: object) {
         done: true,
         done_reason: 'stop',
         message: { content: JSON.stringify(reply) },
+        total_duration: 1_500_000_000,
+        load_duration: 2_000_000,
+        prompt_eval_duration: 400_000_000,
+        eval_duration: 1_000_000_000,
+        prompt_eval_count: 120,
+        eval_count: 11,
       });
     }),
   );
@@ -47,7 +54,50 @@ const ask = (clarifyAbout?: string) =>
   );
 
 describe('Ollama selector', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    setOllamaCallListener(undefined);
+  });
+
+  it('reports each model call with its raw reply and timings', async () => {
+    const reply = { relevant: [true, false], incomplete: false };
+    stubSelector(reply);
+    const listener = vi.fn();
+    setOllamaCallListener(listener);
+    await ask();
+    expect(listener).toHaveBeenCalledExactlyOnceWith({
+      model: MODEL,
+      reply: JSON.stringify(reply),
+      totalMs: 1500,
+      loadMs: 2,
+      promptMs: 400,
+      generationMs: 1000,
+      promptTokens: 120,
+      outputTokens: 11,
+    });
+  });
+
+  it('abstains without a model call when there is no evidence', async () => {
+    const requests = stubSelector({ relevant: [], incomplete: false });
+    const result = await selectWithOllama(
+      'Wie viel verdient Timo?',
+      'de',
+      [],
+      AbortSignal.timeout(1_000),
+    );
+    expect(result).toEqual({ slots: [], status: 'unknown' });
+    expect(requests).toHaveLength(0);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('stops reporting once the listener is removed', async () => {
+    stubSelector({ relevant: [true, false], incomplete: false });
+    const listener = vi.fn();
+    setOllamaCallListener(listener);
+    setOllamaCallListener(undefined);
+    await ask();
+    expect(listener).not.toHaveBeenCalled();
+  });
 
   it('asks for one relevance flag per evidence slot', async () => {
     const requests = stubSelector({

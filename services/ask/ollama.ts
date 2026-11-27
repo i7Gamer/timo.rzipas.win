@@ -163,6 +163,27 @@ async function checkModel(
     throw new Error('Pinned local model unavailable');
 }
 
+/** One finished model call, for evaluation telemetry. */
+export interface OllamaCall {
+  model: string;
+  reply: unknown;
+  totalMs?: number;
+  loadMs?: number;
+  promptMs?: number;
+  generationMs?: number;
+  promptTokens?: number;
+  outputTokens?: number;
+}
+
+let callListener: ((call: OllamaCall) => void) | undefined;
+
+/** Lets the evaluator record every model call; undefined stops it. */
+export function setOllamaCallListener(
+  listener: ((call: OllamaCall) => void) | undefined,
+) {
+  callListener = listener;
+}
+
 async function chatWithOllama(
   messages: readonly {
     role: 'system' | 'user' | 'assistant';
@@ -200,22 +221,20 @@ async function chatWithOllama(
   });
   if (!response.ok) throw new Error('Local model unavailable');
   const output = await response.json();
-  if (process.env.ASK_TIMINGS === 'on') {
-    const ms = (value: unknown) =>
-      typeof value === 'number' ? Math.round(value / NS_PER_MS) : undefined;
-    console.log(
-      JSON.stringify({
-        event: 'ask-ollama-timing',
-        model,
-        totalMs: ms(output.total_duration),
-        loadMs: ms(output.load_duration),
-        promptMs: ms(output.prompt_eval_duration),
-        generationMs: ms(output.eval_duration),
-        promptTokens: output.prompt_eval_count,
-        outputTokens: output.eval_count,
-      }),
-    );
-  }
+  const ms = (value: unknown) =>
+    typeof value === 'number' ? Math.round(value / NS_PER_MS) : undefined;
+  const timing = {
+    model,
+    totalMs: ms(output.total_duration),
+    loadMs: ms(output.load_duration),
+    promptMs: ms(output.prompt_eval_duration),
+    generationMs: ms(output.eval_duration),
+    promptTokens: output.prompt_eval_count,
+    outputTokens: output.eval_count,
+  };
+  if (process.env.ASK_TIMINGS === 'on')
+    console.log(JSON.stringify({ event: 'ask-ollama-timing', ...timing }));
+  callListener?.({ ...timing, reply: output.message?.content });
   if (
     !output.done ||
     output.done_reason !== 'stop' ||
@@ -234,6 +253,9 @@ export const selectWithOllama: SelectFacts = async (
   history,
   clarifyAbout,
 ) => {
+  // Without evidence there is nothing to select; skip the model call.
+  if (!candidates.length && !clarifyAbout)
+    return { slots: [], status: 'unknown' };
   const availableSlots = candidates.map((_, index) => index + 1);
   if (clarifyAbout) availableSlots.unshift(CLARIFICATION_SLOT);
   const decision = await chatWithOllama(
