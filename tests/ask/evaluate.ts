@@ -264,6 +264,18 @@ const fixtures =
 if (process.argv.includes('--misses') && mode !== 'http')
   assert.equal(fixtures.length, misses.size);
 
+const compose = (...args: string[]) =>
+  execFileAsync('docker', [
+    'compose',
+    '-p',
+    resetProject!,
+    '-f',
+    COMPOSE_FILE,
+    ...args,
+  ]);
+const output = async (command: Promise<{ stdout: string }>) =>
+  (await command.catch(() => ({ stdout: '' }))).stdout.trim();
+
 if (mode === 'http') {
   const deadline = Date.now() + HTTP_STARTUP_TIMEOUT_MS;
   for (;;) {
@@ -274,6 +286,9 @@ if (mode === 'http') {
     assert.ok(Date.now() < deadline, 'Ask gateway did not start through nginx');
     await delay(HTTP_POLL_INTERVAL_MS);
   }
+  // With ASK_WARMUP=on the gateway answers 503 until its warm-up ends, so
+  // the cold probe is the first visitor request after a fresh start.
+  if (checkCold && resetProject) await waitForWarmGateway();
   if (checkCold) {
     const coldStart = performance.now();
     try {
@@ -314,18 +329,6 @@ if (mode === 'http') {
     }
   }
 }
-
-const compose = (...args: string[]) =>
-  execFileAsync('docker', [
-    'compose',
-    '-p',
-    resetProject!,
-    '-f',
-    COMPOSE_FILE,
-    ...args,
-  ]);
-const output = async (command: Promise<{ stdout: string }>) =>
-  (await command.catch(() => ({ stdout: '' }))).stdout.trim();
 
 let resetTargetVerified = false;
 /** Refuses to touch a Compose project that does not serve the tested URL. */
@@ -611,6 +614,7 @@ for (const fixture of fixtures) {
     locale,
     question,
     expectedStatus: fixture.status,
+    expectedMode: fixture.expectedMode,
     expectedIds: fixture.acceptableIds,
     lexicalCandidates,
     semanticPool,
