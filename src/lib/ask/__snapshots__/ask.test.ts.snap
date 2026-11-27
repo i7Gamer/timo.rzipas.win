@@ -4,7 +4,8 @@ exports[`curated evidence > pins the reviewed public fields and the published CV
 {
   "/downloads/timo-rzipa-cv-de.pdf": "c2aa43e7ef9e187940f853bd4d12ff8313263edc6fd02136525f489a2d2ae3f5",
   "/downloads/timo-rzipa-cv-en.pdf": "e193d2efe1a2efc617dc8a345fa6b7fb5b73b015b90975bf42e188a369dc814d",
-  "abacus.contribution": "6919de22b40cd86d1dad90cbe6dae8e35acb8fb6cca9fa49941782fe42f95488",
+  "abacus.contribution": "f2ad35233d4028d7f76859a9eda8c03a420990401f82349669976621e765d142",
+  "abacus.highlights": "9e96a201ff1532d8e899779c77b23ff759914d49742b668d52e85c3cad2d844a",
   "abacus.role": "c9ae229a69751d19f0a0f1aeae980a5819162275d0f2d704837dd65c64a2039b",
   "about.intro": "6321f28612613930d8c6c3c8d42a91ea651144c7a628e89b86bf37efece540a7",
   "about.spokenLanguages": "07f797ab09e6ee0dfe3efee03d1df96c25cd5529e7392eac7d582cec56c4f786",

@@ -76,7 +76,7 @@ services:
           sleep 1
         done
         test "$$ready" = 1
-        ollama pull qwen3:4b-instruct-2507-q4_K_M
+        ollama pull qwen3:1.7b
     networks:
       - edge
 

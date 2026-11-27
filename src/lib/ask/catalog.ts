@@ -167,7 +167,7 @@ export function summaryRequiresAllFacts(
 }
 export const CLIENT_TIMEOUT = 10_000;
 export const outOfScope =
-  /\b(?:ignore (?:all |previous |the )?instructions|system prompt|follow (?:this|the) link|https?|password|passwort|credentials|salary|gehalt|lohn|private (?:email|e mail|address|phone|repo)|privatadresse|privatnummer|privates repository|nach hause|private files|confidential|vertraulich)\b/;
+  /\b(?:ignore (?:all |previous |the )?instructions|system prompt|follow (?:this|the) link|https?|password|passwort|credentials|salary|gehalt|lohn|earnings|^(?!.*\b(?:degree|diploma|qualification|bachelor|master|matura|certificate|title)\b).*\bearn(?:s|ed|ing)?|income|compensation|wages?|(?:well |badly |under|over)?paid|pay (?:him|timo|you)|how much (?:does|do|did) (?:he|timo|you) make|verdien(?:t|st|en|e)?|einkommen|verguetung|bezahl(?:t|ung)|stundensatz|honorar|private (?:email|e mail|address|phone|repo)|privatadresse|privatnummer|privates repository|nach hause|private files|confidential|vertraulich)\b/;
 
 export type AskStatus = 'answer' | 'partial' | 'unknown';
 export type AskMode = 'local' | 'index';

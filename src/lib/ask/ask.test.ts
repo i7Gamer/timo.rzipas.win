@@ -28,6 +28,8 @@ import {
   EXTENDED_PITCH_IDS,
   facts,
   MAX_CLAIMS,
+  normalize,
+  outOfScope,
   PET_SOURCE_PATH,
   sourceLink,
   sources,
@@ -729,7 +731,7 @@ describe('selection', () => {
     },
   );
 
-  it('preserves attribution for a rewrite and an unsupported authorship claim', () => {
+  it('preserves attribution for a rewrite and a reviewed authorship denial', () => {
     const rewrite = prepareQuestion(
       'Was the Spotify tracker an original project or a rewrite?',
       'en',
@@ -741,7 +743,7 @@ describe('selection', () => {
       'de',
     );
     expect(abacus.fallback).toMatchObject({
-      status: 'partial',
+      status: 'answer',
       claims: [{ id: 'abacus-recognition', sourceId: 'abacus' }],
     });
   });
@@ -798,6 +800,40 @@ describe('selection', () => {
       fallback: { status: 'unknown', claims: [] },
       candidates: [],
     });
+  });
+
+  // Pay questions are refused as a whole, however they are phrased.
+  it.each([
+    ['en', 'How much does Timo earn at Abacus?'],
+    ['en', 'What does Abacus pay him?'],
+    ['en', 'Is Timo well paid?'],
+    ['en', 'What are his earnings and what does he do at Abacus?'],
+    ['en', 'What is his income?'],
+    ['en', 'What compensation does Timo get?'],
+    ['en', 'How much do you make at Abacus?'],
+    ['de', 'Wie viel verdient Timo bei Abacus?'],
+    ['de', 'Was bezahlt Abacus ihm?'],
+    ['de', 'Wie hoch ist sein Einkommen?'],
+    ['de', 'Welche Vergütung bekommt er?'],
+    ['de', 'Wird Timo gut bezahlt?'],
+  ] as const)('refuses the %s pay question %j', (locale, question) => {
+    const prepared = prepareQuestion(question, locale);
+    expect(prepared).toMatchObject({
+      fallback: { status: 'unknown', claims: [] },
+      candidates: [],
+    });
+    // No ranker either: the semantic search must not offer facts.
+    expect('allowBroadSearch' in prepared && prepared.allowBroadSearch).toBe(
+      false,
+    );
+  });
+
+  it.each([
+    'What degree did Timo earn at FH Vorarlberg?',
+    'Which qualification did he earn in 2015?',
+    'Did Timo earn a bachelor or a master?',
+  ])('still answers the degree question %j', (question) => {
+    expect(outOfScope.test(normalize(question))).toBe(false);
   });
 
   it('keeps a specific technical question out of the background overview', () => {
@@ -944,7 +980,8 @@ afterEach(async () => {
 
 describe('gateway', () => {
   it('prewarms through the pinned chat selector and rejects an abstaining probe', async () => {
-    let slots = [1];
+    // The probe offers one evidence record, so the selector returns one flag.
+    let relevant = [true];
     const fetchModel = vi.fn<typeof fetch>(async (url) => {
       if (String(url).endsWith('/api/tags'))
         return Response.json({
@@ -954,14 +991,14 @@ describe('gateway', () => {
       return Response.json({
         done: true,
         done_reason: 'stop',
-        message: { content: JSON.stringify({ slots, incomplete: false }) },
+        message: { content: JSON.stringify({ relevant, incomplete: false }) },
       });
     });
     vi.stubGlobal('fetch', fetchModel);
     try {
       const signal = new AbortController().signal;
       await expect(warmSelector(signal)).resolves.toBeUndefined();
-      slots = [];
+      relevant = [false];
       await expect(warmSelector(signal)).rejects.toThrow(/readiness probe/);
     } finally {
       vi.unstubAllGlobals();

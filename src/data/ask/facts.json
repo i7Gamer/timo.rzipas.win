@@ -519,7 +519,7 @@
     {
       "id": "abacus-recognition",
       "sourceId": "abacus",
-      "facet": "recognition ownership is undocumented",
+      "facet": "recognition developed by other teams",
       "aliases": [
         "recognition",
         "ocr",
@@ -531,12 +531,39 @@
         "texterkennung"
       ],
       "standalone": ["belegerkennung", "document recognition"],
-      "partial": true,
       "answer": {
-        "en": "The source documents Timo’s work on the Java/Vaadin workflow that processes already recognised documents. It does not establish who developed recognition itself.",
-        "de": "Belegt ist Timos Arbeit am Java/Vaadin-Workflow, der bereits erkannte Belege weiterverarbeitet. Wer die Erkennung selbst entwickelt hat, geht daraus nicht hervor."
+        "en": "Timo did not develop the automatic document recognition at Abacus; other parts and teams of the company develop it. His work starts afterwards, in the Java/Vaadin workflow that processes the recognised documents.",
+        "de": "Die automatische Belegerkennung bei Abacus hat nicht Timo entwickelt; sie stammt von anderen Bereichen und Teams des Unternehmens. Seine Arbeit beginnt danach, im Java/Vaadin-Workflow, der die erkannten Belege weiterverarbeitet."
       },
       "evidence": ["abacus.contribution"]
+    },
+    {
+      "id": "abacus-missing-data",
+      "sourceId": "abacus",
+      "facet": "missing data and pending documents",
+      "aliases": [
+        "missing data",
+        "missing",
+        "supplier",
+        "payment method",
+        "address",
+        "defaults",
+        "pending",
+        "fehlende daten",
+        "fehlt",
+        "fehlende",
+        "lieferant",
+        "zahlungsart",
+        "zahlungsarten",
+        "adresse",
+        "standardwerte",
+        "offene belege"
+      ],
+      "answer": {
+        "en": "Timo’s Abacus workflow checks recognised documents for missing data, such as a supplier that does not exist yet, a missing payment method or a missing address. It creates that data automatically from the available information, defaults, user settings and evaluations users prepare, then saves the document. Documents it still cannot create go to a pending list, where users see what is missing or wrong, correct it and save the document.",
+        "de": "Timos Abacus-Workflow prüft erkannte Belege auf fehlende Daten, etwa einen noch nicht erfassten Lieferanten, eine fehlende Zahlungsart oder eine fehlende Adresse. Er legt diese Daten automatisch aus den vorhandenen Informationen, Standardwerten, Benutzereinstellungen und vorbereiteten Auswertungen an und speichert danach den Beleg. Belege, die er weiterhin nicht erstellen kann, landen in einer Liste offener Belege, wo Benutzer fehlende oder falsche Daten sehen, korrigieren und den Beleg speichern."
+      },
+      "evidence": ["abacus.highlights"]
     },
     {
       "id": "abacus-tests",

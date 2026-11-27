@@ -51,7 +51,7 @@ In another window, pull the pinned model once and start the gateway.
 
 ```powershell
 $env:OLLAMA_HOST = '127.0.0.1:11435'
-ollama pull qwen3:4b-instruct-2507-q4_K_M
+ollama pull qwen3:1.7b
 node services/ask/server.ts
 ```
 
@@ -68,9 +68,16 @@ These local preview ports select the two static outputs. The production site
 continues to use same-URL language negotiation. The preview proxy handles only
 `POST /api/ask` at the gateway, whose listener is on `127.0.0.1:4513`.
 
-Qwen3-4B-Instruct-2507 Q4_K_M is a 2.5 GB text model with a pinned manifest
-digest. It uses 2,048 context tokens and a 96-token completion budget. The model
-receives the question and up to six public records. The browser keeps the
+Qwen3 1.7B Q4_K_M is a 1.4 GB text model with a pinned manifest digest, run
+without thinking. It uses 2,048 context tokens and a 96-token completion
+budget. The model receives the question and up to six public records. It returns
+one relevance flag per record, which makes it judge every record instead of
+picking a few. More than three relevant records fail verification and fall back
+to the page excerpt. Before the question, the model sees five worked selections
+about an invented person, which show answering, partial and abstaining. They
+form a fixed prompt prefix that Ollama keeps cached between requests. The
+project-scope clarification still picks slot numbers, and a repeated slot
+counts once. The browser keeps the
 thread in tab memory until reload or reset. When it makes a gateway request,
 it can include selected earlier questions and replies, up to 2,000 bytes of
 history. Longer turns can be excerpted to fit. Local-only turns stay in the tab.
@@ -310,11 +317,40 @@ diagnostic local modes and report no HTTP outages because they do not contact
 the gateway. The fixtures compare approved evidence IDs and abstention in both
 languages.
 
-On the Windows workstation, Ollama 0.40.16 ran the pinned Qwen model on CPU and
-passed all 32 fixtures. The 23 warm selector responses took 1.22 seconds at
-the median and 1.31 seconds at p95. A separate cold HTTP request answered in
-4.21 seconds. Ollama reported 2.88 GB loaded and zero VRAM. Measure these again
-under the Docker host's normal load.
+On 27 November 2026 the Windows workstation compared three CPU models in the
+native gateway at 25–85% host load. The full suite has 49 model-routed
+questions.
+
+| Model                      | Correct | Median | p95   |
+| -------------------------- | ------- | ------ | ----- |
+| Qwen3 4B Instruct 2507     | 48/49   | 4.5 s  | 5.5 s |
+| LFM2.5 1.2B                | 38/49   | 2.2 s  | 2.8 s |
+| Qwen3 1.7B, slot picking   | 43/49   | 1.5 s  | 2.1 s |
+| Qwen3 1.7B, per-slot flags | 45/49   | 2.5 s  | 3.5 s |
+
+The two Qwen3 1.7B rows used worked examples. The per-slot run had 56% host load
+against 23% for slot picking, so their times are not directly comparable.
+
+The 4B model missed the six-second deadline for most packaged requests whenever
+batch jobs loaded the host. Qwen3 1.7B was chosen for its speed. Its remaining
+misses:
+
+- It does not select the reviewed denial that other Abacus teams develop the
+  document recognition, for four recognition questions that reach the model.
+- It adds a related Hearthcoil fact to both Hearthcoil rules-testing
+  paraphrases.
+
+After the recognition fact became an explicit denial, the full suite scored
+82/88 (38/44 model questions). Five recognition questions now take the
+reviewed route.
+
+Prompt variants did worse: rule lists, a three-level score per record, and
+extra sentences about same-project facts each scored 42–43/49. A worked example
+of a denial scored 37/44. Passing the `partial` flag with a limitation rule and
+the question last scored 33/44. Qwen3 1.7B at Q8 scored the same 82/88 with
+different misses and was 15–35% slower than Q4 in alternating runs.
+
+Measure again under the Docker host's normal load.
 
 Review the source fields and both CVs when a pinned evidence hash changes.
 Update the corresponding bilingual claims before approving the new snapshot.

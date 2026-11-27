@@ -59,7 +59,7 @@
     "id": "fresh-en-09",
     "locale": "en",
     "question": "What work does Timo do downstream in Abacus, and who developed the OCR recognition upstream?",
-    "status": "partial",
+    "status": "answer",
     "acceptableIds": [
       ["abacus-recognition"],
       ["abacus-workflow", "abacus-recognition"]
@@ -69,7 +69,7 @@
     "id": "fresh-en-10",
     "locale": "en",
     "question": "Which Abacus document workflow does Timo handle, and does the evidence name the person who built recognition?",
-    "status": "partial",
+    "status": "answer",
     "acceptableIds": [
       ["abacus-recognition"],
       ["abacus-workflow", "abacus-recognition"]
@@ -233,7 +233,7 @@
     "id": "fresh-de-09",
     "locale": "de",
     "question": "Welchen Beleg-Workflow betreut Timo bei Abacus, und wer entwickelte die vorgelagerte OCR-Erkennung?",
-    "status": "partial",
+    "status": "answer",
     "acceptableIds": [
       ["abacus-recognition"],
       ["abacus-workflow", "abacus-recognition"]
@@ -243,7 +243,7 @@
     "id": "fresh-de-10",
     "locale": "de",
     "question": "Was macht Timo mit bereits erkannten Belegen im Abacus-ERP, und geht hervor, wer die Erkennung selbst gebaut hat?",
-    "status": "partial",
+    "status": "answer",
     "acceptableIds": [
       ["abacus-recognition"],
       ["abacus-workflow", "abacus-recognition"]

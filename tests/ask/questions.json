@@ -62,7 +62,7 @@
   {
     "locale": "en",
     "question": "Did Timo build OCR recognition for Abacus?",
-    "status": "partial",
+    "status": "answer",
     "id": "abacus-recognition"
   },
   {
@@ -152,7 +152,7 @@
   {
     "locale": "de",
     "question": "Hat Timo die Erkennung von Belegen bei Abacus programmiert?",
-    "status": "partial",
+    "status": "answer",
     "id": "abacus-recognition"
   },
   {
