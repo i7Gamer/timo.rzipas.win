@@ -50,7 +50,7 @@ import {
 } from '../../src/lib/ask/topics.ts';
 import type { Locale } from '../../src/i18n';
 
-const MAX_CANDIDATES = 6;
+export const MAX_CANDIDATES = 6;
 const MIN_SPELLING_LENGTH = 5;
 const portfolioReference =
   /\b(?:timo|rzipa|portfolio|he|him|his|er|ihn|ihm|sein(?:e|en|er|em|es)?)\b/;

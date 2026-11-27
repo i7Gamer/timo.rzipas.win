@@ -356,6 +356,48 @@ Review the source fields and both CVs when a pinned evidence hash changes.
 Update the corresponding bilingual claims before approving the new snapshot.
 Use the case study, job section, or CV page that supports each claim.
 
+## Question sets and selector-only runs
+
+The built-in 88 questions have shaped the prompt and rules, so treat them as
+development data. New question sets are JSON arrays with `id`, `family`,
+`category`, `locale`, `question`, optional `history` (earlier questions with
+the fact ids they were answered with), `status` and `acceptableIds`. The
+loader rejects unknown fact ids, empty answers and more than three facts per
+answer.
+
+```powershell
+node tests/ask/evaluate.ts --rank-port 4535 --questions tests/ask/dev-questions.json --report .local-ask/dev.json
+node tests/ask/fixed-candidates-run.ts --from-report .local-ask/dev.json --sizes 1,6 --shuffles 2 --report .local-ask/dev-fixed.json
+```
+
+Every evaluator row records:
+
+- whether `approved-answers.json` replaced its expectation
+  (`expectationOverlay`)
+- the number of selector calls
+- each model call's raw reply, prompt and output tokens, and load, prompt and
+  generation times
+
+Over HTTP the gateway runs in another process, so these stay empty. The
+selector skips the model when it has no evidence.
+
+The fixed-candidate run measures the selector apart from routing. It gives
+the selector the expected facts plus facts from the same project (by fact id
+prefix), at each list size. Each list runs in natural, reversed and seeded
+shuffled order. The run reports accuracy per size and order, and the
+questions whose result depends on the order.
+
+When a final held-out set is imported as `tests/ask/final-questions.json`,
+freeze the questions that are already answered without the model:
+
+```powershell
+node tests/ask/final-guard.ts --freeze
+```
+
+From then on, a test fails if a later rule answers another final question
+without the model, since such a rule would leak that question into the code.
+Of the current 48 held-out questions, 9 are answered without the model.
+
 ## Later adapter experiment
 
 Freeze owner-reviewed EN and DE question families for evaluation. Compare the

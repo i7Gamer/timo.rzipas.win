@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
+import { readFileSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
+import { basename, extname } from 'node:path';
 import { promisify } from 'node:util';
 import { request } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -26,7 +28,14 @@ import {
   ollamaThreads,
   SELECTOR_CONTEXT_TOKENS,
   selectWithOllama,
+  setOllamaCallListener,
+  type OllamaCall,
 } from '../../services/ask/ollama.ts';
+import {
+  historyTurns,
+  parseQuestionSet,
+  type HistoryEntry,
+} from './question-set.ts';
 import { askModel, prepareQuestion } from '../../services/ask/selection.ts';
 import { createGateway } from '../../services/ask/server.ts';
 import {
@@ -195,6 +204,12 @@ type Fixture = {
   status: string;
   acceptableIds: string[][];
   expectedMode?: AskResult['mode'];
+  id?: string;
+  family?: string;
+  category?: string;
+  history?: HistoryEntry[];
+  /** True when approved-answers.json replaced the fixture's own expectation. */
+  expectationOverlay?: boolean;
 };
 const basicFixtures = (
   suite: string,
@@ -222,15 +237,27 @@ const misses = new Set([
   'Which parts of SpotifyTracker did Timo rebuild, and what technology did he use?',
   'Which methods can the thesis tool use to analyse a schedule?',
 ]);
-const baselineFixtures = process.argv.includes('--routing')
-  ? basicFixtures('routing', routing)
-  : process.argv.includes('--misses')
-    ? suite.filter(({ question }) => misses.has(question))
-    : process.argv.includes('--paraphrases')
-      ? extra
-      : process.argv.includes('--original')
-        ? original
-        : suite;
+// --questions <file> runs a reviewed question-set file (e.g. the development
+// or final held-out set) instead of the built-in suites.
+const questionsFlag = process.argv.indexOf('--questions');
+const questionsFile =
+  questionsFlag >= 0 ? process.argv[questionsFlag + 1] : undefined;
+if (questionsFlag >= 0 && (!questionsFile || questionsFile.startsWith('--')))
+  throw new Error('--questions requires a question-set file');
+const baselineFixtures: Fixture[] = questionsFile
+  ? parseQuestionSet(
+      JSON.parse(readFileSync(questionsFile, 'utf8')),
+      basename(questionsFile, extname(questionsFile)),
+    )
+  : process.argv.includes('--routing')
+    ? basicFixtures('routing', routing)
+    : process.argv.includes('--misses')
+      ? suite.filter(({ question }) => misses.has(question))
+      : process.argv.includes('--paraphrases')
+        ? extra
+        : process.argv.includes('--original')
+          ? original
+          : suite;
 const allFixtures = process.argv.includes('--answers')
   ? basicFixtures('approved-answers', approvedAnswers)
   : baselineFixtures.map((fixture) => {
@@ -242,6 +269,7 @@ const allFixtures = process.argv.includes('--answers')
             ...fixture,
             status: update.status,
             acceptableIds: [update.id ? [update.id] : []],
+            expectationOverlay: true,
           }
         : fixture;
     });
@@ -438,15 +466,21 @@ if (mode !== 'index' && mode !== 'http') {
   );
 }
 
-async function runGateway(question: string, locale: Locale) {
+async function runGateway(
+  question: string,
+  locale: Locale,
+  history: ReturnType<typeof historyTurns>,
+) {
   let graniteRan = false;
   let qwenEvidenceIds: string[] = [];
+  let selectorCalls = 0;
   const server = createGateway({
     rank: (...args) => {
       graniteRan = true;
       return rankWithGranite(...args);
     },
     select: (...args) => {
+      selectorCalls += 1;
       qwenEvidenceIds = args[2].map(({ id }) => id);
       return selectWithOllama(...args);
     },
@@ -457,7 +491,11 @@ async function runGateway(question: string, locale: Locale) {
   await once(server, 'listening');
   const { port } = server.address() as AddressInfo;
   const host = LOOPBACK + ':' + localPorts[locale];
-  const body = JSON.stringify({ question, locale });
+  const body = JSON.stringify({
+    question,
+    locale,
+    ...(history.length ? { history } : {}),
+  });
   const start = performance.now();
   try {
     const response = await new Promise<{ status: number; body: unknown }>(
@@ -499,6 +537,7 @@ async function runGateway(question: string, locale: Locale) {
       ...response,
       graniteRan,
       qwenEvidenceIds,
+      selectorCalls,
       ms: performance.now() - start,
     };
   } finally {
@@ -514,15 +553,24 @@ if (mode === 'http' && resetProject && fixtures.length) {
 for (const fixture of fixtures) {
   const { question } = fixture;
   const locale = fixture.locale === 'de' ? 'de' : 'en';
+  const history = historyTurns(fixture.history, locale);
   const { fallback, candidates, semanticPool, compound } = prepareQuestion(
     question,
     locale,
+    history,
   );
   const lexicalCandidates = candidates.map(({ id }) => id);
   let actual: AskResult | null = fallback;
   let httpStatus: number | null = null;
   let graniteRan = false;
   let qwenEvidenceIds: string[] = [];
+  // Selector calls and their raw model replies; unknown over HTTP, where the
+  // gateway runs in another process.
+  let selectorCalls: number | null = mode === 'http' ? null : 0;
+  const modelCalls: OllamaCall[] = [];
+  setOllamaCallListener(
+    mode === 'http' ? undefined : (call) => modelCalls.push(call),
+  );
   const start = performance.now();
   let ms;
   if (mode === 'http') {
@@ -542,7 +590,11 @@ for (const fixture of fixtures) {
           Origin: httpOrigin!,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ question, locale }),
+        body: JSON.stringify({
+          question,
+          locale,
+          ...(history.length ? { history } : {}),
+        }),
         signal: AbortSignal.timeout(CLIENT_TIMEOUT),
       });
       httpStatus = response.status;
@@ -556,11 +608,12 @@ for (const fixture of fixtures) {
       ms = performance.now() - started;
     }
   } else if (mode === 'gateway') {
-    const response = await runGateway(question, locale);
+    const response = await runGateway(question, locale, history);
     httpStatus = response.status;
     ms = response.ms;
     graniteRan = response.graniteRan;
     qwenEvidenceIds = response.qwenEvidenceIds;
+    selectorCalls = response.selectorCalls;
     actual =
       httpStatus === 200
         ? validateResult(response.body, locale, corpusVersion)
@@ -569,13 +622,14 @@ for (const fixture of fixtures) {
   } else {
     if (mode === 'lexical' && candidates.length) {
       qwenEvidenceIds = lexicalCandidates;
+      selectorCalls = 1;
       actual = await askModel(
         selectWithOllama,
         question,
         locale,
         candidates,
         AbortSignal.timeout(LEXICAL_TIMEOUT_MS),
-        undefined,
+        history,
         compound,
       ).catch(() => null);
     }
@@ -609,10 +663,18 @@ for (const fixture of fixtures) {
             ? 'index-only'
             : 'no-evidence'
           : 'direct';
+  setOllamaCallListener(undefined);
   rows.push({
     suite: fixture.suite,
+    ...(fixture.id ? { id: fixture.id } : {}),
+    ...(fixture.family ? { family: fixture.family } : {}),
+    ...(fixture.category ? { category: fixture.category } : {}),
     locale,
     question,
+    ...(fixture.history ? { history: fixture.history } : {}),
+    expectationOverlay: Boolean(fixture.expectationOverlay),
+    selectorCalls,
+    modelCalls,
     expectedStatus: fixture.status,
     expectedMode: fixture.expectedMode,
     expectedIds: fixture.acceptableIds,
