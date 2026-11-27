@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MAX_CLAIMS } from './catalog';
 import {
   MODEL,
   MODEL_DIGEST,
@@ -60,7 +61,7 @@ describe('Ollama selector', () => {
   });
 
   it('reports each model call with its raw reply and timings', async () => {
-    const reply = { relevant: [true, false], incomplete: false };
+    const reply = { slots: [1], incomplete: false };
     stubSelector(reply);
     const listener = vi.fn();
     setOllamaCallListener(listener);
@@ -78,7 +79,7 @@ describe('Ollama selector', () => {
   });
 
   it('abstains without a model call when there is no evidence', async () => {
-    const requests = stubSelector({ relevant: [], incomplete: false });
+    const requests = stubSelector({ slots: [], incomplete: false });
     const result = await selectWithOllama(
       'Wie viel verdient Timo?',
       'de',
@@ -91,7 +92,7 @@ describe('Ollama selector', () => {
   });
 
   it('stops reporting once the listener is removed', async () => {
-    stubSelector({ relevant: [true, false], incomplete: false });
+    stubSelector({ slots: [1], incomplete: false });
     const listener = vi.fn();
     setOllamaCallListener(listener);
     setOllamaCallListener(undefined);
@@ -99,38 +100,35 @@ describe('Ollama selector', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
-  it('asks for one relevance flag per evidence slot', async () => {
-    const requests = stubSelector({
-      relevant: [true, false],
-      incomplete: false,
-    });
+  it('asks for at most three evidence slot numbers', async () => {
+    const requests = stubSelector({ slots: [1], incomplete: false });
     await ask();
     const { format } = requests[0];
-    expect(format.required).toEqual(['relevant', 'incomplete']);
-    expect(format.properties.relevant).toMatchObject({
-      minItems: candidates.length,
-      maxItems: candidates.length,
-      items: { type: 'boolean' },
+    expect(format.required).toEqual(['slots', 'incomplete']);
+    expect(format.properties.slots).toMatchObject({
+      maxItems: MAX_CLAIMS,
+      items: { type: 'integer', enum: [1, 2] },
     });
   });
 
   it.each([
-    [[false, true], false, { slots: [2], status: 'answer' }],
-    [[true, true], true, { slots: [1, 2], status: 'partial' }],
-    [[false, false], false, { slots: [], status: 'unknown' }],
+    [[2], false, { slots: [2], status: 'answer' }],
+    [[2, 1], true, { slots: [2, 1], status: 'partial' }],
+    [[1, 1], false, { slots: [1], status: 'answer' }],
+    [[], false, { slots: [], status: 'unknown' }],
   ])(
-    'turns flags %j with incomplete=%s into a selection',
-    async (relevant, incomplete, expected) => {
-      stubSelector({ relevant, incomplete });
+    'turns slots %j with incomplete=%s into a selection',
+    async (slots, incomplete, expected) => {
+      stubSelector({ slots, incomplete });
       expect(await ask()).toEqual(expected);
     },
   );
 
   it.each([
-    ['too few flags', { relevant: [true], incomplete: false }],
-    ['a non-boolean flag', { relevant: [true, 1], incomplete: false }],
-    ['slot numbers', { slots: [1], incomplete: false }],
-    ['no incomplete flag', { relevant: [true, false], other: false }],
+    ['relevance flags', { relevant: [true, false], incomplete: false }],
+    ['a clarification slot', { slots: [0], incomplete: false }],
+    ['no incomplete flag', { slots: [1], other: false }],
+    ['a non-array selection', { slots: 1, incomplete: false }],
   ])('rejects a reply with %s', async (_, reply) => {
     stubSelector(reply);
     expect(await ask()).toBeNull();
@@ -138,7 +136,7 @@ describe('Ollama selector', () => {
 
   it('sends worked examples between the rules and the question', async () => {
     const requests = stubSelector({
-      relevant: [false, false],
+      slots: [],
       incomplete: false,
     });
     await ask();
@@ -159,50 +157,77 @@ describe('Ollama selector', () => {
     expect(facts.some(({ answer }) => text.includes(answer.en))).toBe(false);
   });
 
-  it('gives each example one flag per evidence item', async () => {
-    const requests = stubSelector({
-      relevant: [false, false],
-      incomplete: false,
-    });
+  it('puts the question after history and evidence in every request', async () => {
+    const requests = stubSelector({ slots: [], incomplete: false });
+    await selectWithOllama(
+      'Which project used Flask?',
+      'en',
+      candidates,
+      AbortSignal.timeout(1_000),
+      [{ question: 'What is SpotifyTracker?', answer: 'A listening tracker.' }],
+    );
+    const users = requests[0].messages.filter(({ role }) => role === 'user');
+    for (const { content } of users)
+      expect(Object.keys(JSON.parse(content)).at(-1)).toBe('question');
+    expect(Object.keys(JSON.parse(users.at(-1)!.content))).toEqual([
+      'history',
+      'evidence',
+      'question',
+    ]);
+  });
+
+  it('shows a two-part question answered by one slot per part', async () => {
+    const requests = stubSelector({ slots: [], incomplete: false });
+    await ask();
+    const replies = requests[0].messages
+      .filter(({ role }) => role === 'assistant')
+      .map(({ content }) => JSON.parse(content) as { slots: number[] });
+    expect(replies.some(({ slots }) => slots.length > 1)).toBe(true);
+  });
+
+  it('gives each example only slots its evidence offers', async () => {
+    const requests = stubSelector({ slots: [], incomplete: false });
     await ask();
     const { messages } = requests[0];
     for (let index = 1; index < messages.length - 1; index += 2) {
       const { evidence } = JSON.parse(messages[index].content);
-      const { relevant } = JSON.parse(messages[index + 1].content);
-      expect(relevant).toHaveLength(evidence.length);
+      const { slots } = JSON.parse(messages[index + 1].content);
+      const offered = evidence.map(({ slot }: { slot: number }) => slot);
+      expect(slots.length).toBeLessThanOrEqual(MAX_CLAIMS);
+      for (const slot of slots) expect(offered).toContain(slot);
     }
   });
 
   it('covers answering, partial and abstaining in the examples', async () => {
-    const requests = stubSelector({
-      relevant: [false, false],
-      incomplete: false,
-    });
+    const requests = stubSelector({ slots: [], incomplete: false });
     await ask();
-    const replies: { relevant: boolean[]; incomplete: boolean }[] =
-      requests[0].messages
-        .filter(({ role }) => role === 'assistant')
-        .map(({ content }) => JSON.parse(content));
-    const chosen = (flags: boolean[]) => flags.some(Boolean);
+    const { messages } = requests[0];
+    const examples = messages.slice(1, -1).flatMap((message, index, all) =>
+      index % 2
+        ? []
+        : [
+            {
+              offered: JSON.parse(message.content).evidence.length as number,
+              ...(JSON.parse(all[index + 1].content) as {
+                slots: number[];
+                incomplete: boolean;
+              }),
+            },
+          ],
+    );
     expect(
-      replies.some(
-        ({ relevant, incomplete }) => !chosen(relevant) && !incomplete,
-      ),
+      examples.some(({ slots, incomplete }) => !slots.length && !incomplete),
     ).toBe(true);
     expect(
-      replies.some(
-        ({ relevant, incomplete }) => chosen(relevant) && incomplete,
-      ),
+      examples.some(({ slots, incomplete }) => slots.length && incomplete),
     ).toBe(true);
     expect(
-      replies.some(
-        ({ relevant, incomplete }) => chosen(relevant) && !incomplete,
-      ),
+      examples.some(({ slots, incomplete }) => slots.length && !incomplete),
     ).toBe(true);
-    // At least one example rejects a fact about the same project.
+    // At least one example leaves out a fact about the same project.
     expect(
-      replies.some(
-        ({ relevant }) => chosen(relevant) && !relevant.every(Boolean),
+      examples.some(
+        ({ slots, offered }) => slots.length && slots.length < offered,
       ),
     ).toBe(true);
   });

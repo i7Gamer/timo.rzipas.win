@@ -350,6 +350,29 @@ of a denial scored 37/44. Passing the `partial` flag with a limitation rule and
 the question last scored 33/44. Qwen3 1.7B at Q8 scored the same 82/88 with
 different misses and was 15–35% slower than Q4 in alternating runs.
 
+The fixed-candidate test (see below) then showed that per-slot flags mark
+every same-project fact relevant once a list holds three or six facts. The
+selector went back to slot picking, with the question after the evidence and
+one slot per part of a multi-part question. Fixed-candidate results, sizes 1,
+3 and 6, natural, reversed and one shuffled order:
+
+| Selector                             | Dev set | Built-in suite |
+| ------------------------------------ | ------- | -------------- |
+| Qwen3 1.7B, per-slot flags           | –       | 50/314         |
+| Qwen3 4B, slot picking (1.7B prompt) | –       | 128/314        |
+| Qwen3 1.7B, slot picking             | 183/445 | 219/314        |
+| … question last                      | 216/445 | 206/314        |
+| … question last, one slot per part   | 267/445 | 187/314        |
+
+The last row, now in use, scored 87/88 end to end (43/44 model questions;
+median 2.3 s, p95 3.6 s), against 84/88 for plain slot picking. It still
+misses "Did Timo build OCR recognition for Abacus?". A yes/no rule helped
+alone but lowered the combination.
+
+On the 120-question dev set it scored 30/120 end to end. Retrieval limits
+that score: only 19 of the 100 answerable questions reach the selector with a
+complete expected fact set.
+
 Measure again under the Docker host's normal load.
 
 Review the source fields and both CVs when a pinned evidence hash changes.

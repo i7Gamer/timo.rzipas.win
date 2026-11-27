@@ -980,8 +980,8 @@ afterEach(async () => {
 
 describe('gateway', () => {
   it('prewarms through the pinned chat selector and rejects an abstaining probe', async () => {
-    // The probe offers one evidence record, so the selector returns one flag.
-    let relevant = [true];
+    // The probe offers one evidence record, so the selector can pick slot 1.
+    let slots = [1];
     const fetchModel = vi.fn<typeof fetch>(async (url) => {
       if (String(url).endsWith('/api/tags'))
         return Response.json({
@@ -991,14 +991,14 @@ describe('gateway', () => {
       return Response.json({
         done: true,
         done_reason: 'stop',
-        message: { content: JSON.stringify({ relevant, incomplete: false }) },
+        message: { content: JSON.stringify({ slots, incomplete: false }) },
       });
     });
     vi.stubGlobal('fetch', fetchModel);
     try {
       const signal = new AbortController().signal;
       await expect(warmSelector(signal)).resolves.toBeUndefined();
-      relevant = [false];
+      slots = [];
       await expect(warmSelector(signal)).rejects.toThrow(/readiness probe/);
     } finally {
       vi.unstubAllGlobals();
