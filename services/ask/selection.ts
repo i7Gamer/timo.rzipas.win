@@ -709,8 +709,8 @@ export async function askModel(
       false,
     );
     if (!decision) return null;
-    if (!decision.matches.length)
-      return documentAnswer([], 'unknown', 'local', locale, corpusVersion);
+    // An empty selection still leaves the reviewed clauses; the combined
+    // answer marks the unselected clauses as missing.
     const combined = combineReviewedClauses(
       compound.map((part) => {
         if (!needsCompoundSelection(part)) return part.reviewed;
@@ -719,7 +719,7 @@ export async function askModel(
         );
         return {
           ids: covered.map(({ id }) => id),
-          ...(covered.every(({ partial }) => partial)
+          ...(covered.length && covered.every(({ partial }) => partial)
             ? { partial: true as const }
             : {}),
         };
