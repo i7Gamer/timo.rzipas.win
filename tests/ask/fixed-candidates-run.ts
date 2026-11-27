@@ -5,7 +5,7 @@
 //   node tests/ask/fixed-candidates-run.ts --questions <set.json> [options]
 //   node tests/ask/fixed-candidates-run.ts --from-report <report.json> [options]
 //
-// Options: --sizes 1,6  --shuffles 2  --seed 23  --report <out.json>
+// Options: --sizes 1,6  --shuffles 2  --seed 23  --timeout-ms 6000  --report <out.json>
 // --from-report reuses an evaluator report's effective expectations, so
 // approved-answers overrides are not rebuilt here.
 import { readFileSync } from 'node:fs';
@@ -88,6 +88,10 @@ const sizes = (flag('--sizes') ?? DEFAULT_SIZES.join(','))
   .map(Number);
 if (!sizes.every((size) => Number.isInteger(size) && size >= 1))
   throw new Error('--sizes takes positive whole numbers, e.g. 1,3,6');
+// A longer limit than the gateway's compares accuracy, not deadline fit.
+const timeoutMs = Number(flag('--timeout-ms') ?? SELECTOR_TIMEOUT_MS);
+if (!Number.isInteger(timeoutMs) || timeoutMs < 1)
+  throw new Error('--timeout-ms takes a positive whole number');
 const shuffles = Number(flag('--shuffles') ?? DEFAULT_SHUFFLES);
 const seed = Number(flag('--seed') ?? DEFAULT_SEED);
 const cases = loadCases();
@@ -107,7 +111,7 @@ for (const fixture of cases) {
           fixture.question,
           fixture.locale,
           order.items,
-          AbortSignal.timeout(SELECTOR_TIMEOUT_MS),
+          AbortSignal.timeout(timeoutMs),
           history,
         );
         if (decision) {
@@ -168,6 +172,7 @@ if (out)
         sizes,
         shuffles,
         seed,
+        timeoutMs,
         summary,
         rows,
       },
