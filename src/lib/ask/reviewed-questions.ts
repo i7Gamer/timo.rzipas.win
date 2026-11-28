@@ -13,6 +13,7 @@ import {
   type MissingDetail,
 } from './catalog.ts';
 import { acknowledgement, removeChatPrefix, type ChatTurn } from './history.ts';
+import { unrecordedDetail } from './recorded-details.ts';
 import { isSingleTypo } from './spelling.ts';
 import {
   answerTopic,
@@ -66,7 +67,13 @@ export function asksAboutAICoding(terms: string) {
   );
 }
 
+/** A reviewed single-fact route, unless it lacks a detail the question asks. */
 export function reviewedFactId(terms: string) {
+  const id = matchedReviewedFactId(terms);
+  return id && !unrecordedDetail(terms, [id]) ? id : undefined;
+}
+
+function matchedReviewedFactId(terms: string) {
   if (spotifyTracker.test(terms) && lastFm.test(terms)) {
     const purpose = terms
       .replace(spotifyTracker, '')
@@ -774,7 +781,10 @@ export function approvedAnswer(
   const jointlyReviewed = reviewedSpotifyRewriteAndStack(terms);
   if (jointlyReviewed) return jointlyReviewed;
   const clauses = questionClauses(question);
-  if (clauses.length <= 1) return approvedClause(terms);
+  if (clauses.length <= 1) {
+    const answer = approvedClause(terms);
+    return answer && unrecordedDetail(terms, answer.ids) ? undefined : answer;
+  }
   const parts = reviewedCompoundClauses(clauses, terms);
   const answer = combineReviewedClauses(
     parts.map((part) =>
@@ -862,14 +872,19 @@ export function reviewedCompoundClauses(
       reviewedFactId(terms) ??
       (abacusRoleQuestion.test(terms) ? 'abacus-workflow' : undefined);
     const answer = approvedClause(terms) ?? { ids: direct ? [direct] : [] };
+    const modelIds = reviewedCompoundFactIds(terms, scope);
+    const evidence = answer.ids.length ? answer.ids : modelIds;
+    // A clause asking for a detail its evidence never states stays missing.
+    if (evidence.length && unrecordedDetail(terms, evidence))
+      return {
+        question,
+        reviewed: { ids: [], missing: 'additional-question' as const },
+        modelIds: [],
+      };
     const reviewed: ReviewedAnswer = cvGaps.test(terms)
       ? { ...answer, partial: true, missing: 'cv-gaps' }
       : answer;
-    return {
-      question,
-      reviewed,
-      modelIds: reviewedCompoundFactIds(terms, scope),
-    };
+    return { question, reviewed, modelIds };
   });
   if (clauses.length > MAX_CLAIMS)
     reviewed.push({ question: '', reviewed: { ids: [] }, modelIds: [] });

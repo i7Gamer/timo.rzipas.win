@@ -35,6 +35,28 @@ export const acknowledgement = new RegExp(
     .join('|'),
 );
 
+/** The latest turn that is not a social acknowledgement. */
+export function lastSubstantiveTurn<T extends ChatTurn>(history: readonly T[]) {
+  return history.findLast(
+    ({ question }) => !acknowledgement.test(normalize(question)),
+  );
+}
+
+// “Is there …” and “Gibt es …” open independent questions.
+const existential =
+  /\b(?:is there|are there|was there|were there|gibt es|gab es)\b/g;
+const backReference =
+  /^(?:and|und|what about|how about|wie sieht es mit)\b|\b(?:that|there|it|its|they|them|their|those|dort|dabei|damals|es|dessen|deren|(?:war|ist|wird|wurde|hat|macht) das)\b|\bdas$/;
+
+/** Whether normalized terms lean on the previous answer: “And …”, “that”, “dort”. */
+export function refersBack(terms: string) {
+  return backReference.test(terms.replace(existential, ' '));
+}
+
+/** An explicit change of subject, which ends a follow-up. Normalized terms. */
+export const subjectChange =
+  /^(?:(?:a )?(?:new|different|other) (?:topic|question|subject)|something else|(?:ein )?(?:anderes|neues) thema|(?:eine )?(?:andere|neue) frage|themawechsel)\b/;
+
 /** Removes a leading greeting or thanks: “Hi, why hire Timo?”. */
 export function removeChatPrefix(question: string) {
   return question.replace(

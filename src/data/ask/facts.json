@@ -1476,7 +1476,12 @@
         "wie ist die website gebaut",
         "zweisprachige website",
         "sprachwahl nginx",
-        "website selbst gehostet"
+        "website selbst gehostet",
+        "astro",
+        "typescript",
+        "framework",
+        "programming language",
+        "programmiersprache"
       ],
       "answer": {
         "en": "Timo built this portfolio with Astro and TypeScript and hosts it on his own hardware. English and German use the same URLs. nginx serves the matching static build using the visitor’s saved language choice or browser preference.",

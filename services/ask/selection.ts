@@ -36,7 +36,13 @@ import {
   type ReviewedCompoundClause,
   WORK_EXPERIENCE_IDS,
 } from '../../src/lib/ask/reviewed-questions.ts';
-import type { ChatTurn } from '../../src/lib/ask/history.ts';
+import {
+  lastSubstantiveTurn,
+  refersBack,
+  subjectChange,
+  type ChatTurn,
+} from '../../src/lib/ask/history.ts';
+import { unrecordedDetail } from '../../src/lib/ask/recorded-details.ts';
 import {
   projectCandidates,
   projectFollowUp,
@@ -447,6 +453,7 @@ function prepareExactQuestion(
     (questionClauses(question).length <= 1 &&
       (development ||
         asksUnsupportedDetail(terms) ||
+        asksUnrecordedTopicDetail(terms) ||
         missingDetails.some(
           ({ topics, patterns }) =>
             matchingLength(terms, topics) &&
@@ -592,6 +599,15 @@ export function prepareBoundedQuestion(
   };
 }
 
+/**
+ * A detail (version, chapter, hardware) that no fact of the named project
+ * states. Questions naming no project are left to retrieval.
+ */
+function asksUnrecordedTopicDetail(terms: string) {
+  const pool = topicPool(terms);
+  return pool.length > 0 && unrecordedDetail(terms, pool);
+}
+
 /** Ids of the general facts whose source topics the terms mention. */
 function topicPool(terms: string) {
   const development = asksAboutAICoding(terms);
@@ -606,10 +622,12 @@ function topicPool(terms: string) {
 
 /**
  * A follow-up that names no topic ("And which institution was that at?")
- * is ranked within the topics of the most recent turn.
+ * is ranked within the topics of the last substantive turn. Independent
+ * questions and explicit subject changes keep the broad search.
  */
-function followUpPool(history: readonly ChatTurn[]) {
-  const last = history.at(-1);
+function followUpPool(terms: string, history: readonly ChatTurn[]) {
+  if (!refersBack(terms) || subjectChange.test(terms)) return [];
+  const last = lastSubstantiveTurn(history);
   return last ? topicPool(normalize(last.question + ' ' + last.answer)) : [];
 }
 
@@ -649,7 +667,7 @@ export function prepareQuestion(
     ? recovered.semanticPool
     : candidates.length
       ? []
-      : followUpPool(history);
+      : followUpPool(terms, history);
   return {
     ...exact,
     compound,
@@ -702,6 +720,44 @@ function prepareMixedCompound(question: string, fallback: AskResult) {
   if (clauses.length <= 1) return;
   const parts = reviewedCompoundClauses(clauses, normalize(question));
   if (parts.some(needsCompoundSelection)) return parts;
+}
+
+/**
+ * Whether a fact's own wording names what one part of the question asks.
+ * The project may be named anywhere in the question ("…at Abacus, and which
+ * CI server…"), so the topic is matched against the whole question. A bare
+ * keyword ("Did Timo invent Flask?") is retrieval evidence, not coverage.
+ */
+function factAnswersClause(fact: Fact, clause: string, scope: string) {
+  const terms = normalize(clause);
+  return Boolean(
+    matchingLength(terms, fact.aliases) &&
+    matchingLength(scope, sources[fact.sourceId].topics) &&
+    !unrecordedDetail(terms, [fact.id]),
+  );
+}
+
+/**
+ * A selected fact that answers no part by its own wording may still stand for
+ * one part that names its project and has no other evidence. It never fills a
+ * second part, so an on-topic fact cannot hide an unanswered request.
+ */
+function fillClausesByTopic(
+  matches: readonly Fact[],
+  parts: readonly ReviewedCompoundClause[],
+  covered: Set<string>[],
+  topicIds: ReadonlySet<string>,
+) {
+  for (const fact of matches) {
+    if (topicIds.has(fact.id) || covered.some((ids) => ids.has(fact.id)))
+      continue;
+    const index = parts.findIndex(
+      ({ question: clause }, at) =>
+        !covered[at].size &&
+        matchingLength(normalize(clause), sources[fact.sourceId].topics),
+    );
+    if (index >= 0) covered[index].add(fact.id);
+  }
 }
 
 export async function askModel(
@@ -799,7 +855,8 @@ export async function askModel(
   const clauses = questionClauses(question);
   let additionalUnanswered = false;
   if (matches.length && clauses.length > 1) {
-    const parts = reviewedCompoundClauses(clauses, normalize(question));
+    const scope = normalize(question);
+    const parts = reviewedCompoundClauses(clauses, scope);
     const covered = parts.map(
       ({ question: clause, modelIds }) =>
         new Set([
@@ -810,8 +867,12 @@ export async function askModel(
             true,
           ).fallback.claims.map(({ id }) => id),
           ...modelIds,
+          ...matches
+            .filter((fact) => factAnswersClause(fact, clause, scope))
+            .map(({ id }) => id),
         ]),
     );
+    fillClausesByTopic(matches, parts, covered, topicIds);
     matches = matches.filter(
       ({ id }) => topicIds.has(id) || covered.some((ids) => ids.has(id)),
     );

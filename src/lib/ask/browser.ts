@@ -44,6 +44,7 @@ import {
   findEarlierTurn,
   recallChat,
   selectChatHistory,
+  subjectChange,
   type ChatTurn,
 } from './history';
 import { LOCAL_PETS_PATH, parseLocalPets, type LocalPets } from './local-pets';
@@ -101,7 +102,26 @@ function citation(href: string, label: string) {
   link.href = href;
   if (/^https?:/.test(href)) link.rel = 'noopener noreferrer';
   link.textContent = label;
+  link.setAttribute('data-ask-citation', '');
   return link;
+}
+
+type Citation = { href: string; label: string };
+
+/** The cited sources of a reply, as shown; attributions keep no link. */
+function citationsOf(reply: HTMLElement): Citation[] {
+  return Array.from(
+    reply.querySelectorAll('[data-ask-citation], [data-ask-attribution]'),
+    (element) => ({
+      href: element.getAttribute('href') ?? '',
+      label: element.textContent ?? '',
+    }),
+  );
+}
+
+/** Adds remembered citations below recalled answer text. */
+function showCitations(reply: HTMLElement, citations: readonly Citation[]) {
+  for (const { href, label } of citations) reply.append(citation(href, label));
 }
 
 function answerText(node: Node): string {
@@ -152,6 +172,8 @@ export function setupAskWork(panel: HTMLElement) {
   const transcript: (ChatTurn & {
     subjects: SiteSubject[];
     evidence: string[];
+    /** Sources the answer cited, shown again when it is recalled. */
+    citations: Citation[];
     localOnly: boolean;
     /** Languages the question and answer were written in. */
     questionLang: string;
@@ -331,6 +353,7 @@ export function setupAskWork(panel: HTMLElement) {
           reply.querySelectorAll('[data-ask-evidence] p'),
           (part) => part.textContent ?? '',
         ),
+        citations: citationsOf(reply),
         localOnly: reply.hasAttribute('data-ask-local-only'),
         questionLang: locale,
         answerLang: reply.lang || locale,
@@ -410,6 +433,10 @@ export function setupAskWork(panel: HTMLElement) {
       } else if (path.startsWith('/projects/') && path !== '/projects/') {
         // The project overview and contribution may cite the same subject.
         confirmed.set(path + '#', { href: path, label: label.split(' · ')[0] });
+      } else if (isPortfolioPageHref(href) && isReviewedSourceHref(href)) {
+        // Other portfolio sources (“/about/#tutoring”) keep their canonical
+        // link, so a follow-up reaches the gateway with this subject.
+        confirmed.set(href, { href, label: label.split(' · ').at(-1)! });
       }
     }
     rememberSubjects(reply, [...confirmed.values()]);
@@ -600,6 +627,8 @@ export function setupAskWork(panel: HTMLElement) {
         (locale === 'de'
           ? 'Das finde ich in diesem Chat nicht.'
           : 'I can’t find that in this chat.');
+      if (recalled.turn && recalled.field === 'answer')
+        showCitations(reply, recalled.turn.citations);
       if (recalled.turn)
         reply.lang =
           recalled.field === 'question'
@@ -622,6 +651,7 @@ export function setupAskWork(panel: HTMLElement) {
       );
     if (earlier && !pivot?.[2]) {
       reply.textContent = earlier.answer;
+      showCitations(reply, earlier.citations);
       reply.lang = earlier.answerLang;
       rememberSubjects(reply, earlier.subjects);
       if (earlier.localOnly) reply.setAttribute('data-ask-local-only', '');
@@ -757,6 +787,7 @@ export function setupAskWork(panel: HTMLElement) {
         earlier ||
         petFollowUp ||
         (shortFollowUp &&
+          !subjectChange.test(shortFollowUp) &&
           !approvedAnswer(profileQuestion, question) &&
           !topicMore &&
           (languageQuestion.test(shortFollowUp) ||
