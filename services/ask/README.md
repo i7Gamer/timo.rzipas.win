@@ -212,8 +212,8 @@ report records `benchmarkIdentity`: the version, the hash of each fixture file,
 the hash of the rows actually evaluated (question, expectation, `requiresModelCall`
 and the conversation history as sent to Ask), and whether the run matches the
 pin. `matchesPin` is true only when the files match the pin and the evaluated
-rows are the full built-in set; a subset, `--questions` file or approved overlay
-reports false. Run `--suite-only` after preloading to measure the
+rows are the full built-in set; a subset or `--questions` file reports false,
+and a version without a pin, such as the approved overlay, reports `null`. Run `--suite-only` after preloading to measure the
 selected suite separately from a cold probe. The evaluator also has
 `--cold-only` and `--warm-only` smoke paths. `--cold-only` needs
 `--reset-compose-project`: it restarts `ask`, then unloads the model
