@@ -14,6 +14,7 @@ import {
 } from './catalog.ts';
 import { acknowledgement, removeChatPrefix, type ChatTurn } from './history.ts';
 import { unrecordedDetail } from './recorded-details.ts';
+import { supportsRequest } from './requested-attribute.ts';
 import { isSingleTypo } from './spelling.ts';
 import {
   answerTopic,
@@ -32,7 +33,31 @@ type ReviewedAnswer = {
   partial?: true;
   missing?: MissingDetail;
   preferModel?: true;
+  /**
+   * Matched on keywords, so it answers only when its facts support the
+   * requested attribute. `requests` lists nouns the route itself answers.
+   */
+  keyword?: { requests: readonly string[] };
 };
+
+const keywordRoute = (
+  id: string,
+  requests: readonly string[] = [],
+): ReviewedAnswer => ({ ids: [id], keyword: { requests } });
+
+/**
+ * Whether a reviewed answer lacks what the clause asks: a detail kind its
+ * facts never state, or, for a keyword route, an unsupported attribute.
+ */
+function lacksRequest(terms: string, answer: ReviewedAnswer) {
+  return (
+    unrecordedDetail(terms, answer.ids) ||
+    Boolean(
+      answer.keyword &&
+      !supportsRequest(terms, answer.ids, answer.keyword.requests),
+    )
+  );
+}
 
 const spotifyTracker = /\b(?:spotify ?tracker|spotify stats tracker)\b/;
 const lastFm = /\blast fm\b/;
@@ -793,7 +818,7 @@ export function approvedAnswer(
   if (clauses.length <= 1) {
     const answer = approvedClause(terms);
     // A reviewed partial answer already says what is missing.
-    return answer && !labelsGap(answer) && unrecordedDetail(terms, answer.ids)
+    return answer && !labelsGap(answer) && lacksRequest(terms, answer)
       ? undefined
       : answer;
   }
@@ -887,7 +912,7 @@ export function reviewedCompoundClauses(
     const modelIds = reviewedCompoundFactIds(terms, scope);
     const evidence = answer.ids.length ? answer.ids : modelIds;
     // A clause asking for a detail its evidence never states stays missing.
-    if (evidence.length && unrecordedDetail(terms, evidence))
+    if (evidence.length && lacksRequest(terms, { ...answer, ids: evidence }))
       return {
         question,
         reviewed: { ids: [], missing: 'additional-question' as const },
@@ -1050,7 +1075,7 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
       terms,
     )
   )
-    return { ids: ['spotify-compare-performance'] };
+    return keywordRoute('spotify-compare-performance');
 
   if (
     /\b(?:this (?:portfolio )?(?:website|site)|this portfolio|portfolio (?:website|stack)|diese (?:website|seite)|dieses portfolio)\b/.test(
@@ -1060,7 +1085,7 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
       terms,
     )
   )
-    return { ids: ['portfolio-website-architecture'] };
+    return keywordRoute('portfolio-website-architecture');
 
   if (
     tutto.test(terms) &&
@@ -1071,7 +1096,7 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
       terms,
     )
   )
-    return { ids: ['tutto-online-compatibility'] };
+    return keywordRoute('tutto-online-compatibility');
 
   if (
     /^(?:(?:does|can) ask otto (?:use|run on) (?:an? )?(?:llm|language model|ai)|is ask otto (?:an? )?(?:llm|language model|ai)|(?:nutzt|verwendet) ask otto (?:ein )?(?:llm|sprachmodell|ki)|ist ask otto (?:ein )?(?:llm|sprachmodell|ki))$/.test(
@@ -1096,7 +1121,7 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
       terms,
     )
   )
-    return { ids: ['coilwatch-push-notifications'] };
+    return keywordRoute('coilwatch-push-notifications');
 
   if (
     /\b(?:spotifystatstracker|spotify stats tracker|spotifytracker)\b/.test(
@@ -1108,7 +1133,7 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
       /\b(?:upstream|original|urspruenglich\w*)\b/.test(terms) &&
       /\b(?:contribut\w*|improv\w*|verbesser\w*|beitrag)\b/.test(terms)
     )
-      return { ids: ['spotify-upstream-review'] };
+      return keywordRoute('spotify-upstream-review');
 
     if (
       /^(?:who (?:created|started|originated|developed) (?:the )?(?:original |upstream )?|wer hat (?:das )?(?:urspruengliche )?)(?:spotifystatstracker|spotify stats tracker|spotifytracker)(?: entwickelt| erstellt)?$/.test(
@@ -1137,35 +1162,46 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
     /\b(?:exact (?:date|day)|genau\w* datum|genau\w* tag)\b/.test(terms) &&
     /\b(?:join\w*|start\w*|begann|angefangen|eintritt\w*)\b/.test(terms)
   )
-    return { ids: ['stadler-start-month'] };
+    return keywordRoute('stadler-start-month');
 
   if (
     /\b(?:bachelor thesis|bachelorarbeit)\b/.test(terms) &&
     /\b(?:title|titel)\b/.test(terms) &&
     /^(?:what (?:is|was)|wie (?:lautete|lautet|hiess))\b/.test(terms)
   )
-    return { ids: ['bachelor-title'] };
+    return keywordRoute('bachelor-title');
 
   if (
     /\b(?:master(?: s)? degree|masterabschluss)\b/.test(terms) &&
     /\b(?:cv|lebenslauf)\b/.test(terms) &&
     /\b(?:lists?|mentions?|aufgefuehrt|steht|nennt)\b/.test(terms)
   )
-    return { ids: ['cv-masters-listing'] };
+    return keywordRoute('cv-masters-listing');
 
   if (carini.test(terms)) {
     if (
       monthlyBilling.test(terms) &&
       /\b(?:language|sprache|programmiersprache)\b/.test(terms)
     )
-      return { ids: ['carini-billing-scope'] };
+      return keywordRoute('carini-billing-scope', [
+        'programming',
+        'language',
+        'sprache',
+        'programmiersprache',
+      ]);
     if (
       /\b(?:programming language|programmiersprache|technology|technologie)\b/.test(
         terms,
       ) &&
       /\b(?:document view(?:er)?|dokumentenansicht)\b/.test(terms)
     )
-      return { ids: ['carini-document-view'] };
+      return keywordRoute('carini-document-view', [
+        'programming',
+        'language',
+        'programmiersprache',
+        'technology',
+        'technologie',
+      ]);
   }
 
   if (
@@ -1174,7 +1210,7 @@ function approvedClause(terms: string): ReviewedAnswer | undefined {
     /^(?:can|does|kann|bietet|unterstuetzt)\b/.test(terms) &&
     /\b(?:bandwidth|bandbreit\w*|bill|rechnung)\b/.test(terms)
   )
-    return { ids: ['myspeed-forecast-scope'] };
+    return keywordRoute('myspeed-forecast-scope');
 
   if (
     kniffel.test(terms) &&
