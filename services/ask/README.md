@@ -206,8 +206,11 @@ the approved expectations `approved-v2` and the raw `--baseline` fixtures
 expectations; both versions are pinned by content hash in `tests/ask/identity.ts`
 and a test fails when a fixture file changes without a new version. Every
 report records `benchmarkIdentity`: the version, the hash of each fixture file,
-the hash of the expectation set as evaluated, and whether the files match the
-pin. Run `--suite-only` after preloading to measure the
+the hash of the rows actually evaluated (question, expectation, `requiresModelCall`
+and the conversation history as sent to Ask), and whether the run matches the
+pin. `matchesPin` is true only when the files match the pin and the evaluated
+rows are the full built-in set; a subset, `--questions` file or approved overlay
+reports false. Run `--suite-only` after preloading to measure the
 selected suite separately from a cold probe. The evaluator also has
 `--cold-only` and `--warm-only` smoke paths. `--cold-only` needs
 `--reset-compose-project`: it restarts `ask`, then unloads the model
