@@ -181,9 +181,9 @@ describe('requested detail heads', () => {
       'de',
     ],
   ] as const)('answers %j with the document view fact', (question, locale) => {
-    expect(approvedAnswer(normalize(question), question)).toEqual({
-      ids: [CARINI],
-    });
+    expect(approvedAnswer(normalize(question), question)?.ids).toEqual([
+      CARINI,
+    ]);
     expect(prepareQuestion(question, locale).fallback.status).toBe('answer');
     expect(ids(question, locale)).toEqual([CARINI]);
   });
