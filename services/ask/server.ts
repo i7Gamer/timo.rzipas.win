@@ -353,10 +353,9 @@ export function createGateway({
           // Weak strict hits get a bounded ranked rescue from their topics.
           const rescue = 'rescuePool' in prepared ? prepared.rescuePool : [];
           if (rank && candidates.length && rescue?.length) {
-            countModelCall();
+            rescue.forEach(() => countModelCall());
             selected = await withRescue(
               rank,
-              question,
               locale,
               candidates,
               rescue,

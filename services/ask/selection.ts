@@ -582,7 +582,7 @@ function prepareExactQuestion(
     fallback: unknown,
     candidates,
     semanticPool,
-    rescuePool: rescuePool(terms, candidates),
+    rescuePool: rescuePool(question, terms, candidates),
     allowBroadSearch: !candidates.length && !semanticPool.length,
   };
 }
@@ -605,24 +605,44 @@ function withoutSubjects(terms: string) {
 /** The head noun of a fact's facet: "methods" in "schedule analysis methods". */
 const facetHead = (facet: string) => normalize(facet).split(' ').at(-1) ?? '';
 
+/** One part of a question no strict hit answers, with the facts a ranker may add for it. */
+export interface RescueClause {
+  query: string;
+  pool: readonly string[];
+}
+
 /**
- * Facts of the named topics a ranker may add when the strict candidates are
- * weak hits: their aliases and facet head match only inside the topic names ("…the site Timo
- * made at HTL Dornbirn" finds only the Matura through "htl" and "dornbirn").
- * Questions naming no topic are never widened.
+ * Per uncovered clause, the facts of the named topics a ranker may add when
+ * the strict candidates are weak hits for it: no alias or facet head matches
+ * the clause outside the topic names ("…the site Timo made at HTL Dornbirn"
+ * finds only the Matura through "htl" and "dornbirn"). A strong hit for one
+ * clause never hides a weak or missing one in a compound question. A clause
+ * naming no topic uses the topics of the whole question; questions naming no
+ * topic are never widened.
  */
-function rescuePool(terms: string, candidates: readonly Fact[]) {
-  const request = withoutSubjects(terms);
-  if (
-    !candidates.length ||
-    candidates.some(({ aliases, facet }) =>
-      matchingLength(request, [...aliases, facetHead(facet)]),
+function rescuePool(
+  question: string,
+  terms: string,
+  candidates: readonly Fact[],
+): RescueClause[] {
+  if (!candidates.length) return [];
+  const clauses = questionClauses(question);
+  const queries = clauses.length > 1 ? clauses : [question];
+  return queries.flatMap((query) => {
+    const clauseTerms = clauses.length > 1 ? normalize(query) : terms;
+    const request = withoutSubjects(clauseTerms);
+    if (
+      candidates.some(({ aliases, facet }) =>
+        matchingLength(request, [...aliases, facetHead(facet)]),
+      )
     )
-  )
-    return [];
-  return topicPool(terms).filter(
-    (id) => !candidates.some((fact) => fact.id === id),
-  );
+      return [];
+    const named = topicPool(clauseTerms);
+    const pool = (named.length ? named : topicPool(terms)).filter(
+      (id) => !candidates.some((fact) => fact.id === id),
+    );
+    return pool.length ? [{ query, pool }] : [];
+  });
 }
 
 export function prepareBoundedQuestion(

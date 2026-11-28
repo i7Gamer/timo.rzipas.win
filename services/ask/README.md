@@ -149,8 +149,11 @@ four ranked facts on this path (two beside the broad topic overviews), under
 the same six-second gateway deadline. When keyword matching finds only weak
 hits (aliases that are just subject names, such as "HTL" or "supervisor"),
 a rescue pass ranks the named topics' facts within the ranker's 300 ms budget
-and adds at most two of them beside the hits; questions naming no topic are
-never widened, and a slow ranker leaves the hits alone. When the ranker is unavailable or its
+and adds at most two of them beside the hits. A compound question is checked
+per clause: each clause no hit covers is ranked on its own text in parallel
+(one fact per clause), so a strong hit for one clause cannot hide the other.
+Questions naming no topic are never widened, and a slow ranker leaves the hits
+alone. When the ranker is unavailable or its
 catalogue version differs, the gateway returns the index response for those
 questions. Restart the worker after any change to `facts.json`; the evaluator
 refuses to run against a worker that serves an older catalogue version.
