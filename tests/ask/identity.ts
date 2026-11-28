@@ -1,6 +1,7 @@
 // Identity of the benchmark inputs, recorded in every evaluator report so a
 // comparison can tell which fixtures and expectations it used.
 import { createHash } from 'node:crypto';
+import { type HistoryEntry, historyTurns } from './question-set.ts';
 
 export const CURRENT_BASELINE = 'baseline-v2';
 
@@ -72,6 +73,70 @@ export function expectationsLabel(baseline: boolean) {
   return baseline ? CURRENT_BASELINE : 'approved-v2';
 }
 
+/** A fixture as the evaluator holds it, before projection. */
+export interface EvaluatedFixture {
+  suite: string;
+  id?: string;
+  locale: string;
+  question: string;
+  status: string;
+  acceptableIds: string[][];
+  expectedMode?: string;
+  requiresModelCall?: boolean;
+  history?: HistoryEntry[];
+  expectationOverlay?: boolean;
+}
+
+/**
+ * The fields of a fixture that decide what is sent to Ask and how the result
+ * is judged. Included: suite, id (the row's name in reports), locale as the
+ * evaluator resolves it, question, the history after `historyTurns`
+ * normalization (the exact turns sent to Ask), the expected status, mode and
+ * fact ids, `requiresModelCall` (gate input) and `expectationOverlay`
+ * (whether an approved expectation replaced the fixture's own). Excluded:
+ * `family` and `category`, which only group rows in the report.
+ */
+export function evaluatedRow(fixture: EvaluatedFixture) {
+  const locale = fixture.locale === 'de' ? 'de' : 'en';
+  return {
+    suite: fixture.suite,
+    id: fixture.id ?? null,
+    locale,
+    question: fixture.question,
+    history: historyTurns(fixture.history, locale),
+    status: fixture.status,
+    acceptableIds: fixture.acceptableIds,
+    expectedMode: fixture.expectedMode ?? null,
+    requiresModelCall: Boolean(fixture.requiresModelCall),
+    expectationOverlay: Boolean(fixture.expectationOverlay),
+  };
+}
+
+type BuiltInEntry = {
+  locale: string;
+  question: string;
+  status: string;
+  id?: string;
+};
+
+/** The default set `--baseline` evaluates: the three fixture files in order. */
+export function builtInFixtures(files: BaselineFiles): EvaluatedFixture[] {
+  const simple = (suite: string, entries: unknown) =>
+    (entries as BuiltInEntry[]).map(({ id, ...entry }) => ({
+      ...entry,
+      suite,
+      acceptableIds: [id ? [id] : []],
+    }));
+  return [
+    ...simple('original', files.questions),
+    ...simple('paraphrases', files.paraphrases),
+    ...(files.heldOut as EvaluatedFixture[]).map((fixture) => ({
+      ...fixture,
+      suite: 'held-out',
+    })),
+  ];
+}
+
 export function runIdentity({
   version,
   files,
@@ -79,19 +144,28 @@ export function runIdentity({
 }: {
   version: string;
   files: BaselineFiles;
-  /** The fixtures as evaluated: question, expectation and ids. */
-  evaluated: readonly unknown[];
+  /** The fixtures actually evaluated, in run order. */
+  evaluated: readonly EvaluatedFixture[];
 }) {
   const hashes = fixtureHashes(files);
+  const rows = evaluated.map(evaluatedRow);
+  const expectationHash = contentHash(rows);
   const pin =
     version in BASELINES
       ? BASELINES[version as keyof typeof BASELINES]
       : undefined;
+  // A pin describes the full built-in set; a subset, a custom question set or
+  // an approved overlay evaluates something else.
+  const evaluatesBuiltInSet =
+    expectationHash === contentHash(builtInFixtures(files).map(evaluatedRow));
   return {
     version,
     fixtureHashes: hashes,
-    expectationHash: contentHash(evaluated),
-    matchesPin: pin ? contentHash(hashes) === contentHash(pin.fixtures) : null,
+    expectationHash,
+    evaluatedCount: rows.length,
+    matchesPin: pin
+      ? evaluatesBuiltInSet && contentHash(hashes) === contentHash(pin.fixtures)
+      : null,
     baselines: BASELINES,
   };
 }

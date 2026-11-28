@@ -926,16 +926,7 @@ const identity = usesHttp ? await hostIdentity() : null;
 const benchmarkIdentity = runIdentity({
   version: expectationsVersion,
   files: { questions, paraphrases, heldOut },
-  evaluated: fixtures.map(
-    ({ suite, locale, question, status, acceptableIds, expectedMode }) => ({
-      suite,
-      locale,
-      question,
-      status,
-      acceptableIds,
-      expectedMode: expectedMode ?? null,
-    }),
-  ),
+  evaluated: fixtures,
 });
 
 if (reportPath)

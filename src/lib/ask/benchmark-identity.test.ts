@@ -4,7 +4,9 @@ import paraphrases from '../../../tests/ask/paraphrases.json';
 import questions from '../../../tests/ask/questions.json';
 import {
   BASELINES,
+  builtInFixtures,
   contentHash,
+  evaluatedRow,
   expectationsLabel,
   fixtureHashes,
   runIdentity,
@@ -51,59 +53,178 @@ describe('baseline pins', () => {
   });
 });
 
-describe('run identity', () => {
-  const evaluated = [
-    {
-      suite: 'original',
-      locale: 'en',
-      question: 'Q?',
-      status: 'answer',
-      acceptableIds: [['a']],
-    },
-  ];
+const fullSet = builtInFixtures(currentFiles);
+const HISTORY_FACT_ID = 'spotify-python';
+const OTHER_FACT_ID = 'spotify-rewrite';
+const historyFixture = {
+  suite: 'dev',
+  id: 'dev-en-051',
+  locale: 'en',
+  question: 'And what about the second one?',
+  status: 'answer',
+  acceptableIds: [[HISTORY_FACT_ID]],
+  history: [
+    { question: 'Which project used Flask?', answerIds: [HISTORY_FACT_ID] },
+  ],
+};
 
-  it('records hashes of the fixtures and of the evaluated expectations', () => {
-    const identity = runIdentity({
-      version: 'baseline-v2',
-      files: currentFiles,
-      evaluated,
-    });
+describe('evaluated row', () => {
+  it('normalizes the history as it is sent into Ask', () => {
+    const row = evaluatedRow(historyFixture);
+    expect(row.history).toEqual([
+      { question: 'Which project used Flask?', answer: expect.any(String) },
+    ]);
+    expect(row.history[0].answer).not.toBe('');
+  });
+
+  it('defaults optional fields so absent and explicit defaults agree', () => {
+    const bare = { ...historyFixture, history: undefined };
+    expect(evaluatedRow(bare)).toEqual(
+      evaluatedRow({
+        ...bare,
+        history: [],
+        requiresModelCall: false,
+        expectedMode: undefined,
+        expectationOverlay: false,
+      }),
+    );
+  });
+
+  it('treats any locale other than de as en, as the evaluator does', () => {
+    expect(evaluatedRow({ ...historyFixture, locale: 'fr' }).locale).toBe('en');
+    expect(evaluatedRow({ ...historyFixture, locale: 'de' }).locale).toBe('de');
+  });
+});
+
+describe('built-in fixtures', () => {
+  it('lists the original, paraphrase and held-out rows in suite order', () => {
+    const suites = [...new Set(fullSet.map(({ suite }) => suite))];
+    expect(suites).toEqual(['original', 'paraphrases', 'held-out']);
+    expect(fullSet).toHaveLength(
+      questions.length + paraphrases.length + heldOut.length,
+    );
+  });
+});
+
+describe('run identity', () => {
+  const evaluated = [historyFixture];
+  const identityOf = (rows: readonly unknown[], version = 'approved-v2') =>
+    runIdentity({ version, files: currentFiles, evaluated: rows as never });
+
+  it('records hashes of the fixtures and of the evaluated rows', () => {
+    const identity = identityOf(fullSet, 'baseline-v2');
     expect(identity.version).toBe('baseline-v2');
     expect(identity.fixtureHashes).toEqual(fixtureHashes(currentFiles));
-    expect(identity.expectationHash).toBe(contentHash(evaluated));
-    expect(identity.matchesPin).toBe(true);
+    expect(identity.expectationHash).toBe(
+      contentHash(fullSet.map((row) => evaluatedRow(row))),
+    );
+    expect(identity.evaluatedCount).toBe(fullSet.length);
     expect(identity.baselines).toBe(BASELINES);
   });
 
-  it('flags fixtures that no longer match the pinned baseline', () => {
+  it('matches the pin for the full built-in set', () => {
+    expect(identityOf(fullSet, 'baseline-v2').matchesPin).toBe(true);
+  });
+
+  it('keeps the historical pins untouched', () => {
+    expect(BASELINES['baseline-v1'].fixtures).toEqual({
+      questions:
+        '5defdd6e794524ecc8e245711cb962e8e04dd1477eed55eda8b15d374f919e94',
+      paraphrases:
+        '1c34ea922dc144e92d69d83dd5ae20deaa65609890f245fe92aff5f09e1f7952',
+      heldOut:
+        '8072acc11efc200faf299556d877cd835e4b26812925bb504622998500061a99',
+    });
+    expect(BASELINES['baseline-v2'].fixtures).toEqual({
+      questions:
+        '6e61a29022fe4d0cf664fd2316e0ae0a76ff88d9f3cffbd087969b42bf7f6e13',
+      paraphrases:
+        '1c34ea922dc144e92d69d83dd5ae20deaa65609890f245fe92aff5f09e1f7952',
+      heldOut:
+        '2d48863b5a990bf104cc1363f057ebf483ae12999e2cb1eb19616189b8c44d5a',
+    });
+  });
+
+  it('does not match when the fixture files differ from the pin', () => {
     const identity = runIdentity({
       version: 'baseline-v2',
       files: { ...currentFiles, questions: [] },
-      evaluated,
+      evaluated: builtInFixtures({ ...currentFiles, questions: [] }),
     });
     expect(identity.matchesPin).toBe(false);
   });
 
-  it('has no pin to compare for the approved overlay', () => {
-    const identity = runIdentity({
-      version: 'approved-v2',
-      files: currentFiles,
-      evaluated,
-    });
-    expect(identity.matchesPin).toBeNull();
+  it('does not match a baseline-v1 pin against the current files', () => {
+    expect(identityOf(fullSet, 'baseline-v1').matchesPin).toBe(false);
   });
 
-  it('changes the expectation hash when one expectation changes', () => {
-    const changed = [{ ...evaluated[0], status: 'partial' }];
+  it('does not match when a custom subset is evaluated', () => {
+    expect(identityOf(fullSet.slice(1), 'baseline-v2').matchesPin).toBe(false);
+    expect(identityOf([], 'baseline-v2').matchesPin).toBe(false);
+  });
+
+  it('does not match when a custom question set is evaluated', () => {
+    expect(identityOf(evaluated, 'baseline-v2').matchesPin).toBe(false);
+  });
+
+  it('does not match when an evaluated row differs from the built-in one', () => {
+    const changed = fullSet.map((row, index) =>
+      index ? row : { ...row, requiresModelCall: true },
+    );
+    expect(identityOf(changed, 'baseline-v2').matchesPin).toBe(false);
+  });
+
+  it('has no pin to compare for the approved overlay', () => {
+    expect(identityOf(fullSet, 'approved-v2').matchesPin).toBeNull();
+  });
+
+  it('changes the hash when one expectation changes', () => {
+    const changed = [{ ...historyFixture, status: 'partial' }];
+    expect(identityOf(evaluated).expectationHash).not.toBe(
+      identityOf(changed).expectationHash,
+    );
+  });
+
+  it('changes the hash when only a prior answer in the history changes', () => {
+    const changed = [
+      {
+        ...historyFixture,
+        history: [{ ...historyFixture.history[0], answerIds: [OTHER_FACT_ID] }],
+      },
+    ];
+    expect(identityOf(changed).expectationHash).not.toBe(
+      identityOf(evaluated).expectationHash,
+    );
+  });
+
+  it('changes the hash when only requiresModelCall changes', () => {
+    const changed = [{ ...historyFixture, requiresModelCall: true }];
+    expect(identityOf(changed).expectationHash).not.toBe(
+      identityOf(evaluated).expectationHash,
+    );
+  });
+
+  it('changes the hash when expectedMode or the overlay flag changes', () => {
+    const base = identityOf(evaluated).expectationHash;
     expect(
-      runIdentity({ version: 'approved-v2', files: currentFiles, evaluated })
+      identityOf([{ ...historyFixture, expectedMode: 'local' }])
         .expectationHash,
-    ).not.toBe(
-      runIdentity({
-        version: 'approved-v2',
-        files: currentFiles,
-        evaluated: changed,
-      }).expectationHash,
+    ).not.toBe(base);
+    expect(
+      identityOf([{ ...historyFixture, expectationOverlay: true }])
+        .expectationHash,
+    ).not.toBe(base);
+  });
+
+  it('ignores JSON whitespace and key order', () => {
+    const reformatted =
+      JSON.parse(`{ "history":[{"answerIds":["${HISTORY_FACT_ID}"],
+      "question":"Which project used Flask?"}],
+      "acceptableIds":[["${HISTORY_FACT_ID}"]], "status":"answer",
+      "question":"And what about the second one?", "locale":"en",
+      "id":"dev-en-051", "suite":"dev" }`);
+    expect(identityOf([reformatted]).expectationHash).toBe(
+      identityOf(evaluated).expectationHash,
     );
   });
 });
