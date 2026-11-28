@@ -140,10 +140,13 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:4515/rank -ContentType appl
 ```
 
 The worker binds to `127.0.0.1:4515` by default. It ranks facts only when a question mentions
-a catalogue topic and keyword matching comes up empty. Qwen sees at most two
-ranked facts on this path, under the same six-second gateway deadline. When the
-ranker is unavailable or its catalogue version differs, the gateway returns the
-index response for those questions.
+a catalogue topic and keyword matching comes up empty. A follow-up that names
+no topic is ranked within the topics of the previous turn. Qwen sees at most
+four ranked facts on this path (two beside the broad topic overviews), under
+the same six-second gateway deadline. When the ranker is unavailable or its
+catalogue version differs, the gateway returns the index response for those
+questions. Restart the worker after any change to `facts.json`; the evaluator
+refuses to run against a worker that serves an older catalogue version.
 
 An optional private [Open WebUI model preset](https://docs.openwebui.com/features/workspace/models/)
 can test a system prompt and a knowledge base made from the approved public facts.
@@ -369,9 +372,23 @@ median 2.3 s, p95 3.6 s), against 84/88 for plain slot picking. It still
 misses "Did Timo build OCR recognition for Abacus?". A yes/no rule helped
 alone but lowered the combination.
 
-On the 120-question dev set it scored 30/120 end to end. Retrieval limits
-that score: only 19 of the 100 answerable questions reach the selector with a
-complete expected fact set.
+On the 120-question dev set, end to end:
+
+| Change                                              | Dev set |
+| --------------------------------------------------- | ------- |
+| Granite worker serving an older catalogue (stale)   | 30/120  |
+| Granite restarted on the current catalogue          | 44/120  |
+| Four ranked facts instead of two                    | 45/120  |
+| Follow-ups ranked within the previous turn's topics | 58/120  |
+| Project names as topics of every project source     | 60/120  |
+
+The built-in suite stayed at 87/88 throughout. Ranking the remaining topic
+facts beside a lexical shortlist left the dev set at 60/120 and dropped the
+built-in suite to 68/88, because the selector then adds same-project facts.
+
+Remaining dev misses: 21 questions reach the selector with the right facts
+but get a wrong selection, and keyword matching often finds only one part of a
+two-part question.
 
 Measure again under the Docker host's normal load.
 

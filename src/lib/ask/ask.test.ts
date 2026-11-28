@@ -1669,7 +1669,7 @@ describe('gateway', () => {
     expect(rank).toHaveBeenCalledWith(
       fallbackQuestion,
       'en',
-      ['bachelor-contribution', 'bachelor-methods'],
+      ['bachelor-contribution', 'bachelor-methods', 'bachelor-title'],
       expect.any(AbortSignal),
     );
     expect(select).toHaveBeenCalledWith(

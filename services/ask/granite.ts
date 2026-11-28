@@ -5,7 +5,8 @@ import { LOOPBACK } from './local-profile.ts';
 
 const GRANITE_PORT = 4515;
 const RANK_TIMEOUT_MS = 300;
-const MAX_RANKED_FACTS = 2;
+/** Ranked facts per request; keep equal to MAX_RESULTS in granite.py. */
+export const MAX_RANKED_FACTS = 4;
 
 export type RankFacts = (
   question: string,

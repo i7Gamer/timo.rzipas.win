@@ -37,10 +37,14 @@ class RequestTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     worker.validate_request(body)
 
-    def test_ranking_returns_only_scoped_ids_in_score_order_capped_at_two(self):
-        allowed = ["spotify-rewrite", "spotify-python", "spotify-accounts"]
+    def test_ranking_returns_only_scoped_ids_in_score_order_capped_at_four(self):
+        allowed = [
+            "spotify-rewrite", "spotify-python", "spotify-accounts",
+            "spotify-recovery", "spotify-enrichment",
+        ]
         result = worker.rank({"question": "q", "locale": "en", "ids": allowed}, FakeRanker({
-            "spotify-rewrite": 0.5, "spotify-python": 0.9, "spotify-accounts": 0.8,
+            "spotify-rewrite": 0.1, "spotify-python": 0.9, "spotify-accounts": 0.8,
+            "spotify-recovery": 0.7, "spotify-enrichment": 0.6,
         }))
         self.assertEqual(result, {"corpusVersion": worker.CORPUS_VERSION, "ids": allowed[1:]})
 
@@ -49,10 +53,10 @@ class RequestTests(unittest.TestCase):
         result = worker.rank({"question": "q", "locale": "de", "ids": ids}, FakeRanker({}))
         self.assertEqual(result["ids"], ids)
 
-    def test_ranks_the_full_scoped_catalogue_but_only_returns_two(self):
+    def test_ranks_the_full_scoped_catalogue_but_only_returns_four(self):
         ids = list(worker.FACT_IDS)
         result = worker.rank({"question": "q", "locale": "en", "ids": ids}, FakeRanker({}))
-        self.assertEqual(result["ids"], ids[:2])
+        self.assertEqual(result["ids"], ids[:4])
 
     def test_http_endpoint_returns_json_and_rejects_oversized_body(self):
         worker.Handler.ranker = FakeRanker({"spotify-rewrite": 1})

@@ -219,8 +219,28 @@ describe('ranked facts with topic candidates', () => {
     ]);
   });
 
-  it('uses the ranked facts alone when there are no candidates', () => {
-    const ranked = [fact('spotify-recovery')];
+  it('keeps only the two best ranked facts beside the topic candidates', () => {
+    const ranked = [
+      'spotify-recovery',
+      'spotify-python',
+      'tutto-stack',
+      'myspeed-stack',
+    ].map(fact);
+    const merged = rankedWithTopics(ranked, topicCandidates());
+    expect(merged.map(({ id }) => id)).toEqual([
+      'spotify-recovery',
+      'spotify-python',
+      ...topicCandidates().map(({ id }) => id),
+    ]);
+  });
+
+  it('uses all ranked facts alone when there are no candidates', () => {
+    const ranked = [
+      'spotify-recovery',
+      'spotify-python',
+      'spotify-rewrite',
+      'spotify-accounts',
+    ].map(fact);
     expect(rankedWithTopics(ranked, [])).toEqual(ranked);
   });
 

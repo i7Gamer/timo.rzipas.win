@@ -6,7 +6,7 @@
         "en": "Timo’s approved pet details",
         "de": "Timos freigegebene Angaben zu seinen Katzen"
       },
-      "topics": []
+      "topics": ["cat", "cats", "katze", "katzen", "rudi", "georgi", "benji"]
     },
     "portfolio-about": {
       "href": "/about/",
@@ -24,7 +24,15 @@
     "homelab": {
       "href": "/homelab/",
       "label": { "en": "Portfolio · Homelab", "de": "Portfolio · Homelab" },
-      "topics": []
+      "topics": [
+        "homelab",
+        "home lab",
+        "self-hosting",
+        "self hosting",
+        "selbst hosten",
+        "eigene infrastruktur",
+        "own infrastructure"
+      ]
     },
     "portfolio-website": {
       "href": "/projects/this-website/",
@@ -46,7 +54,17 @@
         "en": "SpotifyTracker · Compare performance (PR #44)",
         "de": "SpotifyTracker · Vergleichsansicht (PR #44)"
       },
-      "topics": ["compare view", "compare page", "vergleichsansicht"]
+      "topics": [
+        "compare view",
+        "compare page",
+        "vergleichsansicht",
+        "spotify",
+        "spotifytracker",
+        "music tracker",
+        "listening tracker",
+        "musik tracker",
+        "hörstatistiken"
+      ]
     },
     "tutto-compatibility-pr": {
       "href": "https://github.com/i7Gamer/Tutto/pull/14",
@@ -59,7 +77,8 @@
         "archived server",
         "tutto protocol",
         "älterer server",
-        "tutto protokoll"
+        "tutto protokoll",
+        "tutto"
       ]
     },
     "current-work": {
@@ -87,7 +106,13 @@
       "topics": [
         "spotifystatstracker",
         "spotify stats tracker",
-        "upstream import"
+        "upstream import",
+        "spotify",
+        "spotifytracker",
+        "music tracker",
+        "listening tracker",
+        "musik tracker",
+        "hörstatistiken"
       ]
     },
     "bachelor-title": {
@@ -96,7 +121,7 @@
         "en": "Bachelor thesis · Cover",
         "de": "Bachelorarbeit · Titelblatt"
       },
-      "topics": []
+      "topics": ["bachelor", "bachelor thesis", "bachelorarbeit", "thesis"]
     },
     "tutto-kniffel-tests": {
       "href": "/projects/tutto/#kniffel-test-cases",
@@ -236,7 +261,12 @@
         "en": "Experience · Technical internships at Stadler",
         "de": "Berufserfahrung · Technische Praktika bei Stadler"
       },
-      "topics": ["technical internship", "technische praktika"]
+      "topics": [
+        "technical internship",
+        "technische praktika",
+        "stadler",
+        "altenrhein"
+      ]
     },
     "stadler-internships": {
       "href": "/about/#stadler-internships",
@@ -320,7 +350,9 @@
         "htl dornbirn",
         "class website",
         "website für die klasse",
-        "klassenwebsite"
+        "klassenwebsite",
+        "htl website",
+        "htl-website"
       ]
     },
     "hearthcoil": {

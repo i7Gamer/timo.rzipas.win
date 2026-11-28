@@ -309,10 +309,6 @@ const missingDetails = [
     ],
   },
   {
-    topics: sources.bachelor.topics,
-    patterns: [/\b(?:title|titel)\b/],
-  },
-  {
     topics: sources.hearthcoil.topics,
     patterns: [
       /\b(?:release date|published|publishing studio|veroeffentlicht|veroeffentlichungsdatum)\b/,
@@ -571,15 +567,7 @@ function prepareExactQuestion(
       retrievalRequired: true,
     };
   const candidates = shortlist(question);
-  const semanticPool = candidates.length
-    ? []
-    : generalFacts
-        .filter(
-          ({ id, sourceId }) =>
-            (!development || id !== 'tutto-coach') &&
-            matchingLength(terms, sources[sourceId].topics),
-        )
-        .map(({ id }) => id);
+  const semanticPool = candidates.length ? [] : topicPool(terms);
   return {
     fallback: unknown,
     candidates,
@@ -602,6 +590,27 @@ export function prepareBoundedQuestion(
       ('retrievalRequired' in prepared && prepared.retrievalRequired),
     compound,
   };
+}
+
+/** Ids of the general facts whose source topics the terms mention. */
+function topicPool(terms: string) {
+  const development = asksAboutAICoding(terms);
+  return generalFacts
+    .filter(
+      ({ id, sourceId }) =>
+        (!development || id !== 'tutto-coach') &&
+        matchingLength(terms, sources[sourceId].topics),
+    )
+    .map(({ id }) => id);
+}
+
+/**
+ * A follow-up that names no topic ("And which institution was that at?")
+ * is ranked within the topics of the most recent turn.
+ */
+function followUpPool(history: readonly ChatTurn[]) {
+  const last = history.at(-1);
+  return last ? topicPool(normalize(last.question + ' ' + last.answer)) : [];
 }
 
 export function prepareQuestion(
@@ -636,7 +645,11 @@ export function prepareQuestion(
   const candidates = recovered?.candidates.length
     ? recovered.candidates
     : facts.filter(({ id }) => ids.includes(id));
-  const semanticPool = recovered?.semanticPool ?? [];
+  const semanticPool = recovered?.semanticPool.length
+    ? recovered.semanticPool
+    : candidates.length
+      ? []
+      : followUpPool(history);
   return {
     ...exact,
     compound,
@@ -653,9 +666,13 @@ export function prepareQuestion(
   };
 }
 
+/** Ranked facts kept beside the broad topic candidates. */
+const RANKED_BESIDE_TOPICS = 2;
+
 /**
  * Ranked facts plus broad topic candidates, so the selector can pick a
- * specific fact or a topic. Ordinary candidates are returned unchanged.
+ * specific fact or a topic. Only the best ranked facts join the topics, which
+ * keeps the prompt short. Ordinary candidates are returned unchanged.
  */
 export function rankedWithTopics(
   ranked: readonly Fact[],
@@ -663,7 +680,8 @@ export function rankedWithTopics(
 ): Fact[] {
   if (candidates.some((fact) => !isTopicCandidate(fact)))
     return [...candidates];
-  return [...ranked, ...candidates];
+  if (!candidates.length) return [...ranked];
+  return [...ranked.slice(0, RANKED_BESIDE_TOPICS), ...candidates];
 }
 
 /** Selector candidates for a pool of fact ids, used without a ranker. */

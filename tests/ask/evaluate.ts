@@ -36,6 +36,7 @@ import {
   parseQuestionSet,
   type HistoryEntry,
 } from './question-set.ts';
+import { assertRankerCorpus } from './ranker-check.ts';
 import { askModel, prepareQuestion } from '../../services/ask/selection.ts';
 import { createGateway } from '../../services/ask/server.ts';
 import {
@@ -187,6 +188,12 @@ if (
 )
   throw new Error('--rank-port requires a valid TCP port');
 const rankWithGranite = graniteRanker(rankPort);
+const RANKER_CHECK_TIMEOUT_MS = 5_000;
+if (mode === 'gateway')
+  await assertRankerCorpus(
+    rankWithGranite,
+    AbortSignal.timeout(RANKER_CHECK_TIMEOUT_MS),
+  );
 let coldProbe: {
   httpStatus: number | null;
   status: string;
