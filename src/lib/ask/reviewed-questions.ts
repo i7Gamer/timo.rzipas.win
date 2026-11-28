@@ -67,6 +67,15 @@ export function asksAboutAICoding(terms: string) {
   );
 }
 
+/** Whether a reviewed answer is partial, by its route or one of its facts. */
+function labelsGap(answer: ReviewedAnswer) {
+  return Boolean(
+    answer.partial ||
+    answer.missing ||
+    answer.ids.some((id) => facts.find((fact) => fact.id === id)?.partial),
+  );
+}
+
 /** A reviewed single-fact route, unless it lacks a detail the question asks. */
 export function reviewedFactId(terms: string) {
   const id = matchedReviewedFactId(terms);
@@ -783,7 +792,10 @@ export function approvedAnswer(
   const clauses = questionClauses(question);
   if (clauses.length <= 1) {
     const answer = approvedClause(terms);
-    return answer && unrecordedDetail(terms, answer.ids) ? undefined : answer;
+    // A reviewed partial answer already says what is missing.
+    return answer && !labelsGap(answer) && unrecordedDetail(terms, answer.ids)
+      ? undefined
+      : answer;
   }
   const parts = reviewedCompoundClauses(clauses, terms);
   const answer = combineReviewedClauses(

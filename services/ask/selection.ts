@@ -42,7 +42,10 @@ import {
   subjectChange,
   type ChatTurn,
 } from '../../src/lib/ask/history.ts';
-import { unrecordedDetail } from '../../src/lib/ask/recorded-details.ts';
+import {
+  statesAskedDetail,
+  unrecordedDetail,
+} from '../../src/lib/ask/recorded-details.ts';
 import {
   projectCandidates,
   projectFollowUp,
@@ -579,8 +582,47 @@ function prepareExactQuestion(
     fallback: unknown,
     candidates,
     semanticPool,
+    rescuePool: rescuePool(terms, candidates),
     allowBroadSearch: !candidates.length && !semanticPool.length,
   };
+}
+
+/** Source topic phrases, longest first: they name a subject, not a request. */
+const subjectPhrases = [
+  ...new Set(
+    Object.values(sources).flatMap(({ topics }) => topics.map(normalize)),
+  ),
+].sort((a, b) => b.length - a.length);
+
+/** The terms without the topic phrases they name. */
+function withoutSubjects(terms: string) {
+  let rest = ` ${terms} `;
+  for (const phrase of subjectPhrases)
+    rest = rest.replaceAll(` ${phrase} `, '  ');
+  return rest.trim().replaceAll(/\s+/g, ' ');
+}
+
+/** The head noun of a fact's facet: "methods" in "schedule analysis methods". */
+const facetHead = (facet: string) => normalize(facet).split(' ').at(-1) ?? '';
+
+/**
+ * Facts of the named topics a ranker may add when the strict candidates are
+ * weak hits: their aliases and facet head match only inside the topic names ("…the site Timo
+ * made at HTL Dornbirn" finds only the Matura through "htl" and "dornbirn").
+ * Questions naming no topic are never widened.
+ */
+function rescuePool(terms: string, candidates: readonly Fact[]) {
+  const request = withoutSubjects(terms);
+  if (
+    !candidates.length ||
+    candidates.some(({ aliases, facet }) =>
+      matchingLength(request, [...aliases, facetHead(facet)]),
+    )
+  )
+    return [];
+  return topicPool(terms).filter(
+    (id) => !candidates.some((fact) => fact.id === id),
+  );
 }
 
 export function prepareBoundedQuestion(
@@ -626,9 +668,18 @@ function topicPool(terms: string) {
  * questions and explicit subject changes keep the broad search.
  */
 function followUpPool(terms: string, history: readonly ChatTurn[]) {
-  if (!refersBack(terms) || subjectChange.test(terms)) return [];
+  const subject = referencedSubject(terms, history);
+  return subject ? topicPool(subject) : [];
+}
+
+/**
+ * The normalized last substantive turn a follow-up refers back to, or
+ * undefined for independent questions and explicit subject changes.
+ */
+function referencedSubject(terms: string, history: readonly ChatTurn[]) {
+  if (!refersBack(terms) || subjectChange.test(terms)) return;
   const last = lastSubstantiveTurn(history);
-  return last ? topicPool(normalize(last.question + ' ' + last.answer)) : [];
+  return last && normalize(last.question + ' ' + last.answer);
 }
 
 export function prepareQuestion(
@@ -723,15 +774,17 @@ function prepareMixedCompound(question: string, fallback: AskResult) {
 }
 
 /**
- * Whether a fact's own wording names what one part of the question asks.
- * The project may be named anywhere in the question ("…at Abacus, and which
- * CI server…"), so the topic is matched against the whole question. A bare
- * keyword ("Did Timo invent Flask?") is retrieval evidence, not coverage.
+ * Whether a fact answers one part of the question: its own wording names
+ * what the part asks, or it states the detail the part asks for ("…and when
+ * was that?"). The project may be named anywhere in the scope (the question,
+ * plus the turn a follow-up refers back to). A bare keyword ("Did Timo invent
+ * Flask?") is retrieval evidence, not coverage.
  */
 function factAnswersClause(fact: Fact, clause: string, scope: string) {
   const terms = normalize(clause);
   return Boolean(
-    matchingLength(terms, fact.aliases) &&
+    (matchingLength(terms, fact.aliases) ||
+      statesAskedDetail(terms, [fact.id])) &&
     matchingLength(scope, sources[fact.sourceId].topics) &&
     !unrecordedDetail(terms, [fact.id]),
   );
@@ -855,7 +908,9 @@ export async function askModel(
   const clauses = questionClauses(question);
   let additionalUnanswered = false;
   if (matches.length && clauses.length > 1) {
-    const scope = normalize(question);
+    const terms = normalize(question);
+    const subject = referencedSubject(terms, history ?? []);
+    const scope = subject ? terms + ' ' + subject : terms;
     const parts = reviewedCompoundClauses(clauses, scope);
     const covered = parts.map(
       ({ question: clause, modelIds }) =>

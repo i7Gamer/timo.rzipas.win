@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { askModel, type SelectFacts } from '../../../services/ask/selection.ts';
 import type { Locale } from '../../i18n';
 import { facts } from './catalog';
+import type { ChatTurn } from './history';
 
 const SELECTOR_TIMEOUT_MS = 1_000;
 const fact = (id: string) => facts.find((entry) => entry.id === id)!;
@@ -13,6 +14,7 @@ async function ask(
   candidateIds: readonly string[],
   pickedIds: readonly string[],
   status: 'answer' | 'partial' | 'unknown' = 'answer',
+  { history }: { history?: readonly ChatTurn[] } = {},
 ) {
   const candidates = candidateIds.map(fact);
   const select = vi.fn<SelectFacts>(async () => ({
@@ -25,8 +27,15 @@ async function ask(
     locale,
     candidates,
     AbortSignal.timeout(SELECTOR_TIMEOUT_MS),
+    history,
   );
 }
+
+const TUTORING = 'tutoring';
+const tutoringTurn: ChatTurn = {
+  question: 'Did Timo tutor programming beginners?',
+  answer: fact(TUTORING).answer.en,
+};
 
 const ABACUS = ['abacus-workflow', 'abacus-missing-data', 'abacus-jenkins'];
 const PORTFOLIO = 'portfolio-website-architecture';
@@ -114,6 +123,112 @@ describe('coverage of questions with several parts', () => {
       expect(result?.status).toBe('partial');
       expect(result?.missing).toBe('additional-question');
       expect(ids(result)).toEqual(['abacus-jenkins']);
+    },
+  );
+
+  it.each([
+    ['Where did Timo tutor beginners, and when was that?', 'en'],
+    ['Wo war Timo Tutor für Anfänger, und wann war das?', 'de'],
+  ] as const)(
+    'lets one fact that states both details cover both parts: %s',
+    async (question, locale) => {
+      const result = await ask(question, locale, [TUTORING], [TUTORING]);
+      expect(result?.status).toBe('answer');
+      expect(ids(result)).toEqual([TUTORING]);
+    },
+  );
+
+  it.each([
+    [
+      'Where did Timo tutor beginners, and which CI server was he responsible for at Abacus?',
+      'en',
+    ],
+    [
+      'Wo war Timo Tutor für Anfänger, und welchen CI-Server betreute er bei Abacus?',
+      'de',
+    ],
+  ] as const)(
+    'lets two facts cover two parts: %s',
+    async (question, locale) => {
+      const result = await ask(
+        question,
+        locale,
+        [TUTORING, 'abacus-jenkins'],
+        [TUTORING, 'abacus-jenkins'],
+      );
+      expect(result?.status).toBe('answer');
+      expect(ids(result)).toEqual([TUTORING, 'abacus-jenkins']);
+    },
+  );
+
+  it.each([
+    [
+      'Where did Timo tutor beginners, and which programming language did he teach?',
+      'en',
+    ],
+    [
+      'Wo war Timo Tutor für Anfänger, und welche Programmiersprache unterrichtete er?',
+      'de',
+    ],
+  ] as const)(
+    'marks only the unstated part missing: %s',
+    async (question, locale) => {
+      const result = await ask(question, locale, [TUTORING], [TUTORING]);
+      expect(result?.status).toBe('partial');
+      expect(result?.missing).toBe('additional-question');
+      expect(ids(result)).toEqual([TUTORING]);
+    },
+  );
+
+  it.each([
+    ['Where and when was that?', 'en'],
+    ['Wo und wann war das?', 'de'],
+  ] as const)(
+    'carries the previous turn’s subject into a follow-up: %s',
+    async (question, locale) => {
+      const result = await ask(
+        question,
+        locale,
+        [TUTORING],
+        [TUTORING],
+        'answer',
+        {
+          history: [tutoringTurn],
+        },
+      );
+      expect(result?.status).toBe('answer');
+      expect(ids(result)).toEqual([TUTORING]);
+    },
+  );
+
+  it.each([
+    ['Where and when was that?', 'en'],
+    ['Wo und wann war das?', 'de'],
+  ] as const)(
+    'does not invent a subject without history: %s',
+    async (question, locale) => {
+      const result = await ask(question, locale, [TUTORING], [TUTORING]);
+      expect(result?.status).toBe('unknown');
+    },
+  );
+
+  it.each([
+    ['New topic: where and when was that?', 'en'],
+    ['Anderes Thema: wo und wann war das?', 'de'],
+  ] as const)(
+    'drops the previous subject after a subject change: %s',
+    async (question, locale) => {
+      const result = await ask(
+        question,
+        locale,
+        [TUTORING],
+        [TUTORING],
+        'answer',
+        {
+          history: [tutoringTurn],
+        },
+      );
+      expect(result?.status).toBe('unknown');
     },
   );
 

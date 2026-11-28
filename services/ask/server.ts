@@ -20,6 +20,7 @@ import {
 import {
   rankedCandidates,
   rankWithGranite,
+  withRescue,
   type RankFacts,
 } from './granite.ts';
 import { graniteLocal, localPorts, LOOPBACK } from './local-profile.ts';
@@ -349,6 +350,19 @@ export function createGateway({
           selected = candidates.length
             ? candidates
             : poolCandidates(semanticPool);
+          // Weak strict hits get a bounded ranked rescue from their topics.
+          const rescue = 'rescuePool' in prepared ? prepared.rescuePool : [];
+          if (rank && candidates.length && rescue?.length) {
+            countModelCall();
+            selected = await withRescue(
+              rank,
+              question,
+              locale,
+              candidates,
+              rescue,
+              signal,
+            );
+          }
         }
         const result = await askModel(
           meteredSelect,

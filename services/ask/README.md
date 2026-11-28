@@ -146,7 +146,11 @@ The worker binds to `127.0.0.1:4515` by default. It ranks facts only when a ques
 a catalogue topic and keyword matching comes up empty. A follow-up that names
 no topic is ranked within the topics of the previous turn. Qwen sees at most
 four ranked facts on this path (two beside the broad topic overviews), under
-the same six-second gateway deadline. When the ranker is unavailable or its
+the same six-second gateway deadline. When keyword matching finds only weak
+hits (aliases that are just subject names, such as "HTL" or "supervisor"),
+a rescue pass ranks the named topics' facts within the ranker's 300 ms budget
+and adds at most two of them beside the hits; questions naming no topic are
+never widened, and a slow ranker leaves the hits alone. When the ranker is unavailable or its
 catalogue version differs, the gateway returns the index response for those
 questions. Restart the worker after any change to `facts.json`; the evaluator
 refuses to run against a worker that serves an older catalogue version.
