@@ -15,6 +15,7 @@ const offUrl = process.env.ASK_OFF_URL;
 const GATEWAY_STOPPED = 503;
 const NOT_FOUND = 404;
 const TURN_TIMEOUT_MS = 15_000;
+const DISCLOSURE_TIMEOUT_MS = 5_000;
 const TEST_TIMEOUT_MS = 45_000;
 const CITED_PAGE = '/homelab/';
 const LOCALES = ['en', 'de'] as const;
@@ -56,8 +57,14 @@ describe.skipIf(!askUrl)('Chromium with the Ask gateway stopped', () => {
         await page.goto('/');
         expect(await page.locator('html').getAttribute('lang')).toBe(locale);
         const panel = page.locator('[data-ask-work]');
-        await panel.locator('textarea').fill(question);
-        await panel.locator('textarea').press('Enter');
+        // The chat sits in a closed disclosure, as for a first-time visitor.
+        const input = panel.locator('textarea');
+        await panel.locator('summary.ask-summary').first().click();
+        await expect
+          .poll(() => input.isVisible(), { timeout: DISCLOSURE_TIMEOUT_MS })
+          .toBe(true);
+        await input.fill(question);
+        await input.press('Enter');
         const citation = panel.locator(
           `[data-ask-result] a[href^="${CITED_PAGE}"]`,
         );
