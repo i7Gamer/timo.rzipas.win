@@ -118,6 +118,87 @@ describe('statesAskedDetail', () => {
   });
 });
 
+describe('requested detail heads', () => {
+  const CARINI = 'carini-document-view';
+  it.each([
+    'which programming language did the carini document view use in the browser',
+    'in the browser which programming language did the carini document view use',
+    'welche programmiersprache nutzte die carini dokumentenansicht im browser',
+    'im browser welche programmiersprache nutzte die carini dokumentenansicht',
+    'which languages did the carini document view offer in the browser',
+    'which service runs on linux with a gpu cluster',
+    'the chapter on methods',
+    'it runs on an operating system of his choice',
+    'what is the processor of the cat',
+  ])('does not treat the incidental mention in %j as asking', (terms) => {
+    expect(unrecordedDetail(terms, [CARINI])).toBe(false);
+  });
+
+  it.each([
+    'which browser did the carini document view support',
+    'welchen browser unterstuetzte die carini dokumentenansicht',
+    'in which browser did the carini document view run',
+    'in welchem browser lief die carini dokumentenansicht',
+    'what browser did the carini document view support',
+    'was fuer ein browser lief die carini dokumentenansicht',
+    'what web browser did it support',
+    'on which distro did it run',
+    'what operating system did it use',
+    'which os did it use',
+    'what gpu did it use',
+    'which graphics card did it use',
+    'what was the title of the carini chapter on methods',
+    'wie lautet die versionsnummer',
+  ])('flags %j as asking for a detail the facts lack', (terms) => {
+    expect(unrecordedDetail(terms, [CARINI])).toBe(true);
+  });
+
+  it('does not require the literal noun after "what"', () => {
+    expect(
+      statesAskedDetail('what languages did the carini document view use', [
+        CARINI,
+      ]),
+    ).toBe(false);
+  });
+
+  it.each([
+    ['Which programming language did the CARINI document view use?', 'en'],
+    [
+      'Which programming language did the CARINI document view use in the browser?',
+      'en',
+    ],
+    [
+      'In the browser, which programming language did the CARINI document view use?',
+      'en',
+    ],
+    ['Welche Programmiersprache nutzte die CARINI Dokumentenansicht?', 'de'],
+    [
+      'Welche Programmiersprache nutzte die CARINI Dokumentenansicht im Browser?',
+      'de',
+    ],
+    [
+      'Im Browser: welche Programmiersprache nutzte die CARINI Dokumentenansicht?',
+      'de',
+    ],
+  ] as const)('answers %j with the document view fact', (question, locale) => {
+    expect(approvedAnswer(normalize(question), question)).toEqual({
+      ids: [CARINI],
+    });
+    expect(prepareQuestion(question, locale).fallback.status).toBe('answer');
+    expect(ids(question, locale)).toEqual([CARINI]);
+  });
+
+  it.each([
+    ['Which browser did the CARINI document view support?', 'en'],
+    ['Welchen Browser unterstützte die CARINI Dokumentenansicht?', 'de'],
+  ] as const)('still declines %j', (question, locale) => {
+    expect(approvedAnswer(normalize(question), question)).toBeUndefined();
+    expect(prepareQuestion(question, locale).fallback.status).not.toBe(
+      'answer',
+    );
+  });
+});
+
 describe('instant answers for details the catalogue lacks', () => {
   it.each([
     ['Which nginx version does this portfolio use?', 'en'],
