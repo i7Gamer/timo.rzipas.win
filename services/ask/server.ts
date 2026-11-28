@@ -52,6 +52,15 @@ const EXPERIMENTAL_SELECTOR_TIMEOUT_MS = 8_000;
 const SELECTOR_SETTLE_MS = 350;
 const SETTLE_DEADLINE_DIVISOR = 4;
 const INFERENCE_LIMIT = 60;
+/** Response header with the number of model calls the request made. */
+export const MODEL_CALLS_HEADER = 'X-Ask-Model-Calls';
+
+/** The hourly inference quota was spent when the model was first needed. */
+class InferenceQuotaError extends Error {
+  constructor(readonly wait: number) {
+    super('Inference quota spent');
+  }
+}
 
 function reviewedSummary(
   fallback: AskResult,
@@ -224,6 +233,8 @@ export function createGateway({
         if (!LOCAL_ORIGINS.includes(origin)) return fail(response, 403);
         return reply(response, 200, privatePets);
       }
+      // Model calls made for this request, readable by the evaluator.
+      response.setHeader(MODEL_CALLS_HEADER, '0');
       const requestWait = checkRequestQuota();
 
       let input;
@@ -260,10 +271,27 @@ export function createGateway({
       if (running || (!prepared.summary && Date.now() < retryAt)) {
         return unavailable(503);
       }
-      const modelWait = prepared.summary
-        ? checkSummaryQuota()
-        : checkModelQuota();
-      if (modelWait) return unavailable(429, modelWait);
+      // The inference quota is charged when the model is first invoked, not
+      // here: an abstention without evidence never reaches a model.
+      const checkInference = prepared.summary
+        ? checkSummaryQuota
+        : checkModelQuota;
+      let modelCalls = 0;
+      let charged = false;
+      const countModelCall = () => {
+        if (!charged) {
+          const wait = checkInference();
+          if (wait) throw new InferenceQuotaError(wait);
+          charged = true;
+        }
+        response.setHeader(MODEL_CALLS_HEADER, String(++modelCalls));
+      };
+      const meteredSelect: SelectFacts = (...args) => {
+        // Mirrors selectWithOllama, which skips the model without evidence.
+        const [, , evidence, , , clarifyAbout] = args;
+        if (evidence.length || clarifyAbout) countModelCall();
+        return select(...args);
+      };
 
       running = true;
       const disconnect = new AbortController();
@@ -283,6 +311,7 @@ export function createGateway({
           fallback.status === 'answer' &&
           fallback.claims.length
         ) {
+          countModelCall();
           const summary = reviewedSummary(
             fallback,
             await summarize(locale, fallback.claims, signal),
@@ -299,19 +328,25 @@ export function createGateway({
             : semanticPool;
         // Ranked facts join any broad topic candidates; without a ranker,
         // topic-scoped pools go to the selector directly.
-        const selected =
+        let selected;
+        if (
           rank &&
           pool.length &&
           (!candidates.length || candidates.every(isTopicCandidate))
-            ? rankedWithTopics(
-                await rankedCandidates(rank, question, locale, pool, signal),
-                candidates,
-              )
-            : candidates.length
-              ? candidates
-              : poolCandidates(semanticPool);
+        ) {
+          // rankedCandidates swallows ranker errors, so charge before it.
+          countModelCall();
+          selected = rankedWithTopics(
+            await rankedCandidates(rank, question, locale, pool, signal),
+            candidates,
+          );
+        } else {
+          selected = candidates.length
+            ? candidates
+            : poolCandidates(semanticPool);
+        }
         const result = await askModel(
-          select,
+          meteredSelect,
           question,
           locale,
           selected,
@@ -329,8 +364,10 @@ export function createGateway({
             ? fallback
             : result,
         );
-      } catch {
+      } catch (error) {
         if (disconnect.signal.aborted || response.destroyed) return;
+        if (error instanceof InferenceQuotaError)
+          return unavailable(429, error.wait);
         // The optional summary model can be unavailable while selection works.
         if (prepared.summary) return unavailable(503);
         if (process.env.ASK_TIMINGS === 'on') {
