@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { stripTypeScriptTypes } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -56,6 +57,21 @@ describe('Ask gateway image', () => {
     const copied = copiedFiles();
     const missing = runtimeModules(ENTRY).filter((file) => !copied.has(file));
     expect(missing).toEqual([]);
+  });
+
+  // The image runs the sources directly with Node's type stripping, which
+  // rejects syntax that needs transpiling (Vitest transpiles, so it hides it).
+  it.each(runtimeModules(ENTRY).filter((file) => file.endsWith('.ts')))(
+    'runs %s without transpiling',
+    (file) => {
+      const source = readFileSync(join(root, file), 'utf8');
+      expect(() => stripTypeScriptTypes(source)).not.toThrow();
+    },
+  );
+
+  it('rejects syntax that needs transpiling', () => {
+    const parameterProperty = 'class A { constructor(readonly b: number) {} }';
+    expect(() => stripTypeScriptTypes(parameterProperty)).toThrow();
   });
 
   it('finds the gateway’s known dependencies', () => {

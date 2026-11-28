@@ -57,8 +57,13 @@ export const MODEL_CALLS_HEADER = 'X-Ask-Model-Calls';
 
 /** The hourly inference quota was spent when the model was first needed. */
 class InferenceQuotaError extends Error {
-  constructor(readonly wait: number) {
+  // A plain field: the image runs this file with Node's type stripping, which
+  // rejects TypeScript parameter properties.
+  readonly wait: number;
+
+  constructor(wait: number) {
     super('Inference quota spent');
+    this.wait = wait;
   }
 }
 
