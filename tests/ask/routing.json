@@ -1,0 +1,78 @@
+[
+  {
+    "locale": "en",
+    "question": "Why does SpotifyTracker use Last.fm?",
+    "status": "answer",
+    "id": "spotify-enrichment"
+  },
+  {
+    "locale": "de",
+    "question": "Wozu dient Last.fm bei SpotifyTracker?",
+    "status": "answer",
+    "id": "spotify-enrichment"
+  },
+  {
+    "locale": "en",
+    "question": "How does Otto in Tutto decide which move to recommend?",
+    "status": "answer",
+    "id": "tutto-coach"
+  },
+  {
+    "locale": "de",
+    "question": "Wie berechnet Otto in Tutto seine Empfehlungen?",
+    "status": "answer",
+    "id": "tutto-coach"
+  },
+  {
+    "locale": "en",
+    "question": "What has Timo built with C# and SQL?",
+    "status": "answer",
+    "id": "stadler-plugins"
+  },
+  {
+    "locale": "de",
+    "question": "Was hat Timo mit C# und SQL entwickelt?",
+    "status": "answer",
+    "id": "stadler-plugins"
+  },
+  {
+    "locale": "en",
+    "question": "How many genres does Last.fm provide to SpotifyTracker?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Wie viele Genres liefert Last.fm an SpotifyTracker?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "What exact odds does Ask Otto show for a completed Kniffel in Tutto?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Welche genaue Wahrscheinlichkeit zeigt Otto in Tutto für einen fertigen Kniffel?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "Which Outlook version did the C# and SQL plug-ins at Stadler target?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Für welche Outlook-Version wurden die C#- und SQL-Plug-ins bei Stadler gebaut?",
+    "status": "unknown"
+  },
+  {
+    "locale": "en",
+    "question": "What is Timo working on now?",
+    "status": "unknown"
+  },
+  {
+    "locale": "de",
+    "question": "Woran arbeitet Timo gerade?",
+    "status": "unknown"
+  }
+]

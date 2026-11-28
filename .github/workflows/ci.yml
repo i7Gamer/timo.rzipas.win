@@ -56,8 +56,46 @@ jobs:
       # A short health interval so the healthy state arrives within seconds.
       - run: docker run -d --name smoke --health-interval=2s -p 127.0.0.1:8080:80 timo.rzipas.win:smoke
       - run: bash deploy/smoke-test.sh http://127.0.0.1:8080 smoke
+      # The same image in a real browser: no Ask panel, no Ask routes.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright-core install --with-deps chromium
+      - run: pnpm vitest run src/lib/ask/packaged-chromium.test.ts
+        env:
+          ASK_OFF_URL: http://127.0.0.1:8080
       - if: failure()
         run: docker logs smoke
+
+  ask-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: docker compose -p ask-ci -f deploy/docker-compose.ask.yml up --build -d
+      - run: node services/ask/smoke.ts http://127.0.0.1:18093 --startup
+      - run: docker compose -p ask-ci -f deploy/docker-compose.ask.yml stop ask
+      - run: node services/ask/smoke.ts http://127.0.0.1:18093 --gateway-offline
+      # The real browser chat renders a reviewed excerpt and citation in both
+      # languages while the gateway is stopped.
+      - run: pnpm vitest run src/lib/ask/packaged-outage.test.ts
+        env:
+          ASK_SMOKE_URL: http://127.0.0.1:18093
+      # The same turns in real Chromium through nginx.
+      - run: pnpm exec playwright-core install --with-deps chromium
+      - run: pnpm vitest run src/lib/ask/packaged-chromium.test.ts
+        env:
+          ASK_SMOKE_URL: http://127.0.0.1:18093
+      - if: failure()
+        run: docker compose -p ask-ci -f deploy/docker-compose.ask.yml logs
+      - if: always()
+        run: docker compose -p ask-ci -f deploy/docker-compose.ask.yml down
 
   docker:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

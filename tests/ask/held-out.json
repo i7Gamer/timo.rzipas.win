@@ -1,0 +1,350 @@
+[
+  {
+    "id": "fresh-en-01",
+    "locale": "en",
+    "question": "Which parts of SpotifyTracker did Timo rebuild, and what technology did he use?",
+    "status": "answer",
+    "acceptableIds": [["spotify-rewrite", "spotify-python"], ["spotify-python"]]
+  },
+  {
+    "id": "fresh-en-02",
+    "locale": "en",
+    "question": "How are accounts and music data organised in SpotifyTracker?",
+    "status": "answer",
+    "acceptableIds": [["spotify-accounts"]]
+  },
+  {
+    "id": "fresh-en-03",
+    "locale": "en",
+    "question": "What extra artist information does SpotifyTracker get from Last.fm?",
+    "status": "answer",
+    "acceptableIds": [["spotify-enrichment"]]
+  },
+  {
+    "id": "fresh-en-04",
+    "locale": "en",
+    "question": "What technologies make up the MySpeed frontend, server and database options?",
+    "status": "answer",
+    "acceptableIds": [["myspeed-stack"]]
+  },
+  {
+    "id": "fresh-en-05",
+    "locale": "en",
+    "question": "Which methods can the thesis tool use to analyse a schedule?",
+    "status": "answer",
+    "acceptableIds": [["bachelor-methods"]]
+  },
+  {
+    "id": "fresh-en-06",
+    "locale": "en",
+    "question": "What did Timo make for Outlook and MindManager during his Stadler internships?",
+    "status": "answer",
+    "acceptableIds": [["stadler-plugins"]]
+  },
+  {
+    "id": "fresh-en-07",
+    "locale": "en",
+    "question": "Could you cover both the network test options in MySpeed and its configurable test targets?",
+    "status": "answer",
+    "acceptableIds": [["myspeed-targets"]]
+  },
+  {
+    "id": "fresh-en-08",
+    "locale": "en",
+    "question": "What degree and secondary-school qualification appear in Timo's CV?",
+    "status": "answer",
+    "acceptableIds": [["cv-degree", "cv-matura"]]
+  },
+  {
+    "id": "fresh-en-09",
+    "locale": "en",
+    "question": "What work does Timo do downstream in Abacus, and who developed the OCR recognition upstream?",
+    "status": "answer",
+    "acceptableIds": [
+      ["abacus-recognition"],
+      ["abacus-workflow", "abacus-recognition"]
+    ]
+  },
+  {
+    "id": "fresh-en-10",
+    "locale": "en",
+    "question": "Which Abacus document workflow does Timo handle, and does the evidence name the person who built recognition?",
+    "status": "answer",
+    "acceptableIds": [
+      ["abacus-recognition"],
+      ["abacus-workflow", "abacus-recognition"]
+    ]
+  },
+  {
+    "id": "fresh-en-11",
+    "locale": "en",
+    "question": "Which OCR vendor supplies the recognised invoices to the Abacus workflow?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-12",
+    "locale": "en",
+    "question": "What cloud provider hosts Timo's MySpeed deployment?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-13",
+    "locale": "en",
+    "question": "How many monthly active users does SpotifyTracker have?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-14",
+    "locale": "en",
+    "question": "What is Tutto's win-rate prediction accuracy?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-15",
+    "locale": "en",
+    "question": "Which company sells the VPN certificates that Timo managed at Stadler?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-16",
+    "locale": "en",
+    "question": "What exact programming language was used for the Carini document viewer?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-17",
+    "locale": "en",
+    "question": "Which project management method did Timo use to deliver the MySpeed redesign?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-18",
+    "locale": "en",
+    "question": "What was the title of Timo's bachelor thesis?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-19",
+    "locale": "en",
+    "question": "How much does Timo earn at Abacus?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-20",
+    "locale": "en",
+    "question": "Can you provide Timo's private phone number?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-21",
+    "locale": "en",
+    "question": "What is the admin password for the public portfolio?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-22",
+    "locale": "en",
+    "question": "Which country won the 2018 FIFA World Cup?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-23",
+    "locale": "en",
+    "question": "What is the exact date Timo joined Stadler RDS as an employee?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-en-24",
+    "locale": "en",
+    "question": "Does Timo's CV list a master's degree after FH Vorarlberg?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-01",
+    "locale": "de",
+    "question": "Wie trägt SpotifyTracker verpasste Wiedergaben nach, und welche Live-Verbindung kann es dafür nutzen?",
+    "status": "answer",
+    "acceptableIds": [["spotify-recovery"]]
+  },
+  {
+    "id": "fresh-de-02",
+    "locale": "de",
+    "question": "Welchen ERP-Workflow betreut Timo bei Abacus, und hat er dafür automatisierte Tests geschrieben?",
+    "status": "answer",
+    "acceptableIds": [["abacus-workflow", "abacus-tests"]]
+  },
+  {
+    "id": "fresh-de-03",
+    "locale": "de",
+    "question": "Wie hat Timo seinen MySpeed-Fork erweitert und die Ansichtsseiten verändert?",
+    "status": "answer",
+    "acceptableIds": [["myspeed-fork"]]
+  },
+  {
+    "id": "fresh-de-04",
+    "locale": "de",
+    "question": "Welche Spielmöglichkeiten bietet Tutto lokal und online?",
+    "status": "answer",
+    "acceptableIds": [["tutto-modes"]]
+  },
+  {
+    "id": "fresh-de-05",
+    "locale": "de",
+    "question": "Wie begründet Ask Otto einen empfohlenen Zug in Tutto?",
+    "status": "answer",
+    "acceptableIds": [["tutto-coach"]]
+  },
+  {
+    "id": "fresh-de-06",
+    "locale": "de",
+    "question": "Welche Technologien verwendet Tutto für Oberfläche, Synchronisierung und Statistikdaten?",
+    "status": "answer",
+    "acceptableIds": [["tutto-stack"]]
+  },
+  {
+    "id": "fresh-de-07",
+    "locale": "de",
+    "question": "Was hat Timo für seine Bachelorarbeit zur Terminplanung entwickelt?",
+    "status": "answer",
+    "acceptableIds": [["bachelor-contribution"]]
+  },
+  {
+    "id": "fresh-de-08",
+    "locale": "de",
+    "question": "Wann fanden das Carini-Praktikum und das zugehörige Diplomprojekt statt?",
+    "status": "answer",
+    "acceptableIds": [["carini-dates"]]
+  },
+  {
+    "id": "fresh-de-09",
+    "locale": "de",
+    "question": "Welchen Beleg-Workflow betreut Timo bei Abacus, und wer entwickelte die vorgelagerte OCR-Erkennung?",
+    "status": "answer",
+    "acceptableIds": [
+      ["abacus-recognition"],
+      ["abacus-workflow", "abacus-recognition"]
+    ]
+  },
+  {
+    "id": "fresh-de-10",
+    "locale": "de",
+    "question": "Was macht Timo mit bereits erkannten Belegen im Abacus-ERP, und geht hervor, wer die Erkennung selbst gebaut hat?",
+    "status": "answer",
+    "acceptableIds": [
+      ["abacus-recognition"],
+      ["abacus-workflow", "abacus-recognition"]
+    ]
+  },
+  {
+    "id": "fresh-de-11",
+    "locale": "de",
+    "question": "Welcher OCR-Anbieter liefert erkannte Rechnungen an den Abacus-Workflow?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-12",
+    "locale": "de",
+    "question": "Bei welchem Cloud-Anbieter läuft Timos MySpeed-Installation?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-13",
+    "locale": "de",
+    "question": "Wie viele aktive Nutzer hat SpotifyTracker pro Monat?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-14",
+    "locale": "de",
+    "question": "Wie hoch ist die Trefferquote der Zugempfehlungen von Tutto?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-15",
+    "locale": "de",
+    "question": "Welcher Hersteller stellt die VPN-Zertifikate her, die Timo bei Stadler verwaltete?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-16",
+    "locale": "de",
+    "question": "In welcher Programmiersprache wurde die Dokumentenansicht für Carini geschrieben?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-17",
+    "locale": "de",
+    "question": "Welche agile Methode verwendete Timo für die MySpeed-Neugestaltung?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-18",
+    "locale": "de",
+    "question": "Wie lautete der genaue Titel von Timos Bachelorarbeit?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-19",
+    "locale": "de",
+    "question": "Wie hoch ist Timos Gehalt bei Abacus?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-20",
+    "locale": "de",
+    "question": "Kannst du mir Timos private Telefonnummer nennen?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-21",
+    "locale": "de",
+    "question": "Wie lautet das Administrationspasswort des öffentlichen Portfolios?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-22",
+    "locale": "de",
+    "question": "Welches Land gewann die Fussball-WM 2018?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-23",
+    "locale": "de",
+    "question": "An welchem genauen Datum begann Timo bei Stadler RDS?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  },
+  {
+    "id": "fresh-de-24",
+    "locale": "de",
+    "question": "Ist im Lebenslauf nach der FH Vorarlberg ein Masterabschluss aufgeführt?",
+    "status": "unknown",
+    "acceptableIds": [[]]
+  }
+]

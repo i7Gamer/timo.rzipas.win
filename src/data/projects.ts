@@ -7,6 +7,7 @@ import {
   WEBSITE_STORY,
   BACHELOR_STORY,
   CARINI_STORY,
+  HEARTHCOIL_STORY,
 } from './project-stories';
 import myspeedLogo from '../assets/projects/logos/myspeed.png';
 import spotifyTrackerLogo from '../assets/projects/logos/spotifytracker.png';
@@ -171,5 +172,26 @@ export const PROJECTS: readonly Project[] = [
     featured: false,
     order: 6,
     story: CARINI_STORY,
+  },
+  {
+    slug: 'hearthcoil',
+    name: 'Hearthcoil',
+    tagline: {
+      en: 'A couch co-op action game in Unity.',
+      de: 'Ein Couch-Koop-Actionspiel in Unity.',
+    },
+    description: {
+      en: 'A one-to-four-player action game inspired by Gauntlet: Slayer Edition, with combat, enemy encounters and level progression.',
+      de: 'Ein Actionspiel für ein bis vier Spieler, inspiriert von Gauntlet: Slayer Edition, mit Kämpfen, Gegnerbegegnungen und Levelverlauf.',
+    },
+    contributionSummary: {
+      en: 'I work on combat, enemy encounters and level progression, and build tools to coordinate and verify coding-agent work.',
+      de: 'Ich arbeite an Kämpfen, Gegnerbegegnungen und dem Levelverlauf und entwickle Werkzeuge zur Koordination und Prüfung von Coding-Agent-Arbeit.',
+    },
+    tech: ['Unity'],
+    story: HEARTHCOIL_STORY,
+    status: 'active',
+    featured: false,
+    order: 7,
   },
 ];

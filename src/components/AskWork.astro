@@ -1,0 +1,269 @@
+---
+import { t, type Locale } from '../i18n';
+import {
+  examples,
+  facts,
+  isPortfolioPageHref,
+  sourceLink,
+} from '../lib/ask/catalog';
+import { corpusVersion } from '../lib/ask/version';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const mode = import.meta.env.ASK_WORK_MODE;
+const localPets = import.meta.env.ASK_LOCAL_PETS ? 'true' : undefined;
+const messagesFor = (locale: Locale) => ({
+  wait: t(locale, 'ask.wait'),
+  offline: t(locale, 'ask.offline'),
+  partial: t(locale, 'ask.partial'),
+  evidence: t(locale, 'ask.evidence'),
+  topic: t(locale, 'ask.topic'),
+  related: t(locale, 'ask.related'),
+  seePage: t(locale, 'ask.seePage'),
+  missing: t(locale, 'ask.missing'),
+  missingSubject: t(locale, 'ask.missingSubject'),
+  spec: t(locale, 'ask.spec'),
+  length: t(locale, 'ask.length'),
+  limited: t(locale, 'ask.limited'),
+});
+const starters = [
+  t(locale, 'ask.start.homelab'),
+  t(locale, 'ask.start.spotify'),
+  t(locale, 'ask.start.ai'),
+];
+---
+
+<section
+  class="panel relative overflow-hidden shadow-sm"
+  aria-labelledby="ask-work-title"
+  data-ask-exclude
+>
+  <div class="ask-window-tools" data-ask-window-tools hidden>
+    <button
+      type="button"
+      data-ask-collapse
+      aria-controls="ask-work-body"
+      aria-label={
+        locale === 'de' ? 'Unterhaltung einklappen' : 'Collapse conversation'
+      }
+      class="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-accent focus-visible:outline-offset-2"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        class="size-3.5 text-red-700 dark:text-red-400/90"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.7"
+        stroke-linecap="round"
+      >
+        <path d="M3 8h10" />
+      </svg>
+    </button>
+    <button
+      type="button"
+      data-ask-restore
+      aria-controls="ask-work-body"
+      aria-label={
+        locale === 'de'
+          ? 'Unterhaltung wiederherstellen'
+          : 'Restore conversation'
+      }
+      class="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full focus-visible:outline-accent focus-visible:outline-offset-2"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        class="size-3.5 text-emerald-700 dark:text-emerald-400/90"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="3" y="3" width="10" height="10" rx="1.5" />
+      </svg>
+    </button>
+  </div>
+  <details
+    class="ask-details"
+    data-ask-work
+    data-mode={mode}
+    data-ask-local-pets={localPets}
+    data-version={corpusVersion}
+    data-messages={JSON.stringify(messagesFor(locale))}
+    data-ask-other-messages={JSON.stringify(
+      messagesFor(locale === 'en' ? 'de' : 'en'),
+    )}
+  >
+    <summary class="ask-summary text-muted flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 font-mono text-xs">
+      <span id="ask-work-title">{t(locale, 'ask.title')}</span>
+      <span
+        aria-hidden="true"
+        class="ask-chevron size-2 border-r border-b"
+      ></span>
+    </summary>
+    <div
+      id="ask-work-body"
+      data-ask-body
+      class="ask-body-inner border-line space-y-4 border-t px-4 py-4 sm:px-5"
+    >
+      <div
+        class="text-ink space-y-3 overflow-y-auto overscroll-contain pb-1 text-base leading-relaxed empty:hidden"
+        role="log"
+        tabindex="0"
+        aria-label={t(locale, 'ask.conversation')}
+        aria-live="polite"
+        aria-atomic="false"
+        data-ask-result
+      ></div>
+      <form data-ask-form hidden>
+        <label for="ask-question" class="sr-only">
+          {t(locale, 'ask.label')}
+        </label>
+        <p id="ask-work-hint" class="sr-only">
+          {t(locale, 'ask.hint')}
+        </p>
+        <div class="border-line bg-surface focus-within:border-accent grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 rounded-xl border p-2">
+          <textarea
+            id="ask-question"
+            aria-describedby={
+              mode === 'local'
+                ? 'ask-work-hint ask-work-history'
+                : 'ask-work-hint'
+            }
+            placeholder={t(locale, 'ask.placeholder')}
+            rows="2"
+            required
+            maxlength="1000"
+            class="placeholder:text-muted text-ink min-w-0 resize-y bg-transparent px-2 py-1.5 leading-relaxed outline-none"
+          ></textarea>
+          <button type="submit" class="btn-primary shrink-0">
+            {t(locale, 'ask.send')}
+          </button>
+        </div>
+        {mode === 'local' && (
+          <p id="ask-work-history" class="text-muted mt-2 text-xs">
+            {t(locale, 'ask.history')}
+          </p>
+        )}
+        <div
+          class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1"
+          data-ask-controls
+          hidden
+        >
+          <p class="text-muted text-xs" data-ask-topic hidden></p>
+          <button
+            type="button"
+            data-ask-reset
+            class="link-accent ml-auto rounded px-2 py-1 text-xs"
+          >
+            {t(locale, 'ask.newChat')}
+          </button>
+        </div>
+        <p
+          class="text-muted mt-2 text-sm empty:hidden"
+          aria-live="polite"
+          data-ask-validation
+        ></p>
+      </form>
+      <div class="flex flex-wrap gap-2 empty:hidden" data-ask-actions></div>
+      <div class="flex flex-wrap gap-2" data-ask-starters hidden>
+        {starters.map((question) => (
+          <button
+            type="button"
+            class="btn-muted text-sm"
+            data-ask-prompt={question}
+          >
+            {question}
+          </button>
+        ))}
+      </div>
+      <div data-ask-static-examples>
+        <h2 class="text-muted font-mono text-sm">
+          {t(locale, 'ask.examples')}
+        </h2>
+        <ul class="mt-2 space-y-2">
+          {examples.map(({ factId, question }) => {
+            const fact = facts.find(({ id }) => id === factId);
+            if (!fact) throw new Error('Unknown example fact ' + factId);
+            const source = sourceLink(fact.sourceId, locale);
+            return (
+              <li>
+                <details class="border-line rounded-md border px-3 py-2 text-sm">
+                  <summary class="text-ink cursor-pointer">
+                    {question[locale]}
+                  </summary>
+                  <p class="text-muted mt-2">{fact.answer[locale]}</p>
+                  {isPortfolioPageHref(source.href) ? (
+                    <a class="link-accent mt-1 inline-block" href={source.href}>
+                      {source.label}
+                    </a>
+                  ) : (
+                    <span class="text-muted mt-1 block text-xs">
+                      {source.label}
+                    </span>
+                  )}
+                </details>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  </details>
+</section>
+
+<style>
+  .ask-window-tools:not([hidden]) {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0.5rem;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+  }
+
+  .ask-details[data-window-controls] .ask-summary {
+    padding-inline-start: 5rem;
+  }
+
+  .ask-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .ask-chevron {
+    transform: rotate(45deg);
+  }
+
+  .ask-details[open] .ask-chevron {
+    transform: rotate(225deg);
+  }
+
+  .ask-details::details-content {
+    interpolate-size: allow-keywords;
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 240ms ease,
+      content-visibility 240ms allow-discrete;
+  }
+
+  .ask-details[open]::details-content {
+    block-size: auto;
+  }
+
+  [data-ask-result] {
+    max-height: min(52svh, 32rem);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ask-details::details-content {
+      transition: none;
+    }
+  }
+</style>

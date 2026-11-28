@@ -1,0 +1,1694 @@
+{
+  "sources": {
+    "portfolio-pets": {
+      "href": "/ask-pets.txt",
+      "label": {
+        "en": "Timo’s approved pet details",
+        "de": "Timos freigegebene Angaben zu seinen Katzen"
+      },
+      "topics": ["cat", "cats", "katze", "katzen", "rudi", "georgi", "benji"]
+    },
+    "portfolio-about": {
+      "href": "/about/",
+      "label": {
+        "en": "Portfolio · About Timo",
+        "de": "Portfolio · Über Timo"
+      },
+      "topics": ["timo rzipa", "about timo", "über timo"]
+    },
+    "portfolio-projects": {
+      "href": "/projects/",
+      "label": { "en": "Portfolio · Projects", "de": "Portfolio · Projekte" },
+      "topics": []
+    },
+    "homelab": {
+      "href": "/homelab/",
+      "label": { "en": "Portfolio · Homelab", "de": "Portfolio · Homelab" },
+      "topics": [
+        "homelab",
+        "home lab",
+        "self-hosting",
+        "self hosting",
+        "selbst hosten",
+        "eigene infrastruktur",
+        "own infrastructure"
+      ]
+    },
+    "portfolio-website": {
+      "href": "/projects/this-website/",
+      "label": {
+        "en": "Portfolio · This website",
+        "de": "Portfolio · Diese Website"
+      },
+      "topics": [
+        "this website",
+        "this portfolio",
+        "portfolio website",
+        "diese website",
+        "dieses portfolio"
+      ]
+    },
+    "spotify-compare-pr": {
+      "href": "https://github.com/i7Gamer/SpotifyTracker/pull/44",
+      "label": {
+        "en": "SpotifyTracker · Compare performance (PR #44)",
+        "de": "SpotifyTracker · Vergleichsansicht (PR #44)"
+      },
+      "topics": [
+        "compare view",
+        "compare page",
+        "vergleichsansicht",
+        "spotify",
+        "spotifytracker",
+        "music tracker",
+        "listening tracker",
+        "musik tracker",
+        "hörstatistiken"
+      ]
+    },
+    "tutto-compatibility-pr": {
+      "href": "https://github.com/i7Gamer/Tutto/pull/14",
+      "label": {
+        "en": "Tutto · Online compatibility (PR #14)",
+        "de": "Tutto · Online-Kompatibilität (PR #14)"
+      },
+      "topics": [
+        "older server",
+        "archived server",
+        "tutto protocol",
+        "älterer server",
+        "tutto protokoll",
+        "tutto"
+      ]
+    },
+    "current-work": {
+      "href": "/about/#current-work",
+      "label": {
+        "en": "About · Current work",
+        "de": "Über mich · Woran ich gerade arbeite"
+      },
+      "topics": []
+    },
+    "coilwatch-notifications": {
+      "href": "/projects/hearthcoil/#coilwatch-notifications",
+      "label": {
+        "en": "Hearthcoil · Coilwatch push notifications",
+        "de": "Hearthcoil · Push-Nachrichten in Coilwatch"
+      },
+      "topics": ["coilwatch"]
+    },
+    "spotify-upstream": {
+      "href": "/projects/spotify-stats-tracker/#upstream-import",
+      "label": {
+        "en": "SpotifyTracker · Upstream import contribution",
+        "de": "SpotifyTracker · Beitrag zum Import im Upstream-Projekt"
+      },
+      "topics": [
+        "spotifystatstracker",
+        "spotify stats tracker",
+        "upstream import",
+        "spotify",
+        "spotifytracker",
+        "music tracker",
+        "listening tracker",
+        "musik tracker",
+        "hörstatistiken"
+      ]
+    },
+    "bachelor-title": {
+      "href": "/downloads/timo-rzipa-bachelor-thesis.pdf#page=1",
+      "label": {
+        "en": "Bachelor thesis · Cover",
+        "de": "Bachelorarbeit · Titelblatt"
+      },
+      "topics": ["bachelor", "bachelor thesis", "bachelorarbeit", "thesis"]
+    },
+    "tutto-kniffel-tests": {
+      "href": "/projects/tutto/#kniffel-test-cases",
+      "label": {
+        "en": "Tutto · Kniffel test cases",
+        "de": "Tutto · Kniffel-Testfälle"
+      },
+      "topics": []
+    },
+    "spotify": {
+      "href": "/projects/spotify-stats-tracker/",
+      "label": {
+        "en": "SpotifyTracker case study",
+        "de": "Projektbericht zu SpotifyTracker"
+      },
+      "topics": [
+        "spotify",
+        "spotifytracker",
+        "music tracker",
+        "listening tracker",
+        "musik tracker",
+        "hörstatistiken"
+      ]
+    },
+    "spotify-code": {
+      "href": "/projects/spotify-stats-tracker/#contribution",
+      "label": {
+        "en": "SpotifyTracker · What I built",
+        "de": "SpotifyTracker · Mein Beitrag"
+      },
+      "topics": [
+        "spotify",
+        "spotifytracker",
+        "music tracker",
+        "listening tracker",
+        "musik tracker",
+        "hörstatistiken"
+      ]
+    },
+    "myspeed": {
+      "href": "/projects/myspeed/",
+      "label": {
+        "en": "MySpeed case study",
+        "de": "Projektbericht zu MySpeed"
+      },
+      "topics": [
+        "myspeed",
+        "speed test",
+        "speed tests",
+        "geschwindigkeitstest",
+        "geschwindigkeitstests",
+        "netzwerktests"
+      ]
+    },
+    "tutto": {
+      "href": "/projects/tutto/",
+      "label": {
+        "en": "Tutto case study",
+        "de": "Projektbericht zu Tutto"
+      },
+      "topics": ["tutto", "otto", "dice game", "würfelspiel", "kartenspiel"]
+    },
+    "bachelor": {
+      "href": "/projects/bachelor-thesis/",
+      "label": {
+        "en": "Bachelor thesis case study",
+        "de": "Projektbericht zur Bachelorarbeit"
+      },
+      "topics": [
+        "bachelor",
+        "bachelor thesis",
+        "bachelorarbeit",
+        "thesis",
+        "schedule analysis",
+        "terminanalyse",
+        "pdm"
+      ]
+    },
+    "carini": {
+      "href": "/projects/carini-management-system/",
+      "label": {
+        "en": "Carini project case study",
+        "de": "Projektbericht zu Carini"
+      },
+      "topics": [
+        "carini",
+        "sharepoint",
+        "diplomarbeit",
+        "diploma project",
+        "qualitätsmanagement"
+      ]
+    },
+    "abacus": {
+      "href": "/about/#abacus",
+      "label": {
+        "en": "Experience · Abacus",
+        "de": "Berufserfahrung · Abacus"
+      },
+      "topics": [
+        "abacus",
+        "erp",
+        "accounts receivable",
+        "accounts payable",
+        "debitoren",
+        "kreditoren",
+        "belege",
+        "belegverarbeitung"
+      ]
+    },
+    "stadler": {
+      "href": "/about/#stadler-rds",
+      "label": {
+        "en": "Experience · Stadler RDS",
+        "de": "Berufserfahrung · Stadler RDS"
+      },
+      "topics": [
+        "stadler",
+        "rds",
+        "rail data services",
+        "rail",
+        "trains",
+        "züge",
+        "zug"
+      ]
+    },
+    "tutoring": {
+      "href": "/about/#tutoring",
+      "label": {
+        "en": "Experience · Code Base Camp",
+        "de": "Berufserfahrung · Code Base Camp"
+      },
+      "topics": ["code base camp", "tutoring", "tutor"]
+    },
+    "early-stadler": {
+      "href": "/about/#early-stadler",
+      "label": {
+        "en": "Experience · Technical internships at Stadler",
+        "de": "Berufserfahrung · Technische Praktika bei Stadler"
+      },
+      "topics": [
+        "technical internship",
+        "technische praktika",
+        "stadler",
+        "altenrhein"
+      ]
+    },
+    "stadler-internships": {
+      "href": "/about/#stadler-internships",
+      "label": {
+        "en": "Experience · Stadler internships",
+        "de": "Berufserfahrung · Stadler-Praktika"
+      },
+      "topics": [
+        "stadler",
+        "altenrhein",
+        "internship",
+        "internships",
+        "praktikum",
+        "praktika"
+      ]
+    },
+    "cv": {
+      "href": {
+        "en": "/downloads/timo-rzipa-cv-en.pdf#page=2",
+        "de": "/downloads/timo-rzipa-cv-de.pdf#page=2"
+      },
+      "label": {
+        "en": "English CV · Education",
+        "de": "Deutscher Lebenslauf · Ausbildung"
+      },
+      "topics": [
+        "cv",
+        "resume",
+        "education",
+        "studies",
+        "lebenslauf",
+        "ausbildung",
+        "abschluss",
+        "studium"
+      ]
+    },
+    "cv-experience": {
+      "href": {
+        "en": "/downloads/timo-rzipa-cv-en.pdf#page=1",
+        "de": "/downloads/timo-rzipa-cv-de.pdf#page=1"
+      },
+      "label": {
+        "en": "English CV · Work experience",
+        "de": "Deutscher Lebenslauf · Berufserfahrung"
+      },
+      "topics": [
+        "abacus",
+        "jenkins",
+        "code review",
+        "junit",
+        "mockito",
+        "ci",
+        "berufserfahrung",
+        "code-reviews",
+        "softwarefehler"
+      ]
+    },
+    "hearthcoil-playtest-feedback": {
+      "href": "/projects/hearthcoil/#playtest-feedback",
+      "label": {
+        "en": "Hearthcoil · Playtest feedback",
+        "de": "Hearthcoil · Feedback aus einem Spieltest"
+      },
+      "topics": ["hearthcoil", "launcher", "werfer"]
+    },
+    "coilwatch": {
+      "href": "/projects/hearthcoil/#coilwatch",
+      "label": {
+        "en": "Hearthcoil · Coilwatch",
+        "de": "Hearthcoil · Coilwatch"
+      },
+      "topics": ["coilwatch"]
+    },
+    "htl-dornbirn": {
+      "href": "/about/#htl-dornbirn",
+      "label": {
+        "en": "Education · HTL Dornbirn",
+        "de": "Ausbildung · HTL Dornbirn"
+      },
+      "topics": [
+        "htl dornbirn",
+        "class website",
+        "website für die klasse",
+        "klassenwebsite",
+        "htl website",
+        "htl-website"
+      ]
+    },
+    "hearthcoil": {
+      "href": "/projects/hearthcoil/",
+      "label": {
+        "en": "Hearthcoil · Project story",
+        "de": "Hearthcoil · Projektbericht"
+      },
+      "topics": [
+        "hearthcoil",
+        "couch co-op",
+        "couch coop",
+        "unity",
+        "combat",
+        "enemy encounters",
+        "motion capture",
+        "motion-tracking",
+        "supervisor",
+        "coding agents",
+        "level progression",
+        "couch-koop",
+        "kämpfe",
+        "gegnerbegegnungen",
+        "spielregeln",
+        "coding-agents",
+        "levelverlauf"
+      ]
+    }
+  },
+  "facts": [
+    {
+      "id": "spotify-rewrite",
+      "sourceId": "spotify",
+      "facet": "ownership",
+      "aliases": [
+        "rewrite",
+        "rewrote",
+        "original",
+        "upstream",
+        "fork",
+        "neu entwickelt",
+        "ursprünglich",
+        "ursprung",
+        "herkunft"
+      ],
+      "answer": {
+        "en": "SpotifyTracker began as a fork of the original SpotifyStatsTracker, created by TzurSoffer. Timo rewrote the application, database layer and interface for multiple users.",
+        "de": "TzurSoffer entwickelte das ursprüngliche SpotifyStatsTracker. Timo erstellte daraus den Fork SpotifyTracker und entwickelte Anwendung, Datenbankzugriff und Oberfläche für mehrere Nutzer neu."
+      },
+      "evidence": ["spotify.provenance", "spotify.contribution"]
+    },
+    {
+      "id": "spotify-python",
+      "sourceId": "spotify-code",
+      "facet": "stack",
+      "aliases": [
+        "python",
+        "flask",
+        "stack",
+        "tech stack",
+        "technologien",
+        "technisch"
+      ],
+      "standalone": ["python", "flask"],
+      "lead": {
+        "en": "SpotifyTracker is written in Python. It uses Flask for the web app and SQLite to store listening history.",
+        "de": "SpotifyTracker ist in Python geschrieben. Die Webanwendung nutzt Flask und speichert den Hörverlauf in SQLite."
+      },
+      "answer": {
+        "en": "Timo rewrote SpotifyTracker’s application, database layer and interface using Python, Flask and SQLite.",
+        "de": "Timo entwickelte Anwendung, Datenbankzugriff und Oberfläche von SpotifyTracker mit Python, Flask und SQLite neu."
+      },
+      "evidence": ["spotify.contribution"]
+    },
+    {
+      "id": "spotify-accounts",
+      "sourceId": "spotify",
+      "facet": "multi-user design",
+      "lead": {
+        "en": "SpotifyTracker saves listening history and shows listening stats for multiple users on a self-hosted instance.",
+        "de": "SpotifyTracker speichert den Hörverlauf und zeigt Hörstatistiken für mehrere Nutzer auf einer selbst gehosteten Instanz."
+      },
+      "aliases": [
+        "multiple users",
+        "multi user",
+        "accounts",
+        "account",
+        "catalog",
+        "konten",
+        "konto",
+        "musikkatalog",
+        "mehrere nutzer"
+      ],
+      "answer": {
+        "en": "SpotifyTracker gives each account its own history, settings and listener and uses a shared music catalogue.",
+        "de": "In SpotifyTracker hat jedes Konto einen eigenen Hörverlauf, eigene Einstellungen und einen eigenen Listener. Der Musikkatalog wird gemeinsam genutzt."
+      },
+      "evidence": ["spotify.contribution"]
+    },
+    {
+      "id": "spotify-recovery",
+      "sourceId": "spotify",
+      "facet": "missed playback",
+      "aliases": [
+        "missed",
+        "recover",
+        "backfill",
+        "polling",
+        "push",
+        "websocket",
+        "verpasst",
+        "verpasste",
+        "verpassten",
+        "nachtrag",
+        "nachtragen",
+        "ausfall"
+      ],
+      "standalone": ["spotify connect", "backfill"],
+      "answer": {
+        "en": "With valid Spotify authorisation, SpotifyTracker can backfill missed plays that are still available in Spotify’s recent listening history. It cannot reconstruct an arbitrarily long outage. Live updates can use Spotify Connect over WebSocket and fall back to polling.",
+        "de": "Mit gültiger Spotify-Autorisierung kann SpotifyTracker verpasste Wiedergaben nachtragen, sofern sie noch im jüngsten Spotify-Hörverlauf verfügbar sind. Beliebig lange Ausfälle lassen sich so nicht vollständig rekonstruieren. Für Live-Updates kann Spotify Connect per WebSocket genutzt werden, bei Verbindungsproblemen greift Polling."
+      },
+      "evidence": ["spotify.decisions", "spotify.outcome"]
+    },
+    {
+      "id": "spotify-enrichment",
+      "sourceId": "spotify",
+      "facet": "Last.fm enrichment",
+      "aliases": [
+        "last fm",
+        "genres",
+        "genre",
+        "biographies",
+        "biografien",
+        "metadaten",
+        "enrichment"
+      ],
+      "standalone": ["last fm"],
+      "answer": {
+        "en": "SpotifyTracker uses Last.fm for genres and artist and album biographies. The public case study gives no fixed genre count.",
+        "de": "SpotifyTracker nutzt Last.fm für Genres sowie Künstler- und Albumbiografien. Der öffentliche Projektbericht nennt keine feste Anzahl von Genres."
+      },
+      "evidence": ["spotify.contribution"]
+    },
+    {
+      "id": "spotify-reconciliation-example",
+      "sourceId": "spotify",
+      "facet": "play reconciliation example",
+      "aliases": [
+        "duplicate play",
+        "long pause",
+        "api import",
+        "live listener",
+        "reconciliation",
+        "repeat plays",
+        "doppelte wiedergabe",
+        "doppelte wiedergaben",
+        "lange pause",
+        "langen pause",
+        "api-import",
+        "live-erfassung",
+        "abgleich",
+        "wiederholungen"
+      ],
+      "standalone": ["reconciliation bug", "abgleichsfehler"],
+      "answer": {
+        "en": "A long pause could make the Spotify API import and live listener record the same play twice. The fix reconciles them using the observed end of the listen. A later regression test keeps three genuine repeat plays when the API sends the same history again.",
+        "de": "Nach einer langen Pause konnten der Spotify-API-Import und die Live-Erfassung dieselbe Wiedergabe doppelt speichern. Die Korrektur gleicht die Einträge anhand des beobachteten Wiedergabeendes ab. Ein späterer Regressionstest prüft, dass drei echte Wiederholungen erhalten bleiben, wenn die API denselben Verlauf erneut liefert."
+      },
+      "evidence": ["spotify.decisions"]
+    },
+    {
+      "id": "abacus-workflow",
+      "sourceId": "abacus",
+      "facet": "ERP workflow",
+      "aliases": [
+        "workflow",
+        "processing",
+        "responsible",
+        "responsibility",
+        "contribution",
+        "verantwortlich",
+        "verantwortung",
+        "aufgaben",
+        "verarbeitet",
+        "prozess",
+        "vaadin"
+      ],
+      "standalone": ["vaadin", "java"],
+      "answer": {
+        "en": "At Abacus, Timo is primarily responsible for the Java/Vaadin ERP workflow that processes already recognised receivables and payables documents.",
+        "de": "Bei Abacus verantwortet Timo vor allem den Java/Vaadin-Workflow im ERP, der bereits erkannte Debitoren- und Kreditorenbelege weiterverarbeitet."
+      },
+      "evidence": ["abacus.contribution"]
+    },
+    {
+      "id": "abacus-recognition",
+      "sourceId": "abacus",
+      "facet": "recognition developed by other teams",
+      "aliases": [
+        "recognition",
+        "ocr",
+        "recognise",
+        "recognize",
+        "belegserkennung",
+        "belegerkennung",
+        "erkennung",
+        "texterkennung"
+      ],
+      "standalone": ["belegerkennung", "document recognition"],
+      "answer": {
+        "en": "Timo did not develop the automatic document recognition at Abacus; other parts and teams of the company develop it. His work starts afterwards, in the Java/Vaadin workflow that processes the recognised documents.",
+        "de": "Die automatische Belegerkennung bei Abacus hat nicht Timo entwickelt; sie stammt von anderen Bereichen und Teams des Unternehmens. Seine Arbeit beginnt danach, im Java/Vaadin-Workflow, der die erkannten Belege weiterverarbeitet."
+      },
+      "evidence": ["abacus.contribution"]
+    },
+    {
+      "id": "abacus-missing-data",
+      "sourceId": "abacus",
+      "facet": "missing data and pending documents",
+      "aliases": [
+        "missing data",
+        "missing",
+        "supplier",
+        "payment method",
+        "address",
+        "defaults",
+        "pending",
+        "fehlende daten",
+        "fehlt",
+        "fehlende",
+        "lieferant",
+        "zahlungsart",
+        "zahlungsarten",
+        "adresse",
+        "standardwerte",
+        "offene belege"
+      ],
+      "answer": {
+        "en": "Timo’s Abacus workflow checks recognised documents for missing data, such as a supplier that does not exist yet, a missing payment method or a missing address. It creates that data automatically from the available information, defaults, user settings and evaluations users prepare, then saves the document. Documents it still cannot create go to a pending list, where users see what is missing or wrong, correct it and save the document.",
+        "de": "Timos Abacus-Workflow prüft erkannte Belege auf fehlende Daten, etwa einen noch nicht erfassten Lieferanten, eine fehlende Zahlungsart oder eine fehlende Adresse. Er legt diese Daten automatisch aus den vorhandenen Informationen, Standardwerten, Benutzereinstellungen und vorbereiteten Auswertungen an und speichert danach den Beleg. Belege, die er weiterhin nicht erstellen kann, landen in einer Liste offener Belege, wo Benutzer fehlende oder falsche Daten sehen, korrigieren und den Beleg speichern."
+      },
+      "evidence": ["abacus.highlights"]
+    },
+    {
+      "id": "abacus-tests",
+      "sourceId": "abacus",
+      "facet": "workflow testing",
+      "aliases": [
+        "test",
+        "tests",
+        "testing",
+        "test coverage",
+        "automated tests",
+        "automatisierte tests",
+        "getestet"
+      ],
+      "answer": {
+        "en": "Timo improved the receivables and payables document workflow at Abacus and wrote automated tests for it.",
+        "de": "Bei Abacus verbesserte Timo den Workflow für Debitoren- und Kreditorenbelege und schrieb automatisierte Tests dafür."
+      },
+      "evidence": ["abacus.contribution"]
+    },
+    {
+      "id": "myspeed-fork",
+      "sourceId": "myspeed",
+      "facet": "fork and contribution",
+      "aliases": [
+        "fork",
+        "original",
+        "upstream",
+        "developed",
+        "contribution",
+        "erweitert",
+        "ursprung",
+        "entwickelt",
+        "weiterentwicklung"
+      ],
+      "answer": {
+        "en": "Timo forked gnmyt/MySpeed, added test providers and configurable targets, and redesigned the overview and statistics pages.",
+        "de": "Timo erweiterte seinen Fork von gnmyt/MySpeed um zusätzliche Testanbieter und konfigurierbare Ziele und gestaltete Übersicht und Statistikseiten neu."
+      },
+      "evidence": ["myspeed.provenance", "myspeed.contribution"]
+    },
+    {
+      "id": "myspeed-targets",
+      "sourceId": "myspeed",
+      "facet": "test targets and protocols",
+      "aliases": [
+        "iperf3",
+        "targets",
+        "configurable",
+        "bandwidth",
+        "testziele",
+        "bandbreite",
+        "anbieter"
+      ],
+      "standalone": ["iperf3"],
+      "answer": {
+        "en": "Timo added iperf3 to his MySpeed fork alongside Ookla, LibreSpeed and Cloudflare. Test targets and settings can be configured individually.",
+        "de": "Timo ergänzte seinen MySpeed-Fork um iperf3 neben Ookla, LibreSpeed und Cloudflare. Testziele und Messparameter lassen sich einzeln konfigurieren."
+      },
+      "evidence": ["myspeed.contribution"]
+    },
+    {
+      "id": "myspeed-stack",
+      "sourceId": "myspeed",
+      "facet": "implementation stack",
+      "aliases": [
+        "stack",
+        "react",
+        "express",
+        "bun",
+        "node",
+        "sqlite",
+        "mysql",
+        "frontend",
+        "backend",
+        "technologien"
+      ],
+      "answer": {
+        "en": "MySpeed is written in JavaScript. It uses a React frontend and an Express backend on Bun or Node.js. SQLite is the default database, with MySQL also supported.",
+        "de": "MySpeed ist in JavaScript geschrieben. Es nutzt ein React-Frontend und ein Express-Backend auf Bun oder Node.js. Standardmässig kommt SQLite zum Einsatz, MySQL wird ebenfalls unterstützt."
+      },
+      "evidence": ["myspeed.tech", "myspeed.decisions"]
+    },
+    {
+      "id": "tutto-modes",
+      "sourceId": "tutto",
+      "facet": "play modes",
+      "aliases": [
+        "online",
+        "local",
+        "rooms",
+        "multiplayer",
+        "friends",
+        "lokal",
+        "spielräume",
+        "freunde"
+      ],
+      "answer": {
+        "en": "Timo built Tutto for local play and synchronised online rooms, with physical or digital dice and optional computer opponents.",
+        "de": "Timo entwickelte Tutto für lokales Spiel und synchronisierte Online-Spielräume, mit echten oder digitalen Würfeln und optionalen Computergegnern."
+      },
+      "evidence": ["tutto.contribution"]
+    },
+    {
+      "id": "tutto-coach",
+      "sourceId": "tutto",
+      "facet": "strategy coach",
+      "aliases": [
+        "coach",
+        "otto",
+        "strategy",
+        "strategy suggestions",
+        "spielhilfe",
+        "strategie",
+        "zugvorschlag",
+        "ask otto",
+        "ask otto llm",
+        "tutto ai coach",
+        "otto sprachmodell",
+        "tutto ki spielhilfe"
+      ],
+      "standalone": ["ask otto"],
+      "answer": {
+        "en": "Ask Otto is Tutto’s rules-based strategy coach, not a language model. It evaluates possible dice outcomes and explains a suggested move using the game’s rules and turn calculations.",
+        "de": "Ask Otto ist Tuttos regelbasierte Spielhilfe, kein Sprachmodell. Sie bewertet mögliche Würfelergebnisse und erklärt einen Zugvorschlag anhand der Spielregeln und Zugberechnungen."
+      },
+      "evidence": ["tutto.decisions", "tutto.outcome"]
+    },
+    {
+      "id": "tutto-stack",
+      "sourceId": "tutto",
+      "facet": "implementation stack",
+      "aliases": [
+        "stack",
+        "react",
+        "typescript",
+        "socket io",
+        "sqlite",
+        "technologien",
+        "frontend",
+        "backend"
+      ],
+      "answer": {
+        "en": "Tutto uses TypeScript and React. Socket.IO synchronises rooms, and SQLite stores statistics.",
+        "de": "Tutto nutzt TypeScript und React. Socket.IO synchronisiert die Spielräume und SQLite speichert Statistiken."
+      },
+      "evidence": ["tutto.contribution", "tutto.decisions"]
+    },
+    {
+      "id": "bachelor-contribution",
+      "sourceId": "bachelor",
+      "facet": "editor and REST service",
+      "aliases": [
+        "editor",
+        "javascript",
+        "java",
+        "rest",
+        "spring boot",
+        "backend",
+        "built",
+        "entwickelt",
+        "diagrammeditor",
+        "umsetzung"
+      ],
+      "standalone": ["spring boot", "pdm editor", "java"],
+      "answer": {
+        "en": "For his bachelor thesis, Timo built a browser-based PDM editor and a Java/Spring Boot REST service for schedule analysis.",
+        "de": "Für seine Bachelorarbeit entwickelte Timo einen browserbasierten PDM-Editor und einen Java-/Spring-Boot-REST-Service für Terminanalysen."
+      },
+      "evidence": ["bachelor.contribution", "bachelor.decisions"]
+    },
+    {
+      "id": "bachelor-methods",
+      "sourceId": "bachelor",
+      "facet": "schedule analysis methods",
+      "aliases": [
+        "monte carlo",
+        "cpm",
+        "pert",
+        "critical path",
+        "kritischer pfad",
+        "kritischen pfads",
+        "simulation"
+      ],
+      "standalone": ["monte carlo", "pert"],
+      "answer": {
+        "en": "The thesis application provides critical-path analysis, PERT and Monte Carlo simulation. The simulation samples activity durations and reuses the critical-path calculation.",
+        "de": "Die Anwendung bietet die Methode des kritischen Pfads, PERT und Monte-Carlo-Simulation. Die Simulation zieht zufällige Vorgangsdauern und verwendet die Berechnung des kritischen Pfads erneut."
+      },
+      "evidence": ["bachelor.decisions"]
+    },
+    {
+      "id": "carini-team",
+      "sourceId": "carini",
+      "facet": "team and personal contribution",
+      "aliases": [
+        "team",
+        "contribution",
+        "ownership",
+        "technical",
+        "design",
+        "beitrag",
+        "allein",
+        "technisch",
+        "umsetzung",
+        "navigation",
+        "navigation"
+      ],
+      "answer": {
+        "en": "Carini was a team diploma project. Timo handled the technical design and implementation work described in the case study, including navigation and document views, and wrote nearly all the technical thesis sections.",
+        "de": "Carini war eine Diplomarbeit im Team. Timo übernahm technischen Entwurf und Umsetzung, darunter Navigation und Dokumentenansichten, und schrieb nahezu alle technischen Kapitel."
+      },
+      "evidence": ["carini.contribution"]
+    },
+    {
+      "id": "carini-dates",
+      "sourceId": "carini",
+      "facet": "internship and diploma dates",
+      "aliases": [
+        "when",
+        "date",
+        "dates",
+        "2014",
+        "2015",
+        "school year",
+        "wann",
+        "datum",
+        "schuljahr",
+        "zeitraum"
+      ],
+      "answer": {
+        "en": "The Carini internship ran from July through September 2014. The diploma project took place in the 2014/15 school year.",
+        "de": "Das Praktikum bei Carini dauerte von Juli bis September 2014. Die Diplomarbeit entstand im Schuljahr 2014/15."
+      },
+      "evidence": ["carini.outcome"]
+    },
+    {
+      "id": "stadler-vpn",
+      "sourceId": "stadler",
+      "facet": "Angular and certificate management",
+      "aliases": [
+        "angular",
+        "frontend",
+        "vpn",
+        "certificates",
+        "zertifikate",
+        "oberfläche"
+      ],
+      "standalone": ["vpn certificates", "vpn zertifikate"],
+      "answer": {
+        "en": "At Stadler, Timo built an Angular frontend to manage VPN certificates used for communication between trains and Rail Data Services.",
+        "de": "Bei Stadler entwickelte Timo ein Angular-Frontend zur Verwaltung der VPN-Zertifikate für die Kommunikation zwischen Zügen und Rail Data Services."
+      },
+      "evidence": ["stadler-rds.highlights"]
+    },
+    {
+      "id": "tutoring",
+      "sourceId": "tutoring",
+      "facet": "Code Base Camp tutoring",
+      "aliases": ["beginners", "courses", "anfaenger", "module"],
+      "standalone": ["code base camp", "tutor", "tutoring"],
+      "answer": {
+        "en": "As a Code Base Camp tutor at FH Vorarlberg, Timo supported programming beginners from November 2017 to February 2018 and again in August 2018.",
+        "de": "Als Tutor beim Code Base Camp an der FH Vorarlberg betreute Timo Programmiereinsteiger von November 2017 bis Februar 2018 und nochmals im August 2018."
+      },
+      "evidence": ["tutoring.summary"]
+    },
+    {
+      "id": "early-stadler",
+      "sourceId": "early-stadler",
+      "facet": "Summer technical internships at Stadler Altenrhein",
+      "aliases": ["specifications", "reports", "spezifikationen", "berichte"],
+      "standalone": ["technical internship", "technische praktika"],
+      "answer": {
+        "en": "During summer internships at Stadler Altenrhein in 2011 and 2013, Timo prepared technical specifications, reports and calculations and entered product data into databases.",
+        "de": "In den Sommerpraktika 2011 und 2013 bei Stadler Altenrhein erstellte Timo technische Spezifikationen, Berichte und Berechnungen und pflegte Produktdaten in Datenbanken ein."
+      },
+      "evidence": ["early-stadler.summary", "early-stadler.periodLabel"]
+    },
+    {
+      "id": "stadler-plugins",
+      "sourceId": "stadler-internships",
+      "facet": "C# internships and plug-ins",
+      "aliases": [
+        "outlook",
+        "mindmanager",
+        "plugins",
+        "plug ins",
+        "c sharp",
+        "c#",
+        "sql",
+        "automatisierung"
+      ],
+      "standalone": ["mindmanager", "outlook", "c#"],
+      "answer": {
+        "en": "During Stadler internships, Timo built C# and SQL plug-ins for Outlook and MindManager to share project data and make assigned tasks accessible.",
+        "de": "In Stadler-Praktika entwickelte Timo C#- und SQL-Plug-ins für Outlook und MindManager, um Projektdaten zu teilen und zugewiesene Aufgaben zugänglich zu machen."
+      },
+      "evidence": ["stadler-internships.highlights"]
+    },
+    {
+      "id": "cv-degree",
+      "sourceId": "cv",
+      "facet": "bachelor degree and years",
+      "aliases": [
+        "degree",
+        "bsc",
+        "university",
+        "vorarlberg",
+        "2018",
+        "bachelor",
+        "studied",
+        "graduated",
+        "hochschule",
+        "studierte",
+        "ausbildung",
+        "abschluss",
+        "studium"
+      ],
+      "standalone": [
+        "bsc",
+        "fh vorarlberg",
+        "software and information engineering"
+      ],
+      "answer": {
+        "en": "The CV lists a BSc in Software and Information Engineering at FH Vorarlberg, 2016–2018.",
+        "de": "Im Lebenslauf steht ein BSc in Software and Information Engineering an der FH Vorarlberg von 2016 bis 2018."
+      },
+      "evidence": ["cv.pdf"]
+    },
+    {
+      "id": "cv-matura",
+      "sourceId": "cv",
+      "facet": "school and Matura",
+      "aliases": [
+        "matura",
+        "htl",
+        "dornbirn",
+        "vocational",
+        "school",
+        "schule",
+        "betriebsinformatik"
+      ],
+      "standalone": ["htl dornbirn", "matura"],
+      "answer": {
+        "en": "The CV lists industrial engineering with a focus on business informatics at HTL Dornbirn, 2010–2015, with Matura.",
+        "de": "Im Lebenslauf steht die HTL Dornbirn von 2010 bis 2015, Wirtschaftsingenieurwesen mit Schwerpunkt Betriebsinformatik und Matura."
+      },
+      "evidence": ["cv.pdf"]
+    },
+    {
+      "id": "hearthcoil-game",
+      "sourceId": "hearthcoil",
+      "facet": "game and platform",
+      "aliases": [
+        "couch co-op",
+        "couch coop",
+        "one to four",
+        "multiplayer",
+        "gauntlet",
+        "spiel",
+        "mehrspieler",
+        "ein bis vier"
+      ],
+      "standalone": ["hearthcoil", "gauntlet: slayer edition"],
+      "answer": {
+        "en": "Hearthcoil is a one-to-four-player couch co-op action game Timo is building in Unity, inspired by Gauntlet: Slayer Edition.",
+        "de": "Hearthcoil ist ein Couch-Koop-Actionspiel für ein bis vier Spieler, das Timo in Unity entwickelt und das von Gauntlet: Slayer Edition inspiriert ist."
+      },
+      "evidence": ["hearthcoil.problem"]
+    },
+    {
+      "id": "hearthcoil-contribution",
+      "sourceId": "hearthcoil",
+      "facet": "combat and motion references",
+      "aliases": [
+        "combat",
+        "enemy encounters",
+        "animation reference",
+        "animationsreferenz",
+        "attacks",
+        "kämpfe",
+        "gegnerbegegnungen",
+        "angriffe"
+      ],
+      "standalone": ["attack animation reference", "animationsreferenz"],
+      "answer": {
+        "en": "Timo works on combat, enemy encounters and level progression. He performed attack movements himself and filmed them from two angles as animation reference for Hearthcoil.",
+        "de": "Timo arbeitet an Kämpfen, Gegnerbegegnungen und dem Levelverlauf. Er hat Angriffsbewegungen selbst vorgemacht und aus zwei Blickwinkeln gefilmt, um sie als Animationsreferenz für Hearthcoil zu nutzen."
+      },
+      "evidence": ["hearthcoil.contribution"]
+    },
+    {
+      "id": "hearthcoil-rules-testing",
+      "sourceId": "hearthcoil",
+      "facet": "testable gameplay rules",
+      "aliases": [
+        "gameplay rules",
+        "unity",
+        "combat behaviour",
+        "combat behavior",
+        "unit tests",
+        "spielregeln",
+        "kampfverhalten",
+        "testen"
+      ],
+      "standalone": ["without loading a level", "ohne ein level zu laden"],
+      "answer": {
+        "en": "Timo separated gameplay rules from Unity presentation code so combat behaviour can be tested without loading an entire level.",
+        "de": "Timo trennte die Spielregeln vom Unity-Darstellungscode, damit sich das Kampfverhalten ohne ein ganzes Level testen lässt."
+      },
+      "evidence": ["hearthcoil.decisions"]
+    },
+    {
+      "id": "hearthcoil-playtest",
+      "sourceId": "hearthcoil",
+      "facet": "weekly playtest iteration",
+      "aliases": [
+        "playtest",
+        "playtesting",
+        "partner",
+        "difficulty",
+        "boss fights",
+        "spieltest",
+        "zu einfach",
+        "bosskämpfe"
+      ],
+      "standalone": ["weekly playtest", "wöchentlich testen"],
+      "answer": {
+        "en": "Timo playtests Hearthcoil weekly and uses those sessions to spot gameplay issues. One early takeaway was that some encounters felt too easy, so he tried increasing enemy pressure and adding enemies during boss fights.",
+        "de": "Timo testet Hearthcoil wöchentlich im Spiel und nutzt diese Runden, um Probleme im Gameplay zu erkennen. Ein früher Eindruck war, dass manche Kämpfe zu leicht waren; beim Prototyping erhöhte er daher den Gegnerdruck und ergänzte während Bosskämpfen weitere Gegner."
+      },
+      "evidence": ["hearthcoil.outcome"]
+    },
+    {
+      "id": "hearthcoil-supervisor",
+      "sourceId": "hearthcoil",
+      "facet": "multi-machine agent coordination",
+      "aliases": [
+        "supervisor",
+        "coding agents",
+        "shared database",
+        "blocked",
+        "coordination",
+        "agenten",
+        "datenbank",
+        "blockiert",
+        "koordination"
+      ],
+      "standalone": ["coding-agent supervisor", "coding-agent-supervisor"],
+      "answer": {
+        "en": "Timo built a supervisor, shared database and dashboard to coordinate coding agents across several machines and track assignments, blockers, reviews and test evidence.",
+        "de": "Timo entwickelte einen Supervisor mit gemeinsamer Datenbank und Dashboard, um Coding-Agents auf mehreren Rechnern zu koordinieren und Aufgaben, Blockaden sowie Review- und Testnachweise zu verfolgen."
+      },
+      "evidence": ["hearthcoil.contribution", "hearthcoil.decisions"]
+    },
+    {
+      "id": "hearthcoil-supervisor-verification",
+      "sourceId": "hearthcoil",
+      "facet": "implementation review and test status",
+      "aliases": [
+        "review",
+        "verification",
+        "tested",
+        "unity wait",
+        "needs attention",
+        "prüfung",
+        "getestet",
+        "wartet auf unity",
+        "aufmerksamkeit"
+      ],
+      "standalone": ["implementation review test", "umsetzung review test"],
+      "answer": {
+        "en": "The supervisor keeps implementation, review and test execution distinct. Its dashboard shows what is running, waiting on Unity or needs a decision, so an agent's completion claim is not mistaken for a passed test.",
+        "de": "Der Supervisor trennt Umsetzung, Review und Testausführung. Das Dashboard zeigt, was läuft, auf Unity wartet oder eine Entscheidung braucht, damit die Fertigmeldung eines Agents nicht mit einem bestandenen Test verwechselt wird."
+      },
+      "evidence": ["hearthcoil.outcome", "hearthcoil.decisions"]
+    },
+    {
+      "id": "abacus-jenkins",
+      "sourceId": "cv-experience",
+      "facet": "Jenkins responsibility",
+      "aliases": [
+        "jenkins",
+        "ci",
+        "continuous integration",
+        "build server",
+        "integration"
+      ],
+      "standalone": ["jenkins"],
+      "answer": {
+        "en": "At Abacus, Timo took responsibility for Jenkins within his team.",
+        "de": "Bei Abacus übernahm Timo in seinem Team die Verantwortung für Jenkins."
+      },
+      "evidence": ["cv.pdf"]
+    },
+    {
+      "id": "abacus-reviews-tests",
+      "sourceId": "cv-experience",
+      "facet": "code review and testing tools",
+      "aliases": [
+        "code review",
+        "junit",
+        "mockito",
+        "software defects",
+        "review",
+        "softwarefehler",
+        "testwerkzeuge"
+      ],
+      "standalone": ["junit", "mockito"],
+      "answer": {
+        "en": "At Abacus, Timo reviews code, tests with JUnit and Mockito, and investigates software defects.",
+        "de": "Bei Abacus führt Timo Code-Reviews durch, testet mit JUnit und Mockito und analysiert Softwarefehler."
+      },
+      "evidence": ["cv.pdf"]
+    },
+    {
+      "id": "hearthcoil-launcher-playtest",
+      "sourceId": "hearthcoil-playtest-feedback",
+      "facet": "launcher animation playtest follow-up",
+      "aliases": [
+        "launcher playtest",
+        "free hand",
+        "hand position",
+        "supporting the launcher",
+        "firing the launcher",
+        "animation playback",
+        "spieltest mit dem werfer",
+        "freie hand",
+        "handposition",
+        "werfer abfeuern"
+      ],
+      "answer": {
+        "en": "During a Hearthcoil playtest, Timo noticed that a character’s free hand didn’t look like it was supporting the launcher while firing. He asked for the pose to be corrected. The animation was adjusted and a Unity test was added to check the hand position during playback.",
+        "de": "Bei einem Hearthcoil-Spieltest fiel Timo auf, dass die freie Hand einer Figur den Werfer beim Abfeuern scheinbar nicht stützte. Er bat darum, die Haltung zu korrigieren. Die Animation wurde angepasst und ein Unity-Test ergänzt, der die Handposition beim Abspielen prüft."
+      },
+      "evidence": ["hearthcoil.playtest-feedback"]
+    },
+    {
+      "id": "coilwatch-mobile-dashboard",
+      "sourceId": "coilwatch",
+      "facet": "mobile development dashboard and notifications",
+      "aliases": [
+        "mobile dashboard",
+        "companion app",
+        "notifications",
+        "decision",
+        "compact list",
+        "large cards",
+        "handy",
+        "begleit-app",
+        "benachrichtigungen",
+        "entscheidung",
+        "kompakte liste",
+        "grosse karten"
+      ],
+      "answer": {
+        "en": "Timo started Coilwatch as a mobile companion to his development dashboard. It shows what Hearthcoil’s AI assistants are working on and notifies him when something needs his decision. He chose a compact list over large cards so he could see more at a glance on his phone.",
+        "de": "Timo begann Coilwatch als mobile Ergänzung zu seinem Entwicklungsdashboard. Die App zeigt, woran die KI-Assistenten für Hearthcoil arbeiten, und benachrichtigt ihn, wenn er etwas entscheiden muss. Mit einer kompakten Liste statt grosser Karten sieht er auf dem Handy mehr auf einen Blick."
+      },
+      "evidence": ["hearthcoil.coilwatch"]
+    },
+    {
+      "id": "htl-dornbirn-class-website",
+      "sourceId": "htl-dornbirn",
+      "facet": "early class website and homelab precursor",
+      "aliases": [
+        "class website",
+        "for his class",
+        "school website",
+        "second year",
+        "file sharing",
+        "live chat",
+        "mobile view",
+        "für seine klasse",
+        "klassenwebsite",
+        "zweiten jahr",
+        "dateien teilen",
+        "live chatten",
+        "ansicht fürs handy"
+      ],
+      "answer": {
+        "en": "In his second year at HTL Dornbirn, Timo built a website for his class with file sharing, a Facebook-style feed, live chat and a separate mobile view. He sees it as an early precursor to his current homelab projects.",
+        "de": "Im zweiten Jahr an der HTL Dornbirn baute Timo eine Website für seine Klasse. Sie bot Dateifreigabe, einen Feed nach dem Vorbild von Facebook, Live-Chat und eine eigene Ansicht fürs Handy. Für Timo war die Website ein früher Vorläufer seiner heutigen Homelab-Projekte."
+      },
+      "evidence": ["htl-dornbirn.summary"]
+    },
+    {
+      "id": "current-work",
+      "sourceId": "current-work",
+      "facet": "dated portfolio work update",
+      "aliases": [
+        "working on now",
+        "current work",
+        "recent work",
+        "gerade arbeitet",
+        "aktuelle projekte"
+      ],
+      "answer": {
+        "en": "As of 24 November 2026, Timo works at Abacus on the Java/Vaadin workflow that processes already-recognised accounts receivable and payable documents. Outside work, he’s refining Hearthcoil based on playtest feedback and plans to release it on Steam as an independent developer once the game feels ready. He’s also improving his bilingual portfolio chatbot so it can find relevant public sources and cite them in its answers.",
+        "de": "Stand 24. November 2026 arbeitet Timo bei Abacus am Java/Vaadin-Workflow für bereits erkannte Debitoren- und Kreditorenbelege. Ausserhalb der Arbeit verbessert er Hearthcoil anhand von Rückmeldungen aus Spieltests. Er möchte das Spiel als unabhängiger Entwickler auf Steam veröffentlichen, sobald es sich fertig anfühlt. Ausserdem verbessert er seinen zweisprachigen Portfolio-Chatbot, damit er passende öffentliche Quellen findet und in seinen Antworten angibt."
+      },
+      "evidence": ["current-work.date", "current-work.summary"]
+    },
+    {
+      "id": "hearthcoil-release-plan",
+      "sourceId": "current-work",
+      "facet": "independent Steam release plan",
+      "aliases": [
+        "independent steam release",
+        "publisher",
+        "publishing plans",
+        "unabhängige veröffentlichung",
+        "veröffentlichungsplan"
+      ],
+      "answer": {
+        "en": "In his 24 November 2026 update, Timo said he plans to release Hearthcoil independently on Steam once the game feels ready.",
+        "de": "In seinem Update vom 24. November 2026 schreibt Timo, dass er Hearthcoil als unabhängiger Entwickler auf Steam veröffentlichen möchte, sobald sich das Spiel fertig anfühlt."
+      },
+      "evidence": ["current-work.date", "current-work.summary"]
+    },
+    {
+      "id": "coilwatch-push-notifications",
+      "sourceId": "coilwatch-notifications",
+      "facet": "how push notifications were enabled",
+      "aliases": [
+        "push notifications",
+        "push support",
+        "app export",
+        "push nachrichten",
+        "push benachrichtigungen",
+        "app export"
+      ],
+      "answer": {
+        "en": "The tool Timo used to build Coilwatch initially refused to enable push notifications. Support traced the restriction to the builder for that export. Timo brought that answer back and got push enabled in the next app export. Coilwatch could then notify him when Hearthcoil needed a decision without him having to keep checking the dashboard.",
+        "de": "Das Werkzeug, mit dem Timo Coilwatch gebaut hat, liess Push-Nachrichten zunächst nicht zu. Der Support bestätigte, dass der App-Baukasten Push in diesem Fall blockierte. Mit dieser Auskunft liessen sich Push-Nachrichten im nächsten App-Export aktivieren. Danach konnte Coilwatch Timo benachrichtigen, wenn für Hearthcoil eine Entscheidung anstand."
+      },
+      "evidence": ["hearthcoil.coilwatch-notifications"]
+    },
+    {
+      "id": "spotify-upstream-review",
+      "sourceId": "spotify-upstream",
+      "facet": "AI-assisted upstream import and review",
+      "aliases": [
+        "upstream import",
+        "track metadata",
+        "parallel fetch",
+        "sorting change",
+        "1.6.11",
+        "ursprünglichen spotifystatstracker",
+        "parallele metadatenabfrage",
+        "sortierung"
+      ],
+      "answer": {
+        "en": "Timo contributed an AI-assisted import improvement to TzurSoffer’s original SpotifyStatsTracker. The importer could fetch missing track metadata in parallel. When the maintainer questioned a sorting change, Timo removed it. It saved one file read, while network requests were the main bottleneck. The upstream project credited his contribution in release 1.6.11.",
+        "de": "Mit Unterstützung eines KI-Coding-Agents verbesserte Timo den Import in TzurSoffers ursprünglichem SpotifyStatsTracker. Fehlende Titel-Metadaten konnten parallel abgerufen werden. Als der Maintainer eine Änderung an der Sortierung hinterfragte, nahm Timo sie zurück. Sie sparte einen Dateizugriff, während die Netzwerkanfragen den Import hauptsächlich verlangsamten. Das Upstream-Projekt erwähnte seinen Beitrag in Version 1.6.11."
+      },
+      "evidence": ["spotify.upstream-import"]
+    },
+    {
+      "id": "stadler-start-month",
+      "explicitOnly": true,
+      "sourceId": "stadler",
+      "facet": "published start month at Stadler RDS",
+      "aliases": [
+        "exact date",
+        "start date",
+        "when did timo join",
+        "genaues datum",
+        "genauen datum",
+        "arbeitsbeginn"
+      ],
+      "answer": {
+        "en": "The public experience entry gives October 2018 as the start of Timo’s Stadler RDS role. It gives the month and year only.",
+        "de": "Der öffentliche Eintrag nennt Oktober 2018 als Beginn von Timos Tätigkeit bei Stadler RDS. Dort sind Monat und Jahr angegeben."
+      },
+      "evidence": ["stadler-rds.from"],
+      "partial": true
+    },
+    {
+      "id": "bachelor-title",
+      "sourceId": "bachelor-title",
+      "facet": "official bachelor thesis title",
+      "aliases": [
+        "thesis title",
+        "official title",
+        "titel der bachelorarbeit",
+        "titel von timos bachelorarbeit"
+      ],
+      "answer": {
+        "en": "The cover gives the official title: “Entwicklung einer Webapplikation zur Unterstützung der Terminplanung von Projekten”.",
+        "de": "Der Titel auf dem Deckblatt lautet «Entwicklung einer Webapplikation zur Unterstützung der Terminplanung von Projekten»."
+      },
+      "evidence": ["bachelor.pdf"]
+    },
+    {
+      "id": "cv-masters-listing",
+      "explicitOnly": true,
+      "sourceId": "cv",
+      "facet": "degrees listed in the published CV",
+      "aliases": [
+        "master’s degree listing",
+        "masters listed",
+        "masterabschluss im lebenslauf"
+      ],
+      "answer": {
+        "en": "The published CV lists a BSc and the HTL Dornbirn Matura in its education section. The section lists no master’s degree.",
+        "de": "Im Ausbildungsabschnitt des veröffentlichten Lebenslaufs stehen ein BSc und die Matura der HTL Dornbirn. Ein Masterabschluss ist dort nicht aufgeführt."
+      },
+      "evidence": ["cv.pdf"]
+    },
+    {
+      "id": "carini-document-view",
+      "sourceId": "carini",
+      "facet": "SharePoint document-view technology",
+      "aliases": [
+        "display templates",
+        "document viewer",
+        "document view",
+        "dokumentenansicht",
+        "anzeigevorlagen",
+        "jquery"
+      ],
+      "answer": {
+        "en": "The CARINI document view used custom SharePoint Display Templates. JavaScript and jQuery handled interactions such as navigation, sorting and searching.",
+        "de": "Die Dokumentenansicht bei CARINI nutzte angepasste SharePoint-Anzeigevorlagen (Display Templates). JavaScript und jQuery ermöglichten unter anderem Navigation, Sortierung und Suche."
+      },
+      "evidence": ["carini.decisions"]
+    },
+    {
+      "id": "carini-billing-scope",
+      "explicitOnly": true,
+      "sourceId": "carini",
+      "facet": "documented scope of the CARINI project",
+      "aliases": [],
+      "answer": {
+        "en": "The public CARINI case study documents a SharePoint document-management system. It provides no evidence of monthly billing work or a programming language used for billing.",
+        "de": "Der öffentliche CARINI-Projektbericht beschreibt ein Dokumentenmanagementsystem auf Basis von SharePoint. Er belegt keine Arbeit an der Monatsabrechnung und nennt dafür keine Programmiersprache."
+      },
+      "evidence": ["carini.problem", "carini.decisions"],
+      "partial": true
+    },
+    {
+      "id": "myspeed-forecast-scope",
+      "explicitOnly": true,
+      "sourceId": "myspeed",
+      "facet": "measurement and forecasting scope",
+      "aliases": [],
+      "answer": {
+        "en": "MySpeed measures connection speed and compares historical results. The public case study documents measurement and history, and contains no bandwidth forecasting or bill prediction feature.",
+        "de": "MySpeed misst die Verbindungsgeschwindigkeit und vergleicht frühere Ergebnisse. Der öffentliche Projektbericht beschreibt Messungen und ihren Verlauf und führt keine Prognose für Bandbreitenbedarf oder Kosten auf."
+      },
+      "evidence": ["myspeed.problem", "myspeed.outcome"]
+    },
+    {
+      "id": "tutto-kniffel-completed-fixture",
+      "explicitOnly": true,
+      "sourceId": "tutto-kniffel-tests",
+      "facet": "completed Classic Kniffel coach test",
+      "aliases": [
+        "classic kniffel coach test",
+        "bank 2000",
+        "kniffel test der spielhilfe"
+      ],
+      "answer": {
+        "en": "In the pinned Classic test, dice 1–5 were kept, the last die just rolled a 6, the prior turn score was zero and another draw was disabled. Ask Otto recommends banking 2,000 points and shows no bust percentage because there is no next roll.",
+        "de": "Im referenzierten Test mit klassischen Regeln sind die Würfel 1–5 bereits behalten, der letzte Würfel zeigt gerade eine 6, der bisherige Zugpunktestand ist null und eine weitere Karte kann nicht gezogen werden. Ask Otto empfiehlt, 2’000 Punkte zu sichern. Da kein weiterer Wurf möglich ist, zeigt die Spielhilfe keine Wahrscheinlichkeit für einen Fehlwurf an."
+      },
+      "evidence": ["tutto.kniffel-test-cases"]
+    },
+    {
+      "id": "tutto-kniffel-completion-fixture",
+      "explicitOnly": true,
+      "sourceId": "tutto-kniffel-tests",
+      "facet": "before-final-roll Kniffel probability test",
+      "aliases": [
+        "kniffel probability test",
+        "last die before the roll",
+        "kniffel wahrscheinlichkeitstest"
+      ],
+      "answer": {
+        "en": "In the separate pinned test with dice 1–5 kept and the last die still to be rolled, the probability of completing Kniffel is 1 in 6 in both Classic and Modernized rules.",
+        "de": "Im separaten referenzierten Test sind die Würfel 1–5 bereits behalten und der letzte Wurf steht noch aus. In der klassischen und in der modernisierten Regelvariante beträgt die Wahrscheinlichkeit für einen vollständigen Kniffel 1 zu 6."
+      },
+      "evidence": ["tutto.kniffel-test-cases"]
+    },
+    {
+      "id": "career-role-titles",
+      "sourceId": "portfolio-about",
+      "facet": "public job titles at Abacus, Stadler, Code Base Camp and CARINI",
+      "aliases": ["job titles", "job roles", "berufliche stationen"],
+      "answer": {
+        "en": "Timo is a Software Engineer at Abacus. Previously, he was a Software Developer at Stadler RDS and a Tutor at Code Base Camp. He completed software engineering and earlier technical internships at Stadler Altenrhein, and an internship at CARINI.",
+        "de": "Timo arbeitet als Software Engineer bei Abacus. Zuvor war er Softwareentwickler bei Stadler RDS und Tutor beim Code Base Camp. Bei Stadler Altenrhein absolvierte er Praktika in der Softwareentwicklung und frühere technische Praktika, bei CARINI ein weiteres Praktikum."
+      },
+      "evidence": [
+        "abacus.role",
+        "stadler-rds.role",
+        "tutoring.role",
+        "stadler-internships.role",
+        "early-stadler.role",
+        "carini.role"
+      ]
+    },
+    {
+      "id": "portfolio-role-location",
+      "sourceId": "portfolio-about",
+      "facet": "software engineering and country",
+      "aliases": [
+        "based in",
+        "software engineer based",
+        "where is timo based",
+        "based in switzerland",
+        "wo ist timo ansässig",
+        "standort schweiz"
+      ],
+      "answer": {
+        "en": "Timo is a software engineer based in Switzerland.",
+        "de": "Timo ist Softwareentwickler und lebt in der Schweiz."
+      },
+      "evidence": ["about.intro"]
+    },
+    {
+      "id": "portfolio-spoken-languages",
+      "sourceId": "portfolio-about",
+      "facet": "spoken languages and English qualification",
+      "aliases": [
+        "spoken languages",
+        "english level",
+        "german native speaker",
+        "cambridge cae",
+        "c1 english",
+        "sprachkenntnisse",
+        "englischkenntnisse",
+        "sprachniveau englisch",
+        "deutsch muttersprache",
+        "cambridge zertifikat"
+      ],
+      "answer": {
+        "en": "German is Timo’s native language. His English is C1 (Cambridge CAE).",
+        "de": "Deutsch ist Timos Muttersprache. Seine Englischkenntnisse entsprechen dem Niveau C1 (Cambridge CAE)."
+      },
+      "evidence": ["about.spokenLanguages"]
+    },
+    {
+      "id": "spotify-compare-performance",
+      "sourceId": "spotify-compare-pr",
+      "facet": "comparison view query performance benchmark",
+      "aliases": [
+        "compare performance",
+        "compare sorting",
+        "spotifytracker performance",
+        "compare benchmark",
+        "compare query latency",
+        "spotifytracker vergleich",
+        "vergleichsansicht sortieren",
+        "vergleichsansicht benchmark",
+        "vergleich abfragen schneller"
+      ],
+      "answer": {
+        "en": "When the sort order changed, SpotifyTracker’s Compare page used to calculate statistics it didn’t display. For sort-only refreshes, it now fetches just the displayed lists. In a warm offline benchmark on a read-only database with three users, data gathering was 31–68% faster with identical results. The benchmark did not measure live page load times.",
+        "de": "Wenn sich die Sortierung änderte, berechnete SpotifyTrackers Vergleichsansicht Statistiken, die sie nicht anzeigte. Beim reinen Umsortieren lädt sie jetzt nur noch die angezeigten Listen. In einem Offline-Benchmark nach dem Aufwärmen auf einer schreibgeschützten Datenbank mit drei Nutzern war der Datenabruf bei identischen Ergebnissen 31–68 % schneller. Die Ladezeit der Live-Seite wurde nicht gemessen."
+      },
+      "evidence": ["spotify-compare-pr.href"]
+    },
+    {
+      "id": "portfolio-website-architecture",
+      "sourceId": "portfolio-website",
+      "facet": "bilingual self-hosted portfolio architecture",
+      "aliases": [
+        "portfolio website stack",
+        "built this site",
+        "website hosting",
+        "same urls",
+        "how is this site hosted",
+        "portfolio hosting",
+        "wo läuft diese website",
+        "wie ist die website gebaut",
+        "zweisprachige website",
+        "sprachwahl nginx",
+        "website selbst gehostet",
+        "astro",
+        "typescript",
+        "framework",
+        "programming language",
+        "programmiersprache"
+      ],
+      "answer": {
+        "en": "Timo built this portfolio with Astro and TypeScript and hosts it on his own hardware. English and German use the same URLs. nginx serves the matching static build using the visitor’s saved language choice or browser preference.",
+        "de": "Timo entwickelte dieses Portfolio mit Astro und TypeScript und hostet es auf eigener Hardware. Die englische und die deutsche Fassung verwenden dieselben URLs. nginx liefert die passende statische Fassung anhand der gespeicherten Sprachwahl oder der Browsereinstellung aus."
+      },
+      "evidence": [
+        "website.problem",
+        "website.contribution",
+        "website.decisions",
+        "website.outcome"
+      ]
+    },
+    {
+      "id": "tutto-online-compatibility",
+      "sourceId": "tutto-compatibility-pr",
+      "facet": "backward-compatible online protocol refactor",
+      "aliases": [
+        "tutto compatibility",
+        "tutto online protocol",
+        "older server",
+        "tutto snapshots",
+        "compact commands",
+        "rückwärtskompatibilität tutto",
+        "tutto protokoll",
+        "älterer server",
+        "tutto spielzustand übertragen"
+      ],
+      "answer": {
+        "en": "Tutto’s online client stopped sending full game snapshots the server ignored. It sends smaller commands while keeping the outer message format expected by the older server. The new client passed seven integration cases against the unchanged archived server version 321175e.",
+        "de": "Tuttos Online-Client sendet keine vollständigen Spielzustände mehr, die der Server ohnehin ignorierte. Stattdessen sendet er kleinere Befehle und behält die vom älteren Server erwartete Nachrichtenhülle bei. Der neue Client bestand sieben Integrationstests mit der unveränderten, archivierten Serverversion 321175e."
+      },
+      "evidence": ["tutto-compatibility-pr.href"]
+    },
+    {
+      "id": "about.cats",
+      "sourceId": "portfolio-pets",
+      "facet": "number of pet cats",
+      "aliases": [],
+      "answer": {
+        "en": "Timo has three cats.",
+        "de": "Timo hat drei Katzen."
+      },
+      "evidence": ["pets.txt"]
+    },
+    {
+      "id": "about.cats.names",
+      "sourceId": "portfolio-pets",
+      "facet": "names of the cats",
+      "aliases": [],
+      "answer": {
+        "en": "Timo’s cats are called Rudi, Georgi and Benji.",
+        "de": "Timos Katzen heissen Rudi, Georgi und Benji."
+      },
+      "evidence": ["pets.txt"]
+    },
+    {
+      "id": "about.cats.rudi",
+      "sourceId": "portfolio-pets",
+      "facet": "Rudi’s coat colour and type",
+      "aliases": [],
+      "answer": {
+        "en": "Rudi is a black domestic cat.",
+        "de": "Rudi ist eine schwarze Hauskatze."
+      },
+      "evidence": ["pets.txt"]
+    },
+    {
+      "id": "about.cats.georgi",
+      "sourceId": "portfolio-pets",
+      "facet": "Georgi’s coat colour and breed",
+      "aliases": [],
+      "answer": {
+        "en": "Georgi is a brown rosetted Bengal.",
+        "de": "Georgi ist ein brauner Bengal mit Rosetten."
+      },
+      "evidence": ["pets.txt"]
+    },
+    {
+      "id": "about.cats.benji",
+      "sourceId": "portfolio-pets",
+      "facet": "Benji’s descriptive coat colour and breed",
+      "aliases": [],
+      "answer": {
+        "en": "Benji is a Bengal with a silver-grey coat and dark spots. His exact coat variety is unverified.",
+        "de": "Benji ist ein Bengal mit silbergrauem Fell und dunklen Flecken. Seine genaue Fellvariante ist nicht verifiziert."
+      },
+      "evidence": ["pets.txt"]
+    },
+    {
+      "id": "about.cats.sex",
+      "sourceId": "portfolio-pets",
+      "facet": "The three cats are male",
+      "aliases": [],
+      "answer": {
+        "en": "All three of Timo’s cats are male.",
+        "de": "Alle drei Katzen von Timo sind männlich."
+      },
+      "evidence": ["pets.txt"]
+    },
+    {
+      "id": "portfolio-leisure",
+      "sourceId": "portfolio-projects",
+      "facet": "personal software interests",
+      "aliases": [],
+      "answer": {
+        "en": "Timo builds software for things he wants to use himself, including listening statistics, network monitoring and games he can play with friends.",
+        "de": "Timo entwickelt Software, die er selbst nutzen möchte, etwa für Hörstatistiken, Netzwerküberwachung und Spiele mit Freunden."
+      },
+      "evidence": ["projects.intro"]
+    },
+    {
+      "id": "portfolio-project-inventory",
+      "sourceId": "portfolio-projects",
+      "facet": "public project page inventory",
+      "aliases": [],
+      "answer": {
+        "en": "The portfolio’s project pages cover SpotifyTracker, Tutto, timo.rzipas.win, MySpeed, Bachelor thesis, Carini · SharePoint and Hearthcoil.",
+        "de": "Die Projektseiten des Portfolios behandeln SpotifyTracker, Tutto, timo.rzipas.win, MySpeed, Bachelorarbeit, Carini · SharePoint und Hearthcoil."
+      },
+      "evidence": ["projects.entries"]
+    },
+    {
+      "id": "portfolio-pitch",
+      "sourceId": "portfolio-about",
+      "facet": "software engineering work at Abacus and earlier Stadler RDS",
+      "aliases": [],
+      "answer": {
+        "en": "Timo builds software that automates workflows. At Abacus he works on document processing for accounting teams, and at Stadler RDS he built an interface for managing train VPN certificates.",
+        "de": "Timo entwickelt Software, die Arbeitsabläufe automatisiert. Bei Abacus arbeitet er an der Belegverarbeitung für die Buchhaltung. Bei Stadler RDS baute er eine Oberfläche zur Verwaltung von VPN-Zertifikaten für Züge."
+      },
+      "evidence": [
+        "abacus.role",
+        "abacus.contribution",
+        "stadler-rds.role",
+        "stadler-rds.highlights"
+      ]
+    },
+    {
+      "id": "homelab-motivation",
+      "sourceId": "homelab",
+      "facet": "why Timo self-hosts",
+      "aliases": [],
+      "answer": {
+        "en": "Timo self-hosts to understand the whole stack hands-on, from DNS and TLS to proxies, backups and monitoring. He also keeps his data on his own hardware so he can query and analyse it himself.",
+        "de": "Timo betreibt seine Dienste selbst, um den ganzen Stack praktisch zu verstehen, von DNS und TLS bis zu Proxys, Backups und Monitoring. Seine Daten bleiben auf seiner eigenen Hardware, wo er sie selbst abfragen und auswerten kann."
+      },
+      "evidence": ["homelab.why"]
+    },
+    {
+      "id": "cv-2015-2016",
+      "sourceId": "portfolio-about",
+      "facet": "published study and internship timeline for 2015 to 2016",
+      "aliases": [],
+      "answer": {
+        "en": "Timo completed his Matura at HTL Dornbirn in 2015 and began his BSc at FH Vorarlberg in 2016. His CV also lists several software engineering internships at Stadler across 2015–2018. The published dates are given in years.",
+        "de": "Timo schloss 2015 die HTL Dornbirn mit der Matura ab und begann 2016 sein BSc-Studium an der FH Vorarlberg. Im Lebenslauf stehen auch mehrere Praktika in der Softwareentwicklung bei Stadler zwischen 2015 und 2018. Die veröffentlichten Daten sind Jahresangaben."
+      },
+      "evidence": [
+        "cv.pdf",
+        "htl-dornbirn.to",
+        "stadler-internships.from",
+        "stadler-internships.to"
+      ]
+    }
+  ],
+  "examples": [
+    {
+      "factId": "spotify-python",
+      "question": {
+        "en": "Where can I see Python you actually wrote?",
+        "de": "Wo sehe ich Python-Code, den du selbst geschrieben hast?"
+      }
+    },
+    {
+      "factId": "abacus-workflow",
+      "question": {
+        "en": "What do you work on at Abacus?",
+        "de": "Woran arbeitest du bei Abacus?"
+      }
+    },
+    {
+      "factId": "bachelor-methods",
+      "question": {
+        "en": "What methods did your bachelor thesis use?",
+        "de": "Welche Methoden nutzt deine Bachelorarbeit?"
+      }
+    },
+    {
+      "factId": "hearthcoil-launcher-playtest",
+      "question": {
+        "en": "What changed after the Hearthcoil launcher playtest?",
+        "de": "Was änderte sich nach dem Spieltest mit dem Werfer in Hearthcoil?"
+      }
+    },
+    {
+      "factId": "coilwatch-mobile-dashboard",
+      "question": {
+        "en": "What is Coilwatch?",
+        "de": "Was ist Coilwatch?"
+      }
+    },
+    {
+      "factId": "htl-dornbirn-class-website",
+      "question": {
+        "en": "What did Timo build for his class at HTL Dornbirn?",
+        "de": "Was hat Timo an der HTL Dornbirn für seine Klasse gebaut?"
+      }
+    }
+  ]
+}

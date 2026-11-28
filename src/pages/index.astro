@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import portrait from '../assets/portrait.jpg';
+import AskWork from '../components/AskWork.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import SocialLinks from '../components/SocialLinks.astro';
@@ -16,6 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { featuredProjects } from '../lib/projects';
 
 const locale = getLocale();
+const showAskWork = import.meta.env.ASK_WORK_MODE !== 'off';
 // Rendered at 72px; densities cover 2x and 3x screens.
 const PORTRAIT_SIZE = 72;
 const PORTRAIT_DENSITIES = [1, 2, 3];
@@ -112,6 +114,8 @@ const TERMINAL_STRINGS = {
     </div>
   </section>
 
+  {showAskWork && <AskWork locale={locale} />}
+
   <div class="space-y-16 py-10">
     <section>
       <div class="flex flex-wrap items-end justify-between gap-4">
@@ -159,5 +163,14 @@ const TERMINAL_STRINGS = {
   const host = document.querySelector('[data-hero-terminal]');
   if (host instanceof HTMLElement) {
     setUpTerminal(host);
+  }
+
+  if (import.meta.env.ASK_WORK_MODE !== 'off') {
+    const panel = document.querySelector('[data-ask-work]');
+    if (panel instanceof HTMLElement) {
+      void import('../lib/ask/browser').then(({ setupAskWork }) =>
+        setupAskWork(panel),
+      );
+    }
   }
 </script>

@@ -38,10 +38,14 @@ export const JOBS: readonly Job[] = [
       de: 'Softwareentwicklung im Team Debitoren/Kreditoren Belege Prozess, mit Fokus auf die automatische Verarbeitung von Belegen.',
     },
     contribution: {
-      en: 'Primarily responsible for the Java/Vaadin workflow in the ERP system that processes automatically recognised documents for accounts receivable and accounts payable. Improved the workflow and wrote automated tests for it.',
-      de: 'Hauptsächlich für den Java/Vaadin-Workflow im ERP-System verantwortlich, der automatisch erkannte Belege für die Debitoren- und Kreditorenbuchhaltung verarbeitet. Den Ablauf verbessert und automatisierte Tests dafür geschrieben.',
+      en: 'Primarily responsible for the Java/Vaadin workflow in the ERP system that processes automatically recognised documents for accounts receivable and accounts payable. The recognition itself is developed by other parts and teams of the company. Improved the workflow and wrote automated tests for it.',
+      de: 'Hauptsächlich für den Java/Vaadin-Workflow im ERP-System verantwortlich, der automatisch erkannte Belege für die Debitoren- und Kreditorenbuchhaltung verarbeitet. Die Erkennung selbst entwickeln andere Bereiche und Teams des Unternehmens. Den Ablauf verbessert und automatisierte Tests dafür geschrieben.',
     },
     highlights: [
+      {
+        en: 'The workflow checks recognised documents for missing data, such as a supplier that does not exist yet, a missing payment method or a missing address. It creates that data automatically from the available information, defaults, user settings and evaluations users prepare, then saves the document. Documents it still cannot create go to a pending list, where users see what is missing or wrong, correct it and save the document.',
+        de: 'Der Workflow prüft erkannte Belege auf fehlende Daten, etwa einen noch nicht erfassten Lieferanten, eine fehlende Zahlungsart oder eine fehlende Adresse. Er legt diese Daten automatisch aus den vorhandenen Informationen, Standardwerten, Benutzereinstellungen und vorbereiteten Auswertungen an und speichert danach den Beleg. Belege, die er weiterhin nicht erstellen kann, landen in einer Liste offener Belege, wo Benutzer fehlende oder falsche Daten sehen, korrigieren und den Beleg speichern.',
+      },
       {
         en: 'Investigate and fix bugs, and maintain existing applications.',
         de: 'Fehler analysieren und beheben sowie bestehende Anwendungen pflegen.',

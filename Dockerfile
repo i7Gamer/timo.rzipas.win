@@ -15,8 +15,10 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 ARG PUBLIC_BUILD_SHA=""
+ARG ASK_WORK=off
 ENV PUBLIC_BUILD_SHA=$PUBLIC_BUILD_SHA
-RUN node scripts/build.mjs
+RUN node scripts/build.mjs && \
+    if [ "$ASK_WORK" = off ]; then mv dist /site; else mv "dist/ask-$ASK_WORK" /site; fi
 
 # The full image includes njs for weighted Accept-Language negotiation.
 FROM nginx:1.31-alpine
@@ -25,7 +27,7 @@ COPY deploy/language.js /etc/nginx/language.js
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 # Included by nginx.conf at exactly this path (src/deploy.test.ts checks both sides).
 COPY deploy/security-headers.conf /etc/nginx/snippets/security-headers.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /site /usr/share/nginx/html
 # Built into the image so every deployment gets it, not only the ones that
 # copied a healthcheck block from deploy/docker-compose.example.yml. Three
 # misses in a row mark the container unhealthy in `docker ps`.
