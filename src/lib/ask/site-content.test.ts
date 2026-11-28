@@ -75,6 +75,35 @@ function index() {
 }
 
 describe('Ask public page content', () => {
+  it.each([
+    [
+      'Which programming language did the CARINI document view use in the browser?',
+      'en',
+    ],
+    [
+      'Welche Programmiersprache nutzte die CARINI Dokumentenansicht im Browser?',
+      'de',
+    ],
+  ] as const)(
+    'answers %j offline despite the incidental browser mention',
+    (question, locale) => {
+      const content = { ...index(), locale };
+      content.pages.push(
+        extractPage(
+          '<main><h1>Carini</h1></main>',
+          '/projects/carini-management-system/',
+        ),
+      );
+      const result = findSiteContent(question, content, 'overview');
+      const fact = facts.find(({ id }) => id === 'carini-document-view');
+      expect(result).toMatchObject({
+        status: 'answer',
+        lead: fact?.answer[locale],
+        sources: [{ href: '/projects/carini-management-system/' }],
+      });
+    },
+  );
+
   it('uses the same reviewed project summary offline after a typo', () => {
     const content = index();
     content.pages.push(

@@ -3,11 +3,13 @@ import { facts, normalize } from './catalog.ts';
 /**
  * A kind of detail a question can ask for that a fact must state to answer
  * it. `asked` matches normalized question terms; `stated` matches the raw
- * answer text; `heads` are nouns that ask for it after "which" ("which
- * institution" asks for a place).
+ * answer text; `heads` are nouns that ask for it after "which"/"what" ("which
+ * institution" asks for a place). A kind without `asked` is a noun type: the
+ * bare word is an incidental mention ("in the browser", "runs on Linux"), so
+ * only a head after a question word asks for it.
  */
 interface DetailKind {
-  asked: RegExp;
+  asked?: RegExp;
   stated: RegExp;
   heads: readonly string[];
 }
@@ -27,17 +29,20 @@ const VERSION: DetailKind = {
   stated: /\b(?:version|release|v\d+(?:\.\d+)+|\d+\.\d+\.\d+)\b/i,
   heads: ['version', 'release', 'versionsnummer'],
 };
+const SECTION_WORDS = String.raw`(?:chapters?|sections?|abschnitte?|\w*kapitel\w*)`;
 const SECTION: DetailKind = {
-  asked: /\b(?:chapters?|sections?|abschnitte?|\w*kapitel\w*)\b/,
+  // "the title of chapter two" asks for the chapter's title or number; "the
+  // chapter on methods" only names it.
+  asked: new RegExp(
+    String.raw`\b(?:title|titel|number|nummer|heading|ueberschrift)s? (?:of|von|des|der) (?:(?:the|a|der|die|das|dem|den) )?(?:[\w-]+ ){0,2}${SECTION_WORDS}\b`,
+  ),
   stated: /\b(?:chapters?|sections?|abschnitte?|\w*kapitel\w*)\b/i,
   heads: ['chapter', 'section', 'kapitel', 'abschnitt'],
 };
 const HARDWARE: DetailKind = {
-  asked:
-    /\b(?:gpus?|graphics cards?|grafikkarten?|cpus?|processors?|prozessor(?:en)?)\b/,
   stated:
     /\b(?:gpus?|graphics cards?|grafikkarten?|cpus?|processors?|prozessor(?:en)?)\b/i,
-  heads: ['gpu', 'cpu', 'processor', 'prozessor', 'grafikkarte'],
+  heads: ['gpu', 'cpu', 'processor', 'prozessor', 'grafikkarte', 'graphics'],
 };
 const PLACE: DetailKind = {
   asked: opening('where|wo'),
@@ -83,14 +88,11 @@ const DURATION: DetailKind = {
 };
 
 const OPERATING_SYSTEM: DetailKind = {
-  asked:
-    /\b(?:linux distribution|distribution|distro|operating system|betriebssystem)\b/,
   stated:
     /\b(?:distribution|distro|operating system|betriebssystem|debian|ubuntu|fedora|alpine|centos|nixos|windows|macos|proxmox|truenas|unraid)\b/i,
-  heads: ['distribution', 'distro', 'betriebssystem'],
+  heads: ['distribution', 'distro', 'betriebssystem', 'operating', 'os'],
 };
 const BROWSER: DetailKind = {
-  asked: /\b(?:web ?browser|browser)\b/,
   stated: /\b(?:browser|chrome|chromium|firefox|safari)\b/i,
   heads: ['browser', 'webbrowser'],
 };
@@ -109,6 +111,9 @@ const DETAIL_KINDS = [
 /** Words after "which" (or "welche…") that may name the asked attribute. */
 const MAX_HEAD_WORDS = 2;
 const which = /\b(?:which|welche[rsnm]?)\b/g;
+// "what GPU", "was fuer ein Browser": the head may ask for a kind; its literal
+// noun is not required of the facts.
+const whatKind = /\b(?:what|was fuer(?: (?:ein|eine)[rsnm]?)?)\b/g;
 const qualifier = /^(?:(?:kind|sort|type) of|art von|art) /;
 /** Words that end the noun after "which". */
 const headStop = new Set(
@@ -141,8 +146,8 @@ const inSet = (word: string, set: ReadonlySet<string>) =>
   [...set].some((entry) => sameWord(word, entry));
 
 /** The nouns after each "which" in the terms, before a verb or pronoun. */
-function whichHeads(terms: string) {
-  return [...terms.matchAll(which)].map((match) => {
+function whichHeads(terms: string, question = which) {
+  return [...terms.matchAll(question)].map((match) => {
     const rest = terms
       .slice(match.index + match[0].length)
       .trim()
@@ -164,12 +169,18 @@ function whichHeads(terms: string) {
 
 /** The detail kinds and literal attribute words the terms ask for. */
 function askedDetails(terms: string) {
-  const kinds = new Set(DETAIL_KINDS.filter(({ asked }) => asked.test(terms)));
-  const words: string[][] = [];
-  for (const head of whichHeads(terms)) {
-    const kind = DETAIL_KINDS.find(({ heads }) =>
+  const kinds = new Set(DETAIL_KINDS.filter(({ asked }) => asked?.test(terms)));
+  const kindOf = (head: readonly string[]) =>
+    DETAIL_KINDS.find(({ heads }) =>
       head.some((word) => heads.some((entry) => sameWord(word, entry))),
     );
+  for (const head of whichHeads(terms, whatKind)) {
+    const kind = kindOf(head);
+    if (kind) kinds.add(kind);
+  }
+  const words: string[][] = [];
+  for (const head of whichHeads(terms)) {
+    const kind = kindOf(head);
     if (kind) {
       kinds.add(kind);
       continue;
