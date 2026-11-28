@@ -70,20 +70,23 @@ continues to use same-URL language negotiation. The preview proxy handles only
 
 Qwen3 1.7B Q4_K_M is a 1.4 GB text model with a pinned manifest digest, run
 without thinking. It uses 2,048 context tokens and a 96-token completion
-budget. The model receives the question and up to six public records. It returns
-one relevance flag per record, which makes it judge every record instead of
-picking a few. More than three relevant records fail verification and fall back
-to the page excerpt. Before the question, the model sees five worked selections
-about an invented person, which show answering, partial and abstaining. They
-form a fixed prompt prefix that Ollama keeps cached between requests. The
-project-scope clarification still picks slot numbers, and a repeated slot
-counts once. The browser keeps the
+budget. The model receives up to six numbered public records and the question,
+which comes last. It picks slot numbers (one slot per part of a multi-part
+question) and sets `incomplete` when the evidence cannot settle a requested
+detail; no slot means abstaining. More than three slots fail verification and
+fall back to the page excerpt. A repeated slot counts once. Worked selections
+about an invented person precede the question and form a fixed prompt prefix
+that Ollama keeps cached between requests. The project-scope clarification
+also picks slot numbers. The browser keeps the
 thread in tab memory until reload or reset. When it makes a gateway request,
 it can include selected earlier questions and replies, up to 2,000 bytes of
 history. Longer turns can be excerpted to fit. Local-only turns stay in the tab.
 All callers share a six-per-minute request quota, a separate 60-per-hour
-model budget and one in-flight inference. Reviewed answers can still be
-served when inference is limited or unavailable.
+inference quota and one in-flight inference. The inference quota is charged
+only when a request actually calls a model, so reviewed answers and
+no-evidence abstentions never use it. Every `/api/ask` response carries
+`X-Ask-Model-Calls`, the number of model calls that request made. Reviewed
+answers can still be served when inference is limited or unavailable.
 
 Recognized summary requests return reviewed facts by default. Set
 `ASK_SUMMARIES=on` in a native gateway or preview environment to let the pinned
@@ -170,7 +173,7 @@ docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml confi
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml --profile setup run --rm model-setup
 ASK_WARMUP=off ASK_TIMINGS=on docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml up --build -d
 mkdir -p .local-ask
-node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --cold-only --report .local-ask/qwen-docker-cold.json
+node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --cold-only --reset-compose-project ask-qwen-check-20261124 --report .local-ask/qwen-docker-cold.json
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml restart ask
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml exec -T ask node services/ask/ollama.ts
 node tests/ask/evaluate.ts --http http://127.0.0.1:18093 --warm-only --report .local-ask/qwen-docker-warm.json
@@ -186,6 +189,7 @@ docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml resta
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml stop ask
 node services/ask/smoke.ts http://127.0.0.1:18093 --gateway-offline
 ASK_SMOKE_URL=http://127.0.0.1:18093 pnpm vitest run src/lib/ask/packaged-outage.test.ts
+ASK_SMOKE_URL=http://127.0.0.1:18093 pnpm vitest run src/lib/ask/packaged-chromium.test.ts
 docker compose -p ask-qwen-check-20261124 -f deploy/docker-compose.ask.yml down
 ```
 
@@ -193,13 +197,25 @@ The HTTP evaluator runs the full fixture suite selected by its flags:
 `--routing` runs the routing gate, `--answers` runs approved-answer fixtures,
 and no suite flag runs the full baseline, paraphrase and held-out set. These
 HTTP suites use the same expectations as the in-process evaluator. Reports label
-the approved expectations `approved-v2` and the historical `--baseline`
-expectations `baseline-v1`. Run `--suite-only` after preloading to measure the
+the approved expectations `approved-v2` and the raw `--baseline` fixtures
+`baseline-v2`. `baseline-v1` is the content before commit `dc5e90d` changed six
+expectations; both versions are pinned by content hash in `tests/ask/identity.ts`
+and a test fails when a fixture file changes without a new version. Every
+report records `benchmarkIdentity`: the version, the hash of each fixture file,
+the hash of the expectation set as evaluated, and whether the files match the
+pin. Run `--suite-only` after preloading to measure the
 selected suite separately from a cold probe. The evaluator also has
-`--cold-only` and `--warm-only` smoke paths. The cold
-path sends one English Flask question before any model preload and requires an
-HTTP 200 `answer`, `mode: local`, the exact `spotify-python` claim and its
-canonical citation. Restart only `ask` afterward to clear gateway quotas; this
+`--cold-only` and `--warm-only` smoke paths. `--cold-only` needs
+`--reset-compose-project`: it restarts `ask`, then unloads the model
+(`keep_alive: 0`) and waits until Ollama's `/api/ps` no longer lists it. If that
+cannot be proven the run fails; a cold number is never taken from a model that
+may be resident. It reports three separate numbers: gateway startup-to-ready,
+the first visitor request after ready (not cold), and the cold request after
+the proven unload. The cold request must be HTTP 200 `answer`, `mode: local`,
+the exact `spotify-python` claim and its canonical citation, with at least one
+model call, within 6 s. `--cold-only` exits non-zero when any of this fails or
+the budget is exceeded, and the report keeps the diagnostics. Restart only
+`ask` afterward to clear gateway quotas; this
 leaves Ollama running and its loaded model intact. `node services/ask/ollama.ts`
 runs a real selection with the pinned model and validates the result without
 consuming gateway quota. The warm
@@ -208,7 +224,8 @@ the exact reviewed claim and citation in each locale, plus a reviewed Canadian
 capital abstention with no claims or citations and `mode: local`. A warm failure
 does not hide the cold report, and a cold failure does not prevent a separate
 warm run. Each report records HTTP/result status, mode, claim IDs, citation
-links and latency; warm p95 includes only local results. The fixed warm set is
+links, latency and the model-call count; warm p95 includes only local results
+that made a model call, so a cheap abstention cannot improve it. The fixed warm set is
 three gateway requests, within the retrieval budget.
 
 The default evidence deadline remains six seconds. To compare eight seconds,
@@ -239,22 +256,30 @@ Three time limits apply, each measured differently:
 
 - **Selector deadline** (`ASK_SELECTOR_TIMEOUT_MS`, 6 s): the gateway's own
   limit for one model selection. Past it the gateway answers 503.
-- **Warm p95** (4 s): p95 of successful local answers, end to end over HTTP,
-  once the model is loaded.
-- **Cold end to end** (6 s): the first request after a fresh start.
+- **Warm p95** (4 s): p95 of local answers that made a model call, end to end
+  over HTTP, once the model is loaded.
+- **Cold end to end** (6 s): the first request after the model was unloaded
+  and shown absent from `/api/ps`.
 
 `--gate` runs the packaged warm cases plus English and German SpotifyTracker
-recovery sentinels that only the local model answers. It fails when a
-sentinel misses its reviewed answer, when answers fall back to the index,
+recovery sentinels that only the local model answers, then the cold
+measurement. It fails when a sentinel misses its reviewed answer, when an
+EN/DE model case reports no model call, when answers fall back to the index,
 when any request times out or fails, or when a time limit is exceeded. It
-prints answered/total per route. After each `ask` restart the evaluator waits
-for the gateway's warm-up log line, because HTTP readiness comes first and the
-gateway answers 503 while it warms up. `--recovery` runs on its own: it waits
-for warm-up, pauses the project's `ollama` container, requires a 503 during
-the outage (a quota 429 or a fallback does not count), resumes it and then
-asks every 12 seconds (inside the normal quota, without restarting `ask`)
-until a local answer arrives or two minutes pass. Both exit non-zero on
-failure.
+prints answered/total per route. Only a run with a passing cold measurement
+prints `model gate passed`. `--gate --warm-only` takes no cold measurement:
+it prints `model gate PARTIAL: no cold measurement, not a pass` (or `FAILED
+(partial run ...)`) and exits non-zero. After each `ask` restart the evaluator
+waits for the gateway's warm-up log line, because HTTP readiness comes first
+and the gateway answers 503 while it warms up. `--recovery` runs on its own: it
+waits for warm-up, asks the Flask question once and requires the canonical
+`spotify-python` claim and `spotify-code` citation, pauses the project's
+`ollama` container, requires a 503 or dropped connection during the outage (a
+quota 429 or a fallback does not count), resumes it and then asks every 12
+seconds (inside the normal quota, without restarting `ask`) until the same
+canonical answer returns or two minutes pass. A 200 `local` or `unknown` answer
+without the claim is not recovered. All of them exit non-zero on failure and
+keep their diagnostics in the report.
 
 Every HTTP report records the git commit and whether the worktree was clean,
 the model and digest, context size, budgets, how the model was warmed, and
@@ -282,7 +307,10 @@ warm. The `--offline` phase pauses Ollama and checks reviewed index answers plus
 the no-store 503 response. The `--gateway-offline` phase stops `ask` and checks
 nginx's no-store unavailable response; `packaged-outage.test.ts` then runs the
 real browser chat against the packaged page and requires a reviewed excerpt
-and citation in English and German. Wait for Ollama's health check after
+and citation in English and German. `packaged-chromium.test.ts` (the
+`playwright-core` dev dependency; `pnpm exec playwright-core install chromium`
+once) repeats those turns in real Chromium, and with `ASK_OFF_URL` set it checks
+that the normal image has no Ask panel or Ask routes in both languages. Wait for Ollama's health check after
 unpausing it before starting a stopped gateway. CI runs both startup and gateway-stopped
 smoke without pulling model weights. The optional JSON reports preserve each
 phase's results for review.
@@ -436,7 +464,8 @@ node tests/ask/final-guard.ts --freeze
 
 From then on, a test fails if a later rule answers another final question
 without the model, since such a rule would leak that question into the code.
-Of the current 48 held-out questions, 9 are answered without the model.
+Of the current 240 final questions, 4 are frozen as answered without the model
+(`tests/ask/final-deterministic.json`).
 
 ## Later adapter experiment
 

@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  COLD_EXPECTED,
+  coldGate,
+  gateLabel,
   MODEL_GATE,
   modelGate,
+  modelResidency,
   publishedPortMatches,
   recoveryOutcome,
+  type ColdMeasurement,
+  type ColdProbe,
   type GateRow,
+  type RecoverySample,
   warmupState,
 } from '../../../tests/ask/gate.ts';
 
@@ -18,9 +25,30 @@ const row = (overrides: Partial<GateRow> = {}): GateRow => ({
   match: true,
   ms: 2_000,
   expectedMode: 'local',
+  modelCalls: 1,
+  requiresModelCall: true,
   ...overrides,
 });
-const coldOk = { httpStatus: 200, status: 'answer', mode: 'local', ms: 5_000 };
+const probe = (overrides: Partial<ColdProbe> = {}): ColdProbe => ({
+  httpStatus: 200,
+  status: 'answer',
+  mode: 'local',
+  ms: 5_000,
+  ids: [...COLD_EXPECTED.ids],
+  citations: COLD_EXPECTED.citationIds.map((id) => ({ id })),
+  modelCalls: 1,
+  ...overrides,
+});
+const measured = (
+  overrides: Partial<ColdMeasurement> = {},
+): ColdMeasurement => ({
+  residency: 'unloaded',
+  startupToReadyMs: 12_000,
+  postReady: probe({ ms: 2_500 }),
+  cold: probe(),
+  ...overrides,
+});
+const coldOk = measured();
 
 describe('model gate budgets', () => {
   it('defines the three time limits separately', () => {
@@ -92,18 +120,185 @@ describe('model gate', () => {
     );
   });
 
-  it.each([
-    [{ ...coldOk, ms: 6_500 }, 'cold request took 6500 ms, over 6000 ms'],
-    [
-      { ...coldOk, httpStatus: 503, mode: null, status: 'outage' },
-      'cold request was not answered by the local model',
-    ],
-  ])('checks the cold request separately', (cold, failure) => {
-    expect(modelGate([row()], cold).failures).toContain(failure);
+  it('does not pass without a cold measurement and labels the run partial', () => {
+    const result = modelGate([row()]);
+    expect(result.failures).toEqual([]);
+    expect(result.partial).toBe(true);
+    expect(result.passed).toBe(false);
   });
 
-  it('does not check cold timing without a cold probe', () => {
-    expect(modelGate([row()]).passed).toBe(true);
+  it('is complete and passed with a clean cold measurement', () => {
+    const result = modelGate([row()], coldOk);
+    expect(result.partial).toBe(false);
+    expect(result.passed).toBe(true);
+  });
+
+  it('adds cold failures to the gate', () => {
+    const result = modelGate([row()], measured({ cold: probe({ ms: 6_500 }) }));
+    expect(result.passed).toBe(false);
+    expect(result.failures).toContain(
+      'cold request took 6500 ms, over 6000 ms',
+    );
+  });
+
+  it('fails a sentinel that made no model call', () => {
+    const result = modelGate([row({ modelCalls: 0 }), row()], coldOk);
+    expect(result.failures).toContain(
+      '1/2 model cases made no model call; a local answer without inference proves nothing',
+    );
+  });
+
+  it('fails a sentinel when the gateway did not report model calls', () => {
+    const result = modelGate([row({ modelCalls: null })], coldOk);
+    expect(result.failures).toContain(
+      '1/1 model cases did not report model calls',
+    );
+  });
+
+  it('keeps an abstention that needs no model out of the inference p95', () => {
+    const abstention = row({
+      suite: 'packaged-abstention',
+      status: 'unknown',
+      ms: 10,
+      modelCalls: 0,
+      requiresModelCall: false,
+    });
+    const slow = row({ ms: 4_500 });
+    const result = modelGate(
+      [abstention, abstention, abstention, slow],
+      coldOk,
+    );
+    expect(result.p95Ms).toBe(4_500);
+    expect(result.failures).toContain(
+      'warm p95 4500 ms is over the 4000 ms budget',
+    );
+  });
+
+  it('reports no p95 when no request made a model call', () => {
+    const cheap = row({ modelCalls: 0, requiresModelCall: false });
+    expect(modelGate([cheap], coldOk).p95Ms).toBeNull();
+  });
+});
+
+describe('gate label', () => {
+  it('says passed only for a complete clean run', () => {
+    expect(gateLabel(modelGate([row()], coldOk))).toBe('model gate passed');
+  });
+
+  it('never says passed for a warm-only run', () => {
+    const label = gateLabel(modelGate([row()]));
+    expect(label).not.toContain('passed');
+    expect(label).toContain('PARTIAL');
+    expect(label).toContain('not a pass');
+  });
+
+  it('says FAILED for failures, with the partial note when warm-only', () => {
+    expect(gateLabel(modelGate([row({ match: false })], coldOk))).toBe(
+      'model gate FAILED',
+    );
+    expect(gateLabel(modelGate([row({ match: false })]))).toBe(
+      'model gate FAILED (partial run, no cold measurement)',
+    );
+  });
+});
+
+describe('cold gate', () => {
+  it('passes a proven unloaded, correct, in-budget cold request', () => {
+    expect(coldGate(coldOk)).toEqual([]);
+  });
+
+  it('accepts exactly the budget', () => {
+    expect(
+      coldGate(measured({ cold: probe({ ms: MODEL_GATE.coldEndToEndMs }) })),
+    ).toEqual([]);
+  });
+
+  it('fails one millisecond over the budget', () => {
+    expect(
+      coldGate(
+        measured({ cold: probe({ ms: MODEL_GATE.coldEndToEndMs + 1 }) }),
+      ),
+    ).toContain('cold request took 6001 ms, over 6000 ms');
+  });
+
+  it.each([
+    ['resident', 'model was resident'],
+    ['unknown', 'model residency could not be proven'],
+  ] as const)('fails when residency is %s', (residency, text) => {
+    expect(coldGate(measured({ residency })).join()).toContain(text);
+  });
+
+  it('fails when the cold request did not run', () => {
+    expect(coldGate(measured({ cold: null }))).toContain(
+      'cold request did not run',
+    );
+  });
+
+  it.each([
+    [probe({ httpStatus: 503, mode: null, status: 'outage' })],
+    [probe({ mode: 'index' })],
+    [probe({ httpStatus: null, mode: null, status: 'outage' })],
+  ])('fails a cold request that was not a local answer', (cold) => {
+    expect(coldGate(measured({ cold }))).toContain(
+      'cold request was not answered by the local model',
+    );
+  });
+
+  it.each([
+    [probe({ ids: ['spotify-recovery'] })],
+    [probe({ ids: [] })],
+    [probe({ citations: [] })],
+    [probe({ status: 'partial' })],
+  ])('fails a local cold answer that is not the reviewed one', (cold) => {
+    expect(coldGate(measured({ cold }))).toContain(
+      'cold answer was not the reviewed claim and citation',
+    );
+  });
+
+  it('fails a cold request without a model call', () => {
+    expect(coldGate(measured({ cold: probe({ modelCalls: 0 }) }))).toContain(
+      'cold request made no model call',
+    );
+    expect(coldGate(measured({ cold: probe({ modelCalls: null }) }))).toContain(
+      'cold request did not report model calls',
+    );
+  });
+
+  it('checks the post-ready visitor request separately', () => {
+    expect(coldGate(measured({ postReady: null }))).toContain(
+      'post-ready visitor request did not run',
+    );
+    expect(coldGate(measured({ postReady: probe({ ids: [] }) }))).toContain(
+      'post-ready visitor request was not the reviewed local answer',
+    );
+  });
+
+  it('fails when the gateway never reported ready', () => {
+    expect(coldGate(measured({ startupToReadyMs: null }))).toContain(
+      'gateway startup-to-ready time was not measured',
+    );
+  });
+
+  it('keeps the cold error as a diagnostic', () => {
+    expect(coldGate(measured({ error: 'docker exploded' }))).toContain(
+      'cold measurement error: docker exploded',
+    );
+  });
+});
+
+describe('model residency', () => {
+  it.each([
+    [{ models: [{ name: 'qwen3:1.7b', model: 'qwen3:1.7b' }] }, 'resident'],
+    [{ models: [{ model: 'qwen3:1.7b' }] }, 'resident'],
+    [{ models: [{ name: 'qwen3:1.7b' }] }, 'resident'],
+    [{ models: [{ name: 'other:1b' }] }, 'unloaded'],
+    [{ models: [] }, 'unloaded'],
+    [{}, 'unknown'],
+    [{ models: 'x' }, 'unknown'],
+    [null, 'unknown'],
+    ['nope', 'unknown'],
+  ] as const)('reads /api/ps %j as %s', (ps, expected) => {
+    expect(modelResidency(ps, 'qwen3:1.7b')).toBe(expected);
   });
 });
 
@@ -127,25 +322,96 @@ describe('reset target binding', () => {
 });
 
 describe('recovery outcome', () => {
-  it('recovers on the first local answer after the outage', () => {
+  const good = (overrides: Partial<RecoverySample> = {}): RecoverySample => ({
+    httpStatus: 200,
+    mode: 'local',
+    status: 'answer',
+    ids: [...COLD_EXPECTED.ids],
+    citations: [...COLD_EXPECTED.citationIds],
+    ms: 3_000,
+    ...overrides,
+  });
+  const outage: RecoverySample = { httpStatus: 503, mode: null };
+
+  it('recovers on the first canonical answer after a real outage', () => {
     expect(
       recoveryOutcome({
-        duringOutage: { httpStatus: 503, mode: null },
+        before: good(),
+        duringOutage: outage,
         afterResume: [
           { httpStatus: 503, mode: null, ms: 6_000, at: 6_000 },
-          { httpStatus: 200, mode: 'local', ms: 3_000, at: 20_000 },
+          good({ at: 20_000 }),
         ],
       }),
-    ).toEqual({ recovered: true, attempts: 2, recoveredAfterMs: 20_000 });
+    ).toEqual({
+      recovered: true,
+      attempts: 2,
+      recoveredAfterMs: 20_000,
+      failures: [],
+    });
   });
 
-  it('fails when the outage still produced a local answer', () => {
+  it('does not count a local unknown answer without claims as recovered', () => {
+    const result = recoveryOutcome({
+      before: good(),
+      duringOutage: outage,
+      afterResume: [good({ status: 'unknown', ids: [], citations: [], at: 1 })],
+    });
+    expect(result.recovered).toBe(false);
+    expect(result.recoveredAfterMs).toBeNull();
+    expect(result.failures).toContain(
+      'no canonical answer after the outage ended',
+    );
+  });
+
+  it.each([
+    ['wrong claim', good({ ids: ['spotify-recovery'], at: 1 })],
+    ['missing citation', good({ citations: [], at: 1 })],
+    ['extra claim', good({ ids: ['spotify-python', 'spotify-recovery'] })],
+    ['index fallback', good({ mode: 'index', at: 1 })],
+    ['partial', good({ status: 'partial', at: 1 })],
+  ])('does not accept %s after the outage', (_name, sample) => {
     expect(
       recoveryOutcome({
-        duringOutage: { httpStatus: 200, mode: 'local' },
-        afterResume: [{ httpStatus: 200, mode: 'local', ms: 3_000, at: 1 }],
+        before: good(),
+        duringOutage: outage,
+        afterResume: [sample],
       }).recovered,
     ).toBe(false);
+  });
+
+  it('fails when the answer before the outage was not canonical', () => {
+    const result = recoveryOutcome({
+      before: good({ ids: [] }),
+      duringOutage: outage,
+      afterResume: [good({ at: 1 })],
+    });
+    expect(result.recovered).toBe(false);
+    expect(result.failures).toContain(
+      'the answer before the outage was not the canonical claim and citation',
+    );
+  });
+
+  it('fails when there is no before sample', () => {
+    expect(
+      recoveryOutcome({
+        before: null,
+        duringOutage: outage,
+        afterResume: [good({ at: 1 })],
+      }).recovered,
+    ).toBe(false);
+  });
+
+  it('fails when the outage request still got a local answer', () => {
+    const result = recoveryOutcome({
+      before: good(),
+      duringOutage: good(),
+      afterResume: [good({ at: 1 })],
+    });
+    expect(result.recovered).toBe(false);
+    expect(result.failures).toContain(
+      'the outage request did not see an outage (HTTP 200)',
+    );
   });
 
   it.each([429, 200])(
@@ -153,32 +419,34 @@ describe('recovery outcome', () => {
     (httpStatus) => {
       expect(
         recoveryOutcome({
+          before: good(),
           duringOutage: {
             httpStatus,
             mode: httpStatus === 200 ? 'index' : null,
           },
-          afterResume: [{ httpStatus: 200, mode: 'local', ms: 3_000, at: 1 }],
+          afterResume: [good({ at: 1 })],
         }).recovered,
       ).toBe(false);
     },
   );
 
   it('accepts a dropped connection as the outage', () => {
-    expect(
-      recoveryOutcome({
-        duringOutage: { httpStatus: null, mode: null },
-        afterResume: [{ httpStatus: 200, mode: 'local', ms: 3_000, at: 1 }],
-      }).recovered,
-    ).toBe(true);
+    const result = recoveryOutcome({
+      before: good(),
+      duringOutage: { httpStatus: null, mode: null },
+      afterResume: [good({ at: 1 })],
+    });
+    expect(result.recovered).toBe(true);
   });
 
-  it('fails when no local answer follows', () => {
+  it('fails with the attempt count when nothing recovers', () => {
     expect(
       recoveryOutcome({
-        duringOutage: { httpStatus: 503, mode: null },
+        before: good(),
+        duringOutage: outage,
         afterResume: [{ httpStatus: 200, mode: 'index', ms: 50, at: 1 }],
       }),
-    ).toEqual({ recovered: false, attempts: 1, recoveredAfterMs: null });
+    ).toMatchObject({ recovered: false, attempts: 1, recoveredAfterMs: null });
   });
 });
 

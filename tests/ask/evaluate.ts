@@ -38,22 +38,32 @@ import {
 } from './question-set.ts';
 import { assertRankerCorpus } from './ranker-check.ts';
 import { askModel, prepareQuestion } from '../../services/ask/selection.ts';
-import { createGateway } from '../../services/ask/server.ts';
+import {
+  createGateway,
+  MODEL_CALLS_HEADER,
+} from '../../services/ask/server.ts';
 import {
   approvedAnswers,
   approvedExpectation,
 } from './approved-expectations.ts';
+import { expectationsLabel, runIdentity } from './identity.ts';
 import heldOut from './held-out.json' with { type: 'json' };
 import paraphrases from './paraphrases.json' with { type: 'json' };
 import questions from './questions.json' with { type: 'json' };
 import routing from './routing.json' with { type: 'json' };
 import { assertRoutingExpectations } from '../../src/lib/ask/routing-gate.ts';
 import {
+  coldGate,
+  gateLabel,
   MODEL_GATE,
   modelGate,
+  modelResidency,
   publishedPortMatches,
   recoveryOutcome,
+  type ColdMeasurement,
+  type ColdProbe,
   type RecoverySample,
+  type Residency,
   warmupState,
 } from './gate.ts';
 
@@ -73,6 +83,7 @@ const PACKAGED_WARM_FIXTURES: Fixture[] = [
     status: 'answer',
     acceptableIds: [['spotify-python']],
     expectedMode: 'local',
+    requiresModelCall: true,
   },
   {
     suite: 'packaged-warm',
@@ -81,6 +92,7 @@ const PACKAGED_WARM_FIXTURES: Fixture[] = [
     status: 'answer',
     acceptableIds: [['spotify-python']],
     expectedMode: 'local',
+    requiresModelCall: true,
   },
   {
     suite: 'packaged-abstention',
@@ -101,6 +113,7 @@ const MODEL_SENTINELS: Fixture[] = [
     status: 'answer',
     acceptableIds: [['spotify-recovery']],
     expectedMode: 'local',
+    requiresModelCall: true,
   },
   {
     suite: 'sentinel',
@@ -109,11 +122,15 @@ const MODEL_SENTINELS: Fixture[] = [
     status: 'answer',
     acceptableIds: [['spotify-recovery']],
     expectedMode: 'local',
+    requiresModelCall: true,
   },
 ];
 const RECOVERY_TIMEOUT_MS = 120_000;
 /** Spacing that keeps recovery polling inside the normal gateway quota. */
 const RECOVERY_POLL_MS = 12_000;
+/** Ollama's address inside the shared network namespace (OLLAMA_HOST). */
+const PACKAGED_OLLAMA_PORT = 11_435;
+const UNLOAD_TIMEOUT_MS = 15_000;
 const COMPOSE_FILE = 'deploy/docker-compose.ask.yml';
 const COMPOSE_SERVICES = ['website', 'ask', 'ollama'];
 /** Longer than the gateway's own warm-up timeout. */
@@ -168,7 +185,7 @@ const mode = httpOrigin
       : 'gateway';
 const usesHttp = mode === 'http' || mode === 'gateway';
 const baseline = process.argv.includes('--baseline');
-const expectationsVersion = baseline ? 'baseline-v1' : 'approved-v2';
+const expectationsVersion = expectationsLabel(baseline);
 const reportFlag = process.argv.indexOf('--report');
 const reportPath = reportFlag < 0 ? undefined : process.argv[reportFlag + 1];
 if (reportFlag >= 0 && (!reportPath || reportPath.startsWith('--')))
@@ -194,15 +211,7 @@ if (mode === 'gateway')
     rankWithGranite,
     AbortSignal.timeout(RANKER_CHECK_TIMEOUT_MS),
   );
-let coldProbe: {
-  httpStatus: number | null;
-  status: string;
-  mode: string | null;
-  ids: string[];
-  citations: AskResult['sources'];
-  ms: number;
-  error?: string;
-} | null = null;
+let coldMeasurement: ColdMeasurement | null = null;
 
 type Fixture = {
   suite: string;
@@ -211,6 +220,8 @@ type Fixture = {
   status: string;
   acceptableIds: string[][];
   expectedMode?: AskResult['mode'];
+  /** The gateway must report at least one model call for this case. */
+  requiresModelCall?: boolean;
   id?: string;
   family?: string;
   category?: string;
@@ -321,48 +332,6 @@ if (mode === 'http') {
     assert.ok(Date.now() < deadline, 'Ask gateway did not start through nginx');
     await delay(HTTP_POLL_INTERVAL_MS);
   }
-  // With ASK_WARMUP=on the gateway answers 503 until its warm-up ends, so
-  // the cold probe is the first visitor request after a fresh start.
-  if (checkCold && resetProject) await waitForWarmGateway();
-  if (checkCold) {
-    const coldStart = performance.now();
-    try {
-      const response = await fetch(new URL('/api/ask', httpOrigin), {
-        method: 'POST',
-        headers: {
-          Origin: httpOrigin!,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: PACKAGED_COLD_QUESTION,
-          locale: 'en',
-        }),
-        signal: AbortSignal.timeout(CLIENT_TIMEOUT),
-      });
-      const body: unknown = await response.json().catch(() => null);
-      const result = validateResult(body, 'en', corpusVersion);
-      coldProbe = {
-        httpStatus: response.status,
-        status: result?.status ?? 'outage',
-        mode: result?.mode ?? null,
-        ids: result?.claims.map(({ id }) => id) ?? [],
-        citations: result?.sources ?? [],
-        ms: Math.round(performance.now() - coldStart),
-      };
-      console.log('cold probe', JSON.stringify(coldProbe));
-    } catch (error) {
-      coldProbe = {
-        httpStatus: null,
-        status: 'outage',
-        mode: null,
-        ids: [],
-        citations: [],
-        ms: Math.round(performance.now() - coldStart),
-        error: error instanceof Error ? error.message : String(error),
-      };
-      console.log('cold probe', JSON.stringify(coldProbe));
-    }
-  }
 }
 
 let resetTargetVerified = false;
@@ -439,16 +408,21 @@ async function waitForWarmGateway() {
   }
 }
 
+/** Restarts the gateway and returns the milliseconds until it is ready. */
 async function resetPackagedGateway() {
-  if (!resetProject) return;
+  if (!resetProject) return null;
   await verifyResetTarget();
+  const restarted = performance.now();
   await compose('restart', 'ask');
   const deadline = Date.now() + HTTP_STARTUP_TIMEOUT_MS;
   for (;;) {
     const ready = await fetch(new URL('/api/ask', httpOrigin!), {
       signal: AbortSignal.timeout(2_000),
     }).catch(() => undefined);
-    if (ready?.status === 405) return waitForWarmGateway();
+    if (ready?.status === 405) {
+      await waitForWarmGateway();
+      return Math.round(performance.now() - restarted);
+    }
     assert.ok(
       Date.now() < deadline,
       'Ask gateway did not restart through nginx',
@@ -456,6 +430,135 @@ async function resetPackagedGateway() {
     await delay(HTTP_POLL_INTERVAL_MS);
   }
 }
+
+/** One gateway request over HTTP; the model-call count comes from its header. */
+async function postAsk(
+  question: string,
+  locale: Locale,
+  history: ReturnType<typeof historyTurns> = [],
+) {
+  const started = performance.now();
+  try {
+    const response = await fetch(new URL('/api/ask', httpOrigin!), {
+      method: 'POST',
+      headers: { Origin: httpOrigin!, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question,
+        locale,
+        ...(history.length ? { history } : {}),
+      }),
+      signal: AbortSignal.timeout(CLIENT_TIMEOUT),
+    });
+    const body: unknown = await response.json().catch(() => null);
+    const reported = Number(response.headers.get(MODEL_CALLS_HEADER));
+    return {
+      httpStatus: response.status as number | null,
+      body,
+      modelCalls:
+        response.headers.has(MODEL_CALLS_HEADER) && Number.isInteger(reported)
+          ? reported
+          : null,
+      ms: performance.now() - started,
+    };
+  } catch (error) {
+    return {
+      httpStatus: null,
+      body: null,
+      modelCalls: null,
+      ms: performance.now() - started,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/** The English Flask question as a visitor probe, with diagnostics. */
+async function probeVisitor(): Promise<ColdProbe> {
+  const response = await postAsk(PACKAGED_COLD_QUESTION, 'en');
+  const result = validateResult(response.body, 'en', corpusVersion);
+  const probe: ColdProbe = {
+    httpStatus: response.httpStatus,
+    status: result?.status ?? 'outage',
+    mode: result?.mode ?? null,
+    ids: result?.claims.map(({ id }) => id) ?? [],
+    citations: result?.sources ?? [],
+    modelCalls: response.modelCalls,
+    ms: Math.round(response.ms),
+    ...('error' in response ? { error: response.error } : {}),
+  };
+  console.log('probe', JSON.stringify(probe));
+  return probe;
+}
+
+/** Calls Ollama through the `ask` container, which shares its loopback. */
+async function ollamaApi(path: string, body?: object) {
+  const script =
+    'fetch(process.argv[1], process.argv[2] ? {method: "POST", ' +
+    'headers: {"Content-Type": "application/json"}, body: process.argv[2]} : {})' +
+    '.then(async (r) => console.log(JSON.stringify(await r.json().catch(() => null))))';
+  const text = await output(
+    compose(
+      'exec',
+      '-T',
+      'ask',
+      'node',
+      '-e',
+      script,
+      `http://${LOOPBACK}:${PACKAGED_OLLAMA_PORT}${path}`,
+      body ? JSON.stringify(body) : '',
+    ),
+  );
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Unloads the selector model (`keep_alive: 0`) and waits until /api/ps no
+ * longer lists it. Anything but a clean /api/ps reading that omits the model
+ * is not cold.
+ */
+async function unloadModel(): Promise<Residency> {
+  await ollamaApi('/api/generate', { model: MODEL, keep_alive: 0 });
+  const deadline = Date.now() + UNLOAD_TIMEOUT_MS;
+  for (;;) {
+    const residency = modelResidency(await ollamaApi('/api/ps'), MODEL);
+    if (residency !== 'resident' || Date.now() >= deadline) return residency;
+    await delay(HTTP_POLL_INTERVAL_MS);
+  }
+}
+
+/**
+ * Cold path, three separate numbers: gateway startup-to-ready, the first
+ * visitor request after ready, and a request after the model was unloaded
+ * and proven absent. Failures are kept in the measurement as diagnostics.
+ */
+async function measureCold(): Promise<ColdMeasurement> {
+  const measurement: ColdMeasurement = {
+    residency: 'unknown',
+    startupToReadyMs: null,
+    postReady: null,
+    cold: null,
+  };
+  if (!resetProject) {
+    measurement.error =
+      'a cold measurement needs --reset-compose-project to unload the model and prove it with /api/ps';
+    return measurement;
+  }
+  try {
+    measurement.startupToReadyMs = await resetPackagedGateway();
+    measurement.postReady = await probeVisitor();
+    measurement.residency = await unloadModel();
+    if (measurement.residency === 'unloaded')
+      measurement.cold = await probeVisitor();
+  } catch (error) {
+    measurement.error = error instanceof Error ? error.message : String(error);
+  }
+  console.log('cold measurement', JSON.stringify(measurement));
+  return measurement;
+}
+if (mode === 'http' && checkCold) coldMeasurement = await measureCold();
 
 if (mode !== 'index' && mode !== 'http') {
   const question = 'Where did Timo use Python and Flask?';
@@ -505,41 +608,47 @@ async function runGateway(
   });
   const start = performance.now();
   try {
-    const response = await new Promise<{ status: number; body: unknown }>(
-      (resolve, reject) => {
-        const req = request(
-          {
-            host: LOOPBACK,
-            port,
-            path: '/api/ask',
-            method: 'POST',
-            agent: false,
-            signal: AbortSignal.timeout(CLIENT_TIMEOUT),
-            headers: {
-              Host: host,
-              Origin: 'http://' + host,
-              'Content-Type': 'application/json',
-              'Content-Length': Buffer.byteLength(body),
-            },
+    const response = await new Promise<{
+      status: number;
+      body: unknown;
+      modelCalls: number | null;
+    }>((resolve, reject) => {
+      const req = request(
+        {
+          host: LOOPBACK,
+          port,
+          path: '/api/ask',
+          method: 'POST',
+          agent: false,
+          signal: AbortSignal.timeout(CLIENT_TIMEOUT),
+          headers: {
+            Host: host,
+            Origin: 'http://' + host,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body),
           },
-          async (reply) => {
-            try {
-              reply.setEncoding('utf8');
-              let text = '';
-              for await (const chunk of reply) text += chunk;
-              resolve({
-                status: reply.statusCode ?? 0,
-                body: JSON.parse(text),
-              });
-            } catch (error) {
-              reject(error);
-            }
-          },
-        );
-        req.on('error', reject);
-        req.end(body);
-      },
-    );
+        },
+        async (reply) => {
+          try {
+            reply.setEncoding('utf8');
+            let text = '';
+            for await (const chunk of reply) text += chunk;
+            const reported = Number(
+              reply.headers[MODEL_CALLS_HEADER.toLowerCase()],
+            );
+            resolve({
+              status: reply.statusCode ?? 0,
+              body: JSON.parse(text),
+              modelCalls: Number.isInteger(reported) ? reported : null,
+            });
+          } catch (error) {
+            reject(error);
+          }
+        },
+      );
+      req.on('error', reject);
+      req.end(body);
+    });
     return {
       ...response,
       graniteRan,
@@ -574,9 +683,11 @@ for (const fixture of fixtures) {
   // Selector calls and their raw model replies; unknown over HTTP, where the
   // gateway runs in another process.
   let selectorCalls: number | null = mode === 'http' ? null : 0;
-  const modelCalls: OllamaCall[] = [];
+  const ollamaCalls: OllamaCall[] = [];
+  // Model calls the gateway reports for this request (X-Ask-Model-Calls).
+  let modelCalls: number | null = null;
   setOllamaCallListener(
-    mode === 'http' ? undefined : (call) => modelCalls.push(call),
+    mode === 'http' ? undefined : (call) => ollamaCalls.push(call),
   );
   const start = performance.now();
   let ms;
@@ -589,34 +700,18 @@ for (const fixture of fixtures) {
       packagedRequestsSinceReset = 0;
     }
     if (resetProject) packagedRequestsSinceReset += 1;
-    const started = performance.now();
-    try {
-      const response = await fetch(new URL('/api/ask', httpOrigin!), {
-        method: 'POST',
-        headers: {
-          Origin: httpOrigin!,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question,
-          locale,
-          ...(history.length ? { history } : {}),
-        }),
-        signal: AbortSignal.timeout(CLIENT_TIMEOUT),
-      });
-      httpStatus = response.status;
-      const body: unknown = await response.json().catch(() => null);
-      actual =
-        httpStatus === 200 ? validateResult(body, locale, corpusVersion) : null;
-      ms = performance.now() - started;
-    } catch {
-      httpStatus = null;
-      actual = null;
-      ms = performance.now() - started;
-    }
+    const response = await postAsk(question, locale, history);
+    httpStatus = response.httpStatus;
+    modelCalls = response.modelCalls;
+    actual =
+      httpStatus === 200
+        ? validateResult(response.body, locale, corpusVersion)
+        : null;
+    ms = response.ms;
   } else if (mode === 'gateway') {
     const response = await runGateway(question, locale, history);
     httpStatus = response.status;
+    modelCalls = response.modelCalls;
     ms = response.ms;
     graniteRan = response.graniteRan;
     qwenEvidenceIds = response.qwenEvidenceIds;
@@ -681,7 +776,9 @@ for (const fixture of fixtures) {
     ...(fixture.history ? { history: fixture.history } : {}),
     expectationOverlay: Boolean(fixture.expectationOverlay),
     selectorCalls,
+    ollamaCalls,
     modelCalls,
+    requiresModelCall: Boolean(fixture.requiresModelCall),
     expectedStatus: fixture.status,
     expectedMode: fixture.expectedMode,
     expectedIds: fixture.acceptableIds,
@@ -710,9 +807,9 @@ for (const fixture of fixtures) {
 const summary = [...new Set(rows.map(({ route }) => route))].map((route) => {
   const group = rows.filter((row) => row.route === route);
   const times = group
-    .filter(({ qwenEvidenceIds, resultMode, status }) =>
+    .filter(({ qwenEvidenceIds, resultMode, status, modelCalls }) =>
       mode === 'http'
-        ? resultMode === 'local' && status !== 'error'
+        ? resultMode === 'local' && status !== 'error' && (modelCalls ?? 0) > 0
         : qwenEvidenceIds.length > 0 && status !== 'error',
     )
     .map(({ ms }) => ms)
@@ -757,20 +854,19 @@ if (process.argv.includes('--misses')) {
   );
 }
 async function askOnce(question: string): Promise<RecoverySample> {
-  const started = performance.now();
-  const response = await fetch(new URL('/api/ask', httpOrigin!), {
-    method: 'POST',
-    headers: { Origin: httpOrigin!, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, locale: 'en' }),
-    signal: AbortSignal.timeout(CLIENT_TIMEOUT),
-  }).catch(() => undefined);
-  const body: unknown = await response?.json().catch(() => null);
+  const response = await postAsk(question, 'en');
   const result =
-    response?.status === 200 ? validateResult(body, 'en', corpusVersion) : null;
+    response.httpStatus === 200
+      ? validateResult(response.body, 'en', corpusVersion)
+      : null;
   return {
-    httpStatus: response?.status ?? null,
+    httpStatus: response.httpStatus,
     mode: result?.mode ?? null,
-    ms: Math.round(performance.now() - started),
+    status: result?.status,
+    ids: result?.claims.map(({ id }) => id) ?? [],
+    citations: result?.sources.map(({ id }) => id) ?? [],
+    modelCalls: response.modelCalls,
+    ms: Math.round(response.ms),
   };
 }
 
@@ -797,24 +893,50 @@ if (recovery) {
       ...sample,
       at: Math.round(performance.now() - resumed),
     });
-    if (sample.httpStatus === 200 && sample.mode === 'local') break;
+    if (recoveryOutcome({ before, duringOutage, afterResume }).recovered) break;
   }
   recoveryReport = {
     before,
     duringOutage,
     afterResume,
-    ...recoveryOutcome({ duringOutage, afterResume }),
+    ...recoveryOutcome({ before, duringOutage, afterResume }),
   };
   console.log('recovery', JSON.stringify(recoveryReport));
 }
 
-const gateResult = gate ? modelGate(rows, checkCold ? coldProbe : null) : null;
+const gateResult = gate
+  ? modelGate(rows, checkCold ? coldMeasurement : null)
+  : null;
 if (gateResult) {
-  console.log(gateResult.passed ? 'model gate passed' : 'model gate FAILED');
+  console.log(gateLabel(gateResult));
   for (const failure of gateResult.failures) console.log(' - ' + failure);
   console.table(gateResult.counts);
 }
+// --cold-only runs no rows, so its cold gate is enforced on its own.
+const coldFailures =
+  coldOnly && coldMeasurement ? coldGate(coldMeasurement) : [];
+if (coldOnly) {
+  console.log(
+    coldFailures.length ? 'cold gate FAILED' : 'cold gate passed',
+    coldMeasurement ? JSON.stringify(coldMeasurement) : '',
+  );
+  for (const failure of coldFailures) console.log(' - ' + failure);
+}
 const identity = usesHttp ? await hostIdentity() : null;
+const benchmarkIdentity = runIdentity({
+  version: expectationsVersion,
+  files: { questions, paraphrases, heldOut },
+  evaluated: fixtures.map(
+    ({ suite, locale, question, status, acceptableIds, expectedMode }) => ({
+      suite,
+      locale,
+      question,
+      status,
+      acceptableIds,
+      expectedMode: expectedMode ?? null,
+    }),
+  ),
+});
 
 if (reportPath)
   await writeFile(
@@ -826,7 +948,9 @@ if (reportPath)
         expectationsVersion,
         corpusVersion,
         identity,
-        coldProbe,
+        benchmarkIdentity,
+        coldMeasurement,
+        coldFailures,
         gate: gateResult,
         recovery: recoveryReport,
         summary,
@@ -838,17 +962,8 @@ if (reportPath)
   );
 if (mode === 'gateway' && rows.some(({ match }) => !match))
   process.exitCode = 1;
-if (
-  mode === 'http' &&
-  (rows.some(({ match }) => !match) ||
-    (checkCold &&
-      (!coldProbe ||
-        coldProbe.httpStatus !== 200 ||
-        coldProbe.status !== 'answer' ||
-        coldProbe.mode !== 'local' ||
-        coldProbe.ids.join() !== 'spotify-python' ||
-        coldProbe.citations.map(({ id }) => id).join() !== 'spotify-code')))
-)
-  process.exitCode = 1;
+if (mode === 'http' && rows.some(({ match }) => !match)) process.exitCode = 1;
+// Any run that took a cold measurement fails when that measurement does.
+if (coldMeasurement && coldGate(coldMeasurement).length) process.exitCode = 1;
 if (gateResult && !gateResult.passed) process.exitCode = 1;
 if (recoveryReport && !recoveryReport.recovered) process.exitCode = 1;
