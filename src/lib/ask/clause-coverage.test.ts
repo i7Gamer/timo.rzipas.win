@@ -163,6 +163,46 @@ describe('coverage of questions with several parts', () => {
 
   it.each([
     [
+      'Where did Timo tutor beginners, and when did he take responsibility for Jenkins at Abacus?',
+      'en',
+    ],
+    [
+      'Wo war Timo Tutor für Anfänger, und wann übernahm er bei Abacus die Verantwortung für Jenkins?',
+      'de',
+    ],
+  ] as const)(
+    'does not let one topic’s date answer another topic’s part: %s',
+    async (question, locale) => {
+      const onlyTutoring = await ask(question, locale, [TUTORING], [TUTORING]);
+      expect(onlyTutoring?.status).toBe('partial');
+      expect(onlyTutoring?.missing).toBe('additional-question');
+      expect(ids(onlyTutoring)).toEqual([TUTORING]);
+      // The Jenkins fact names the event but records no date for it.
+      const both = await ask(
+        question,
+        locale,
+        [TUTORING, 'abacus-jenkins'],
+        [TUTORING, 'abacus-jenkins'],
+      );
+      expect(both?.status).toBe('partial');
+      expect(both?.missing).toBe('additional-question');
+    },
+  );
+
+  it.each([
+    ['When and where did Timo tutor beginners?', 'en'],
+    ['Wann und wo war Timo Tutor für Anfänger?', 'de'],
+  ] as const)(
+    'gives a bare question word the subject of the part it opens: %s',
+    async (question, locale) => {
+      const result = await ask(question, locale, [TUTORING], [TUTORING]);
+      expect(result?.status).toBe('answer');
+      expect(ids(result)).toEqual([TUTORING]);
+    },
+  );
+
+  it.each([
+    [
       'Where did Timo tutor beginners, and which programming language did he teach?',
       'en',
     ],

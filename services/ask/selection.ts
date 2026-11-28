@@ -776,8 +776,8 @@ function prepareMixedCompound(question: string, fallback: AskResult) {
 /**
  * Whether a fact answers one part of the question: its own wording names
  * what the part asks, or it states the detail the part asks for ("…and when
- * was that?"). The project may be named anywhere in the scope (the question,
- * plus the turn a follow-up refers back to). A bare keyword ("Did Timo invent
+ * was that?"). The project must be the part's subject (see `clauseScopes`).
+ * A bare keyword ("Did Timo invent
  * Flask?") is retrieval evidence, not coverage.
  */
 function factAnswersClause(fact: Fact, clause: string, scope: string) {
@@ -790,10 +790,36 @@ function factAnswersClause(fact: Fact, clause: string, scope: string) {
   );
 }
 
+const allTopics = Object.values(sources).flatMap(({ topics }) => topics);
+
+/**
+ * The subject each part is about. A part that names a topic is about that
+ * topic alone, so a date from one topic never answers another's part. A part
+ * that names none ("and when was that?", "Where", "which courses …") borrows
+ * the previous part's subject, the first part the turn it refers back to, or,
+ * failing that, the next part that names a topic ("When and where did …").
+ */
+function clauseScopes(clauses: readonly string[], subject?: string) {
+  const terms = clauses.map(normalize);
+  const named = terms.map((clause) => matchingLength(clause, allTopics) > 0);
+  const scopes: string[] = [];
+  terms.forEach((clause, index) => {
+    if (named[index]) return scopes.push(clause);
+    const borrowed =
+      scopes[index - 1] ??
+      subject ??
+      terms.find((_, later) => later > index && named[later]);
+    scopes.push(borrowed ? clause + ' ' + borrowed : clause);
+  });
+  return scopes;
+}
+
 /**
  * A selected fact that answers no part by its own wording may still stand for
- * one part that names its project and has no other evidence. It never fills a
- * second part, so an on-topic fact cannot hide an unanswered request.
+ * one part that names its project and has no other evidence, unless the part
+ * asks for a detail the fact does not record ("…and when did he take over
+ * Jenkins?"). It never fills a second part, so an on-topic fact cannot hide an
+ * unanswered request.
  */
 function fillClausesByTopic(
   matches: readonly Fact[],
@@ -807,7 +833,8 @@ function fillClausesByTopic(
     const index = parts.findIndex(
       ({ question: clause }, at) =>
         !covered[at].size &&
-        matchingLength(normalize(clause), sources[fact.sourceId].topics),
+        matchingLength(normalize(clause), sources[fact.sourceId].topics) &&
+        !unrecordedDetail(normalize(clause), [fact.id]),
     );
     if (index >= 0) covered[index].add(fact.id);
   }
@@ -912,8 +939,12 @@ export async function askModel(
     const subject = referencedSubject(terms, history ?? []);
     const scope = subject ? terms + ' ' + subject : terms;
     const parts = reviewedCompoundClauses(clauses, scope);
+    const scopes = clauseScopes(
+      parts.map(({ question: clause }) => clause),
+      subject,
+    );
     const covered = parts.map(
-      ({ question: clause, modelIds }) =>
+      ({ question: clause, modelIds }, index) =>
         new Set([
           ...prepareExactQuestion(
             clause,
@@ -923,7 +954,7 @@ export async function askModel(
           ).fallback.claims.map(({ id }) => id),
           ...modelIds,
           ...matches
-            .filter((fact) => factAnswersClause(fact, clause, scope))
+            .filter((fact) => factAnswersClause(fact, clause, scopes[index]))
             .map(({ id }) => id),
         ]),
     );
